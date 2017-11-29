@@ -50,6 +50,14 @@ It is used to know when the window has changed of width.")
 
 (defvar-local lsp-line--timer nil)
 
+(defface lsp-line-contents nil
+  "Face used to highlight the hover's contents."
+  :group 'lsp-ui)
+
+(defface lsp-line-current-contents nil
+  "Face used to highlight the hover's contents at point."
+  :group 'lsp-ui)
+
 (defface lsp-line-symbol
   '((t :foreground "grey"
        :box (:line-width -1 :color "grey")
@@ -156,8 +164,11 @@ MARKED-STRING is the string returned by `lsp-line--extract-info'."
 INFO is the information to display.
 SYMBOL is the symbol associated to the info.
 CURRENT is non-nil when the point is on the symbol."
-  (let* ((str (concat info " " (propertize (concat " " symbol " ")
-                                           'face (if current 'lsp-line-current-symbol 'lsp-line-symbol))))
+  (let* ((str (concat (propertize info 'face
+                                  (if current 'lsp-line-current-contents 'lsp-line-contents))
+                      " "
+                      (propertize (concat " " symbol " ")
+                                  'face (if current 'lsp-line-current-symbol 'lsp-line-symbol))))
          (len (length str)))
     (concat
      (propertize " " 'display `(space :align-to (- right-fringe ,(+ 1 (length str)))))
