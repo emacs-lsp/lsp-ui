@@ -266,12 +266,19 @@ to the language server."
       (setq lsp-line--timer
             (run-with-idle-timer 0.2 nil 'lsp-line--run)))))
 
-(defun lsp-line-enable ()
-  "Enable `lsp-line' on the current buffer."
-  (add-hook 'post-command-hook 'lsp-line nil t)
-  (setq-local flycheck-display-errors-function nil))
-
-(add-hook 'lsp-mode-hook 'lsp-line-enable)
+(define-minor-mode lsp-line-mode
+  "Minor mode for showing information of current line."
+  :init-value nil
+  :group nil
+  (cond
+   (lsp-line-mode
+    (add-hook 'post-command-hook 'lsp-line nil t)
+    (setq-local flycheck-display-errors-function nil))
+   (t
+    (setq lsp-line--line nil)
+    (lsp-line--delete-ov)
+    (remove-hook 'post-command-hook 'lsp-line t))
+   ))
 
 (provide 'lsp-line)
 ;;; lsp-line.el ends here
