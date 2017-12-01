@@ -122,10 +122,11 @@ MarkedString | MarkedString[] | MarkupContent (as defined in the LSP).
 We prioritize string with a language (which is probably a type or a
 function signature)."
   (when contents
-    (let* ((strings (seq-group-by 'hash-table-p contents))
+    (let* ((strings (when (listp contents) (seq-group-by 'hash-table-p contents)))
            (string (alist-get nil strings))
            (strings-with-language (alist-get t strings)))
       (or (when (stringp contents) contents)
+          (when (hash-table-p contents) contents)
           (when (listp strings-with-language)
             (or (car (seq-filter (lambda (s) (string= (gethash "language" s)
                                                       (lsp-line--get-language)))
