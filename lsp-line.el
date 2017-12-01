@@ -146,7 +146,7 @@ MARKED-STRING is the string returned by `lsp-line--extract-info'."
       (let* ((language (gethash "language" marked-string))
              (value (gethash "value" marked-string))
              (renderer (lsp-line--get-renderer language)))
-        (setq marked-string (if (functionp renderer)
+        (setq marked-string (if (and (functionp renderer) value)
                                 (funcall renderer value)
                               value))))
     (add-face-text-property 0 (length marked-string) '(:slant italic :height 0.99) nil marked-string)
