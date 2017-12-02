@@ -34,6 +34,14 @@
 (require 'lsp-mode)
 (require 'flycheck)
 
+(defgroup lsp-line nil
+  "Display informations of the current line."
+  :group 'tools
+  :group 'convenience
+  :group 'lsp-ui
+  :link '(custom-manual "(lsp-line) Top")
+  :link '(info-link "(lsp-line) Customizing"))
+
 (defvar-local lsp-line--ovs nil
   "Overlays used by `lsp-line'.")
 
@@ -55,7 +63,7 @@ It is used to know when the window has changed of width.")
        :box (:line-width -1 :color "grey")
        :height 0.99))
   "Face used to highlight symbols."
-  :group 'lsp-ui)
+  :group 'lsp-line)
 
 (defface lsp-line-current-symbol
   '((t :foreground "white"
@@ -63,7 +71,7 @@ It is used to know when the window has changed of width.")
        :box (:line-width -1 :color "white")
        :height 0.99))
   "Face used to highlight the symbol on point."
-  :group 'lsp-ui)
+  :group 'lsp-line)
 
 (defun lsp-line--calc-space (win-width str-len index)
   "Calcul whether there is enough space on line.
@@ -270,7 +278,7 @@ to the language server."
 (define-minor-mode lsp-line-mode
   "Minor mode for showing information of current line."
   :init-value nil
-  :group nil
+  :group lsp-line
   (cond
    (lsp-line-mode
     (add-hook 'post-command-hook 'lsp-line nil t)

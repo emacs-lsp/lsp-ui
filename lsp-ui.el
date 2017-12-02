@@ -33,7 +33,16 @@
 
 ;;; Code:
 
+(defgroup lsp-ui nil
+  "lsp-ui contains a series of useful UI integrations for lsp-mode."
+  :group 'tools
+  :group 'convenience
+  :link '(custom-manual "(lsp-ui) Top")
+  :link '(info-link "(lsp-ui) Customizing"))
 
+(require 'lsp-line)
+(require 'lsp-xref)
+(require 'lsp-flycheck)
 
 (provide 'lsp-ui)
 ;;; lsp-ui.el ends here

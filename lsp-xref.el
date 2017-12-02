@@ -40,6 +40,14 @@
 (require 'quick-peek)
 (require 'dash)
 
+(defgroup lsp-xref nil
+  "Improve version of xref with peek feature."
+  :group 'tools
+  :group 'convenience
+  :group 'lsp-ui
+  :link '(custom-manual "(lsp-xref) Top")
+  :link '(info-link "(lsp-xref) Customizing"))
+
 (defvar-local lsp-xref--buffer nil)
 (defvar-local lsp-xref--origin-buffer nil)
 (defvar-local lsp-xref--win-start nil)
@@ -47,17 +55,17 @@
 (defface lsp-xref-peek-background
   '((t :background "#031A25"))
   "Face used for the peek background."
-  :group 'lsp-ui)
+  :group 'lsp-xref)
 
 (defface lsp-xref-filename
   '((t :foreground "dark orange"))
   "Face used for the filename's reference."
-  :group 'lsp-ui)
+  :group 'lsp-xref)
 
 (defface lsp-xref-line-number
   '((t :foreground "grey25"))
   "Line number face."
-  :group 'lsp-ui)
+  :group 'lsp-xref)
 
 (defface lsp-xref-highlight
   '((t :background "white"
@@ -65,14 +73,14 @@
        :distant-foreground "white"
        :box t))
   "Face used to highlight the reference/definition."
-  :group 'lsp-ui)
+  :group 'lsp-xref)
 
 (defface lsp-xref-peek-header
   '((t :background "white"
        :foreground "black"
        :overline t))
   "Face used for the peek-header."
-  :group 'lsp-ui)
+  :group 'lsp-xref)
 
 (defun lsp-xref--show (xrefs)
   "Create a window to list references/defintions.
