@@ -194,6 +194,7 @@ CURRENT is non-nil when the point is on the symbol."
             (overlay-put ov 'bounds bounds)
             (overlay-put ov 'current current)
             (overlay-put ov 'after-string final-string)
+            (overlay-put ov 'window (get-buffer-window))
             (push ov lsp-line--ovs)))))))
 
 (defun lsp-line--toggle-current (ov current)
