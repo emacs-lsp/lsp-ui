@@ -30,7 +30,20 @@
 (require 'flycheck)
 (require 'pcase)
 
-(defun lsp--flycheck-start (checker callback)
+(defgroup lsp-flycheck nil
+  "The LSP extension to display syntax checking."
+  :group 'tools
+  :group 'convenience
+  :group 'lsp-ui
+  :link '(custom-manual "(lsp-flycheck) Top")
+  :link '(info-link "(lsp-flycheck) Customizing"))
+
+(defcustom lsp-flycheck-enable t
+  "Whether or not to enable lsp-flycheck."
+  :type 'boolean
+  :group 'lsp-ui)
+
+(defun lsp-flycheck--start (checker callback)
   "Start an LSP syntax check with CHECKER.
 
 CALLBACK is the status callback passed by Flycheck."
@@ -59,7 +72,7 @@ CALLBACK is the status callback passed by Flycheck."
 provided by lsp-mode.
 
 See https://github.com/emacs-lsp/lsp-mode."
-  :start #'lsp--flycheck-start
+  :start #'lsp-flycheck--start
   :modes '(python-mode) ; Need a default mode
   :predicate (lambda () lsp-mode)
   :error-explainer #'lsp-error-explainer)

@@ -44,5 +44,21 @@
 (require 'lsp-xref)
 (require 'lsp-flycheck)
 
+(defun lsp-ui--toggle (enable)
+  "ENABLE."
+  (dolist (feature '(lsp-flycheck lsp-xref lsp-line))
+    (let* ((sym (intern-soft (concat (symbol-name feature) "-enable")))
+           (value (symbol-value sym))
+           (fn (symbol-function sym)))
+      (when (and (or value (not enable))
+                 (functionp fn))
+        (funcall fn enable)))))
+
+(define-minor-mode lsp-ui-mode
+  "Minor mode that contains a series of useful UI integrations for lsp-mode."
+  :init-value nil
+  :group lsp-ui
+  (lsp-ui--toggle lsp-ui-mode))
+
 (provide 'lsp-ui)
 ;;; lsp-ui.el ends here

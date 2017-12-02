@@ -42,6 +42,11 @@
   :link '(custom-manual "(lsp-line) Top")
   :link '(info-link "(lsp-line) Customizing"))
 
+(defcustom lsp-line-enable t
+  "Whether or not to enable lsp-line."
+  :type 'boolean
+  :group 'lsp-ui)
+
 (defvar-local lsp-line--ovs nil
   "Overlays used by `lsp-line'.")
 
@@ -288,6 +293,12 @@ to the language server."
     (lsp-line--delete-ov)
     (remove-hook 'post-command-hook 'lsp-line t))
    ))
+
+(defun lsp-line-enable (enable)
+  "Enable/disable lsp-line-mode."
+  (if enable
+      (lsp-line-mode 1)
+    (lsp-line-mode -1)))
 
 (provide 'lsp-line)
 ;;; lsp-line.el ends here

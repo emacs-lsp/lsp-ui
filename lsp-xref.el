@@ -48,6 +48,11 @@
   :link '(custom-manual "(lsp-xref) Top")
   :link '(info-link "(lsp-xref) Customizing"))
 
+(defcustom lsp-xref-enable t
+  "Whether or not to enable lsp-xref."
+  :type 'boolean
+  :group 'lsp-ui)
+
 (defvar-local lsp-xref--buffer nil)
 (defvar-local lsp-xref--origin-buffer nil)
 (defvar-local lsp-xref--win-start nil)
@@ -256,6 +261,16 @@ KIND."
                                 (lsp--make-reference-params)))
             (lsp-xref--locations-to-xref-items)
             (-filter 'identity)))
+
+(defun lsp-xref-enable (enable)
+  "ENABLE."
+  (interactive)
+  (if enable
+      (progn
+        (global-set-key (kbd "M-.") #'lsp-xref-find-definitions)
+        (global-set-key (kbd "M-?") #'lsp-xref-find-references))
+    (global-set-key (kbd "M-.") #'xref-find-definitions)
+    (global-set-key (kbd "M-?") #'xref-find-references)))
 
 (provide 'lsp-xref)
 ;;; lsp-xref.el ends here
