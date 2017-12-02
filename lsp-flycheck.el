@@ -1,7 +1,7 @@
 ;;; lsp-flycheck.el --- Flycheck support for lsp-mode -*- lexical-binding: t; -*-
 
 ;; Copyright (C) 2017  fmdkdd
-;; Package-Requires: ((emacs "25.1") (flycheck "30"))
+;; Package-Requires: ((emacs "25.1") (flycheck "30") (lsp-mode "3.1"))
 
 ;; This program is free software: you can redistribute it and/or modify
 ;; it under the terms of the GNU General Public License as published by
@@ -18,10 +18,10 @@
 
 ;;; Commentary:
 
-;; Put this in your config file:
-;;
+;; Flycheck integration for lsp-mode.  To enable, put this in your config:
+;; (require 'lsp-flycheck)
 ;; (with-eval-after-load 'lsp-mode
-;;   (require 'lsp-flycheck))
+;;   (add-hook 'lsp-after-open-hook 'lsp-flycheck-enable))
 
 ;;; Code:
 
@@ -40,7 +40,6 @@ CALLBACK is the status callback passed by Flycheck."
     (maphash (lambda (file diagnostics)
                (dolist (diag diagnostics)
                  (push (flycheck-error-new
-                        :buffer (current-buffer)
                         :checker checker
                         :filename file
                         :line (1+ (lsp-diagnostic-line diag))
@@ -61,7 +60,7 @@ provided by lsp-mode.
 
 See https://github.com/emacs-lsp/lsp-mode."
   :start #'lsp--flycheck-start
-  :modes '(rust-mode go-mode python-mode haskell-mode) ; Need a default mode
+  :modes '(python-mode) ; Need a default mode
   :predicate (lambda () lsp-mode)
   :error-explainer #'lsp-error-explainer)
 
@@ -70,6 +69,16 @@ See https://github.com/emacs-lsp/lsp-mode."
   (unless (flycheck-checker-supports-major-mode-p 'lsp mode)
     (flycheck-add-mode 'lsp mode)))
 
-(provide 'lsp-flycheck)
+(defun lsp-flycheck-enable ()
+  "Enable flycheck integration for the current buffer."
+  (setq-local flycheck-check-syntax-automatically nil)
+  (setq-local flycheck-checker 'lsp)
+  (lsp-flycheck-add-mode major-mode)
+  (add-to-list 'flycheck-checkers 'lsp)
+  (add-hook 'lsp-after-diagnostics-hook (lambda ()
+                                          (when flycheck-mode
+                                            (flycheck-buffer)))))
 
+
+(provide 'lsp-flycheck)
 ;;; lsp-flycheck ends here
