@@ -33,7 +33,21 @@
 
 ;;; Code:
 
+(require 'imenu)
+(require 'lsp-mode)
 
+(defun lsp-ui-imenu-create-index ()
+  (mapcar
+   (lambda (info)
+     (let ((p (lsp--position-to-point
+               (gethash "start" (gethash "range" (gethash "location" info))))))
+       (cons (gethash "name" info)
+             (if imenu-use-markers
+                 (save-excursion (goto-char p) (point-marker))
+               p))))
+   (lsp--send-request
+    (lsp--make-request "textDocument/documentSymbol"
+                       (list :textDocument (lsp--text-document-identifier))))))
 
 (provide 'lsp-ui)
 ;;; lsp-ui.el ends here
