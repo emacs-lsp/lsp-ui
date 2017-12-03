@@ -278,7 +278,7 @@ XREFS is a list of list of references/definitions."
   (interactive)
   (-when-let (xref (or x (lsp-xref--get-selection)))
     (-let* (((&plist :file file :line line :column column) xref))
-      (lsp-xref--peek-hide)
+      (lsp-xref--abort)
       (find-file file)
       (goto-char 1)
       (forward-line line)
