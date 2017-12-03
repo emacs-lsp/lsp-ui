@@ -54,6 +54,8 @@
                  (functionp fn))
         (funcall fn enable)))))
 
+(defvar lsp-ui-mode-map (make-sparse-keymap))
+
 (define-minor-mode lsp-ui-mode
   "Minor mode that contains a series of useful UI integrations for lsp-mode."
   :init-value nil

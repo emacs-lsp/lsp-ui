@@ -406,15 +406,19 @@ KIND."
             (lsp-xref--locations-to-xref-items)
             (-filter 'identity)))
 
+(defvar lsp-ui-mode-map)
+
 (defun lsp-xref-enable (enable)
   "ENABLE."
   (interactive)
+  (unless (bound-and-true-p lsp-ui-mode-map)
+    (user-error "Please load lsp-ui before trying to enable lsp-xref"))
   (if enable
       (progn
-        (global-set-key (kbd "M-.") #'lsp-xref-find-definitions)
-        (global-set-key (kbd "M-?") #'lsp-xref-find-references))
-    (global-set-key (kbd "M-.") #'xref-find-definitions)
-    (global-set-key (kbd "M-?") #'xref-find-references)))
+        (define-key lsp-ui-mode-map [remap xref-find-definitions] #'lsp-xref-find-definitions)
+        (define-key lsp-ui-mode-map [remap xref-find-references] #'lsp-xref-find-references))
+    (define-key lsp-ui-mode-map [remap xref-find-definitions] nil)
+    (define-key lsp-ui-mode-map [remap xref-find-references] nil)))
 
 (provide 'lsp-xref)
 ;;; lsp-xref.el ends here
