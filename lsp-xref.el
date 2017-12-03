@@ -52,7 +52,7 @@
   :type 'boolean
   :group 'lsp-ui)
 
-(defcustom lsp-xref-peek-height 14
+(defcustom lsp-xref-peek-height 20
   "Height of the peek code."
   :type 'integer
   :group 'lsp-xref)
