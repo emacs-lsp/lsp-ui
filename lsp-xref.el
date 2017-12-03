@@ -179,7 +179,7 @@ XREFS is a list of list of references/definitions."
   (dolist (xref-file xrefs)
     (-let (((&plist :file filename) (car xref-file))
            (len (number-to-string (length xref-file))))
-      (push (concat (propertize (abbreviate-file-name filename)
+      (push (concat (propertize (lsp-ui--workspace-path filename)
                                 'face 'lsp-xref-filename)
                     (propertize " " 'display `(space :align-to (- right-fringe ,(1+ (length len)))))
                     (propertize len 'face 'lsp-xref-filename))
@@ -200,7 +200,7 @@ XREFS is a list of list of references/definitions."
   "Show reference's chunk of code."
   (-when-let (xref (lsp-xref--get-selection))
     (-let* (((&plist :file file :chunk chunk) xref)
-            (header (concat " " (file-relative-name file) "\n"))
+            (header (concat " " (lsp-ui--workspace-path file) "\n"))
             (header2 (format " %s references" lsp-xref--size-list))
             (ref-view (--> chunk
                            (subst-char-in-string ?\t ?\s it)

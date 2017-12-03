@@ -44,6 +44,15 @@
 (require 'lsp-xref)
 (require 'lsp-flycheck)
 
+(defun lsp-ui--workspace-path (path)
+  "Return the path relative to the workspace.
+If the path is not in the workspace, it returns the original PATH."
+  (let* ((root (lsp--workspace-root lsp--cur-workspace))
+         (in-workspace (string-prefix-p root path)))
+    (if in-workspace
+        (substring path (length root))
+      path)))
+
 (defun lsp-ui--toggle (enable)
   "ENABLE."
   (dolist (feature '(lsp-flycheck lsp-xref lsp-line))
