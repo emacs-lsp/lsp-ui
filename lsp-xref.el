@@ -219,16 +219,17 @@ XREFS is a list of list of references/definitions."
   (unless (lsp-xref--get-selection)
     (setq lsp-xref--selection (+ lsp-xref--selection index))))
 
-(defun lsp-xref--select-next ()
+(defun lsp-xref--select-next (&optional no-update)
   "."
   (interactive)
   (when (< lsp-xref--selection (- (length lsp-xref--list) 1))
     (lsp-xref--select 1)
     (while (> (lsp-xref--visual-index) (- lsp-xref-peek-height 2))
       (setq lsp-xref--offset (1+ lsp-xref--offset)))
-    (lsp-xref--peek)))
+    (unless no-update
+      (lsp-xref--peek))))
 
-(defun lsp-xref--select-prev ()
+(defun lsp-xref--select-prev (&optional no-update)
   "."
   (interactive)
   (if (= lsp-xref--selection 1)
@@ -236,7 +237,34 @@ XREFS is a list of list of references/definitions."
     (lsp-xref--select -1)
     (while (< (lsp-xref--visual-index) 0)
       (setq lsp-xref--offset (1- lsp-xref--offset))))
-  (lsp-xref--peek))
+  (unless no-update
+    (lsp-xref--peek)))
+
+(defun lsp-xref--navigate (fn)
+  "."
+  (-let* (((&plist :file current-file) (lsp-xref--get-selection))
+          (half-height (/ lsp-xref-peek-height 2))
+          (last-file current-file)
+          (last-selection 0))
+    (while (and (equal current-file last-file)
+                (not (equal lsp-xref--selection last-selection)))
+      (setq last-selection lsp-xref--selection)
+      (funcall fn t)
+      (setq current-file (let ((item (lsp-xref--get-selection)))
+                           (plist-get item :file))))
+    (when (> lsp-xref--selection half-height)
+      (setq lsp-xref--offset (- lsp-xref--selection (1- half-height))))
+    (lsp-xref--peek)))
+
+(defun lsp-xref--select-prev-file ()
+  "."
+  (interactive)
+  (lsp-xref--navigate 'lsp-xref--select-prev))
+
+(defun lsp-xref--select-next-file ()
+  "."
+  (interactive)
+  (lsp-xref--navigate 'lsp-xref--select-next))
 
 (defun lsp-xref--peek-hide ()
   "Hide the chunk of code and restore previous state."
@@ -264,6 +292,8 @@ XREFS is a list of list of references/definitions."
     (suppress-keymap map t)
     (define-key map "\e\e\e" 'lsp-xref--abort)
     (define-key map "\C-g" 'lsp-xref--abort)
+    (define-key map (kbd "<right>") 'lsp-xref--select-next-file)
+    (define-key map (kbd "<left>") 'lsp-xref--select-prev-file)
     (define-key map (kbd "<down>") 'lsp-xref--select-next)
     (define-key map (kbd "<up>") 'lsp-xref--select-prev)
     (define-key map (kbd "q") 'lsp-xref--abort)
