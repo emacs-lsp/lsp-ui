@@ -6,7 +6,7 @@
 ;; URL: https://github.com/emacs-lsp/lsp-ui
 ;; Keywords: lsp, ui
 ;; Version: 0.0.1
-;; Package-Requires: ((emacs "25.1") (lsp-mode "3.4") (quick-peek "1.0") (dash "0.13"))
+;; Package-Requires: ((emacs "25.1") (lsp-mode "3.4") (dash "0.13"))
 
 ;;; License
 ;;
@@ -37,7 +37,6 @@
 
 (require 'lsp-mode)
 (require 'xref)
-(require 'quick-peek)
 (require 'dash)
 
 (defgroup lsp-xref nil
@@ -53,18 +52,29 @@
   :type 'boolean
   :group 'lsp-ui)
 
-(defvar-local lsp-xref--buffer nil)
-(defvar-local lsp-xref--origin-buffer nil)
-(defvar-local lsp-xref--win-start nil)
+(defcustom lsp-xref-peek-height 14
+  "Height of the peek code."
+  :type 'integer
+  :group 'lsp-xref)
 
-(defface lsp-xref-peek-background
+(defcustom lsp-xref-list-width 50
+  "Width of the right panel."
+  :type 'integer
+  :group 'lsp-xref)
+
+(defface lsp-xref-peek
   '((t :background "#031A25"))
-  "Face used for the peek background."
+  "Face used for the peek."
+  :group 'lsp-xref)
+
+(defface lsp-xref-list
+  '((t :background "#181818"))
+  "Face used to list references."
   :group 'lsp-xref)
 
 (defface lsp-xref-filename
   '((t :foreground "dark orange"))
-  "Face used for the filename's reference."
+  "Face used for the filename's reference in the list."
   :group 'lsp-xref)
 
 (defface lsp-xref-line-number
@@ -80,75 +90,164 @@
   "Face used to highlight the reference/definition."
   :group 'lsp-xref)
 
-(defface lsp-xref-peek-header
+(defface lsp-xref-header
   '((t :background "white"
        :foreground "black"
        :overline t))
-  "Face used for the peek-header."
+  "Face used for the headers."
   :group 'lsp-xref)
+
+(defvar-local lsp-xref--peek-overlay nil)
+(defvar-local lsp-xref--list nil)
+(defvar-local lsp-xref--selection 0)
+(defvar-local lsp-xref--offset 0)
+(defvar-local lsp-xref--size-list 0)
+(defvar-local lsp-xref--win-start nil)
+
+(defun lsp-xref--truncate (len s)
+  "LEN S."
+  (if (> (string-width s) len)
+      (format "%s.." (substring s 0 (- len 2)))
+    s))
+
+(defun lsp-xref--get-text-selection ()
+  "."
+  (nth lsp-xref--selection lsp-xref--list))
+
+(defun lsp-xref--get-selection ()
+  "."
+  (get-text-property 0 'lsp-xref (lsp-xref--get-text-selection)))
+
+(defun lsp-xref--visual-index ()
+  "."
+  (- lsp-xref--selection lsp-xref--offset))
+
+(defun lsp-xref--make-line (index src)
+  "INDEX SRC."
+  (-let* (((s1 . s2) src)
+          (len-s1 (length s1))
+          (len-s2 (length s2))
+          (on-selection (= (1+ (lsp-xref--visual-index)) index))
+          (face-left (if (= index 0) 'lsp-xref-header 'lsp-xref-peek))
+          (face-right (cond (on-selection 'lsp-xref-header)
+                            ((= index 0) 'lsp-xref-header)
+                            (t 'lsp-xref-list))))
+    (when on-selection
+      (setq s2 (copy-sequence s2)))
+    (add-face-text-property 0 len-s2 face-right (not on-selection) s2)
+    (add-face-text-property 0 len-s1 face-left t s1)
+    (concat
+     s1
+     (propertize "_" 'face face-left 'display `(space :align-to (- right-fringe ,(1+ lsp-xref-list-width))))
+     " "
+     s2
+     (propertize "_" 'face face-right 'display `(space :align-to (- right-fringe 1)))
+     (propertize "\n" 'face face-right))))
+
+(defun lsp-xref--adjust (width strings)
+  "WIDTH STRINGS."
+  (-let* (((s1 . s2) strings))
+    (cons (lsp-xref--truncate (- width (1+ lsp-xref-list-width)) s1)
+          (lsp-xref--truncate (1- lsp-xref-list-width) s2))))
+
+(defun lsp-xref--peek-new (src1 src2)
+  "SRC1 SRC2."
+  (-let* ((win-width (window-text-width))
+          (string (-some->> (-zip-fill "" src1 src2)
+                            (--map (lsp-xref--adjust win-width it))
+                            (-map-indexed 'lsp-xref--make-line)))
+          (next-line (line-beginning-position 2))
+          (ov (or (when (overlayp lsp-xref--peek-overlay) lsp-xref--peek-overlay)
+                  (make-overlay next-line next-line))))
+    (setq lsp-xref--peek-overlay ov)
+    (overlay-put ov 'after-string (mapconcat 'identity string ""))
+    (overlay-put ov 'window (get-buffer-window))))
 
 (defun lsp-xref--show (xrefs)
   "Create a window to list references/defintions.
 XREFS is a list of list of references/definitions."
-  (setq lsp-xref--buffer (get-buffer-create "lsp-xref")
-        lsp-xref--win-start (window-start))
-  (recenter 15)
-  (add-to-list 'face-remapping-alist '(quick-peek-background-face lsp-xref-peek-background))
-  (display-buffer lsp-xref--buffer
-                  `(display-buffer-in-side-window . ((side . right)
-                                                     (window-width . 50))))
-  (let ((buffer (current-buffer)))
-    (with-current-buffer lsp-xref--buffer
-      (lsp-xref-mode)
-      (setq lsp-xref--origin-buffer buffer)
-      (let ((inhibit-read-only t))
-        (seq-do 'delete-overlay (overlays-in (point-min) (point-max)))
-        (erase-buffer)
-        (setq-local truncate-lines t)
-        (dolist (xref-file xrefs)
-          (-let [(&plist :file filename) (car xref-file)]
-            (overlay-put (make-overlay (point) (point))
-                         'after-string
-                         (format "%s\n" (propertize (abbreviate-file-name filename)
-                                                    'face 'lsp-xref-filename))))
-          (dolist (xref xref-file)
-            (-let* (((&plist :summary summary :line line) xref)
-                    (string (format "%-3s %s\n"
-                                    (propertize (number-to-string (1+ line)) 'face 'lsp-xref-line-number)
-                                    (string-trim summary))))
-              (add-text-properties 0 (length string) `(lsp-xref ,xref) string)
-              (insert string)))))
-      (setq-local mode-line-format (format " %s found" (1- (line-number-at-pos (point-max))))))
-    (select-window (get-buffer-window lsp-xref--buffer))))
+  (setq lsp-xref--win-start (window-start)
+        lsp-xref--selection 1
+        lsp-xref--offset 0
+        lsp-xref--size-list 0
+        lsp-xref--list nil)
+  (when (oddp lsp-xref-peek-height)
+    (setq lsp-xref-peek-height (1+ lsp-xref-peek-height)))
+  (when (< (- (line-number-at-pos (window-end)) (line-number-at-pos))
+           (+ lsp-xref-peek-height 3))
+    (recenter 15))
+  (dolist (xref-file xrefs)
+    (-let [(&plist :file filename) (car xref-file)]
+      (push (format "%s" (propertize (abbreviate-file-name filename)
+                                     'face 'lsp-xref-filename))
+            lsp-xref--list))
+    (dolist (xref xref-file)
+      (-let* (((&plist :summary summary :line line) xref)
+              (string (format "%-3s %s"
+                              (propertize (number-to-string (1+ line))
+                                          'face 'lsp-xref-line-number)
+                              (string-trim summary))))
+        (setq lsp-xref--size-list (1+ lsp-xref--size-list))
+        (add-text-properties 0 (length string) `(lsp-xref ,xref) string)
+        (push string lsp-xref--list))))
+  (setq lsp-xref--list (nreverse lsp-xref--list))
+  (lsp-xref--peek))
 
 (defun lsp-xref--peek ()
   "Show reference's chunk of code."
-  (-when-let (xref (get-text-property (point) 'lsp-xref))
-    (with-current-buffer lsp-xref--origin-buffer
-      (-let* (((&plist :file file :chunk chunk) xref)
-              (header (concat " " (file-relative-name file)
-                              (propertize " " 'display `(space :align-to (- right-fringe 1)))
-                              "\n")))
-        (add-face-text-property 0 (length header) 'lsp-xref-peek-header t header)
-        (quick-peek-hide)
-        (quick-peek-show (concat header chunk) (line-beginning-position) 15 20)))))
+  (-when-let (xref (lsp-xref--get-selection))
+    (-let* (((&plist :file file :chunk chunk) xref)
+            (header (concat " " (file-relative-name file) "\n"))
+            (header2 (format " %s references" lsp-xref--size-list))
+            (ref-view (--> chunk
+                           (subst-char-in-string ?\t ?\s it)
+                           (concat header it)
+                           (split-string it "\n")))
+            (list-refs (->> lsp-xref--list
+                            (-drop lsp-xref--offset)
+                            (-take (1- lsp-xref-peek-height))
+;;;                            (-take 14)
+                            (-concat (list header2)))))
+      (lsp-xref--peek-new ref-view list-refs))))
+
+(defun lsp-xref--select (index)
+  "INDEX."
+  (setq lsp-xref--selection (+ lsp-xref--selection index))
+  (unless (lsp-xref--get-selection)
+    (setq lsp-xref--selection (+ lsp-xref--selection index))))
+
+(defun lsp-xref--select-next ()
+  "."
+  (interactive)
+  (when (< lsp-xref--selection (- (length lsp-xref--list) 1))
+    (lsp-xref--select 1)
+    (while (> (lsp-xref--visual-index) (- lsp-xref-peek-height 2))
+      (setq lsp-xref--offset (1+ lsp-xref--offset)))
+    (lsp-xref--peek)))
+
+(defun lsp-xref--select-prev ()
+  "."
+  (interactive)
+  (if (= lsp-xref--selection 1)
+      (setq lsp-xref--offset 0)
+    (lsp-xref--select -1)
+    (while (< (lsp-xref--visual-index) 0)
+      (setq lsp-xref--offset (1- lsp-xref--offset))))
+  (lsp-xref--peek))
 
 (defun lsp-xref--peek-hide ()
   "Hide the chunk of code and restore previous state."
-  (when (equal (buffer-name (current-buffer)) "lsp-xref")
-    (setq face-remapping-alist (cdr face-remapping-alist))
-    (with-current-buffer lsp-xref--origin-buffer
-      (quick-peek-hide)
-      (set-window-start (get-buffer-window lsp-xref--origin-buffer)
-                        lsp-xref--win-start))))
+  (when (overlayp lsp-xref--peek-overlay)
+    (delete-overlay lsp-xref--peek-overlay))
+  (setq lsp-xref--peek-overlay nil)
+  (set-window-start (get-buffer-window) lsp-xref--win-start))
 
 (defun lsp-xref--goto-xref (&optional x)
   "Go to a reference/definition."
   (interactive)
-  (-when-let (xref (or x (get-text-property (point) 'lsp-xref)))
+  (-when-let (xref (or x (lsp-xref--get-selection)))
     (-let* (((&plist :file file :line line :column column) xref))
-      (unless x
-        (kill-buffer-and-window))
+      (lsp-xref--peek-hide)
       (find-file file)
       (goto-char 1)
       (forward-line line)
@@ -160,14 +259,23 @@ XREFS is a list of list of references/definitions."
 (unless lsp-xref-mode-map
   (let ((map (make-sparse-keymap)))
     (suppress-keymap map t)
-    (define-key map (kbd "q") 'kill-buffer-and-window)
+    (define-key map "\e\e\e" 'lsp-xref--abort)
+    (define-key map "\C-g" 'lsp-xref--abort)
+    (define-key map (kbd "<down>") 'lsp-xref--select-next)
+    (define-key map (kbd "<up>") 'lsp-xref--select-prev)
+    (define-key map (kbd "q") 'lsp-xref--abort)
     (define-key map (kbd "RET") 'lsp-xref--goto-xref)
     (setq lsp-xref-mode-map map)))
 
-(define-derived-mode lsp-xref-mode special-mode "lsp-xref"
+(defun lsp-xref--abort ()
+  "."
+  (interactive)
+  (lsp-xref-mode -1)
+  (lsp-xref--peek-hide))
+
+(define-minor-mode lsp-xref-mode
   "Mode for lsp-xref."
-  (add-hook 'post-command-hook 'lsp-xref--peek nil t)
-  (add-hook 'kill-buffer-hook 'lsp-xref--peek-hide nil t))
+  :init-value nil)
 
 (defun lsp-xref--find-xrefs (input kind)
   "Find INPUT references.
@@ -178,6 +286,7 @@ KIND is 'references or 'definitions."
     (xref-push-marker-stack)
     (if (and (not (cdr xrefs)) (not (cdar xrefs)))
         (lsp-xref--goto-xref (caar xrefs))
+      (lsp-xref-mode)
       (lsp-xref--show xrefs))))
 
 (defun lsp-xref-find-references ()
@@ -195,12 +304,14 @@ KIND is 'references or 'definitions."
 in the current buffer.
 START and END are delimiters."
   (let* ((point (lsp--position-to-point pos))
-         (inhibit-field-text-motion t))
+         (inhibit-field-text-motion t)
+         (line-start (1+ (- 1 (/ lsp-xref-peek-height 2))))
+         (line-end (/ lsp-xref-peek-height 2)))
     (save-excursion
       (goto-char point)
-      (let* ((before (buffer-substring (line-beginning-position -5) (line-beginning-position)))
+      (let* ((before (buffer-substring (line-beginning-position line-start) (line-beginning-position)))
              (line (buffer-substring (line-beginning-position) (line-end-position)))
-             (after (buffer-substring (line-end-position) (line-end-position 7)))
+             (after (buffer-substring (line-end-position) (line-end-position line-end)))
              (len (length line)))
         (add-face-text-property (max (min start len) 0)
                                 (max (min end len) 0)
