@@ -268,7 +268,8 @@ to the language server."
 (defun lsp-line ()
   "Show informations of the current line."
   (if (or (region-active-p)
-          (bound-and-true-p company-pseudo-tooltip-overlay))
+          (bound-and-true-p company-pseudo-tooltip-overlay)
+          (bound-and-true-p lsp-xref--peek-overlay))
       (progn
         (setq lsp-line--line nil)
         (lsp-line--delete-ov))
