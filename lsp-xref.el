@@ -133,8 +133,11 @@
                             ((= index 0) 'lsp-xref-header)
                             (t 'lsp-xref-list))))
     (when on-selection
-      (setq s2 (copy-sequence s2)))
-    (add-face-text-property 0 len-s2 face-right (not on-selection) s2)
+      (setq s2 (copy-sequence s2))
+      (add-face-text-property 0 len-s2 face-right nil s2))
+    (unless (get-text-property 0 'lsp-xref-faced s2)
+      (add-face-text-property 0 len-s2 face-right t s2)
+      (add-text-properties 0 len-s2 '(lsp-xref-faced t) s2))
     (add-face-text-property 0 len-s1 face-left t s1)
     (concat
      s1
@@ -209,7 +212,6 @@ XREFS is a list of list of references/definitions."
             (list-refs (->> lsp-xref--list
                             (-drop lsp-xref--offset)
                             (-take (1- lsp-xref-peek-height))
-;;;                            (-take 14)
                             (-concat (list header2)))))
       (lsp-xref--peek-new ref-view list-refs))))
 
