@@ -33,6 +33,7 @@
 
 (require 'lsp-mode)
 (require 'flycheck)
+(require 'dash)
 
 (defgroup lsp-line nil
   "Display informations of the current line."
@@ -44,6 +45,11 @@
 
 (defcustom lsp-line-enable t
   "Whether or not to enable lsp-line."
+  :type 'boolean
+  :group 'lsp-ui)
+
+(defcustom lsp-line-ignore-duplicate nil
+  "Control to ignore duplicates when there is a same symbol with the same contents."
   :type 'boolean
   :group 'lsp-ui)
 
@@ -177,6 +183,13 @@ CURRENT is non-nil when the point is on the symbol."
      (propertize " " 'display `(space :align-to (- right-fringe ,(+ 1 (length str)))))
      str)))
 
+(defun lsp-line--check-duplicate (symbol info)
+  "SYMBOL INFO."
+  (not (when lsp-line-ignore-duplicate
+         (--any (and (string= (overlay-get it 'symbol) symbol)
+                     (string= (overlay-get it 'info) info))
+                lsp-line--ovs))))
+
 (defun lsp-line--push-info (symbol line bounds info)
   "SYMBOL LINE BOUNDS INFO."
   (when (= line (line-number-at-pos))
@@ -184,7 +197,8 @@ CURRENT is non-nil when the point is on the symbol."
                            lsp-line--extract-info
                            lsp-line--format-info)))
            (current (and (>= (point) (car bounds)) (<= (point) (cdr bounds)))))
-      (when (> (length info) 0)
+      (when (and (> (length info) 0)
+                 (lsp-line--check-duplicate symbol info))
         (let* ((final-string (lsp-line--make-display-string info symbol current))
                (pos-ov (lsp-line--find-line (window-text-width) (length final-string)))
                (ov (when pos-ov (make-overlay pos-ov pos-ov))))
