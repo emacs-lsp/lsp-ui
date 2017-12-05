@@ -181,6 +181,7 @@ XREFS is a list of list of references/definitions."
   (when (< (- (line-number-at-pos (window-end)) (line-number-at-pos))
            (+ lsp-xref-peek-height 3))
     (recenter 15))
+  (setq xrefs (sort xrefs (lambda (a b) (string< (plist-get (car a) :file) (plist-get (car b) :file)))))
   (dolist (xref-file xrefs)
     (-let (((&plist :file filename) (car xref-file))
            (len (number-to-string (length xref-file))))
