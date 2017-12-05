@@ -384,8 +384,12 @@ KIND is 'references or 'definitions."
     (unless xrefs
       (user-error "No %s found for: %s" (symbol-name kind) input))
     (xref-push-marker-stack)
-    (if (and (not (cdr xrefs)) (not (cdar xrefs)))
-        (lsp-xref--goto-xref (caar xrefs))
+    (if (and (not (cdr xrefs))
+             (= (length (plist-get (car xrefs) :xrefs)) 1))
+        (-let* ((xref (car (plist-get (car xrefs) :xrefs)))
+                ((&hash "uri" file "range" range) xref)
+                ((&hash "line" line "character" col) (gethash "start" range)))
+          (lsp-xref--goto-xref `(:file ,(string-remove-prefix "file://" file) :line ,line :column ,col)))
       (lsp-xref-mode)
       (lsp-xref--show xrefs))))
 
