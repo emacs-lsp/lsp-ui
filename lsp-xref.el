@@ -377,10 +377,10 @@ XREFS is a list of list of references/definitions."
   "Mode for lsp-xref."
   :init-value nil)
 
-(defun lsp-xref--find-xrefs (input kind)
+(defun lsp-xref--find-xrefs (input kind &optional request param)
   "Find INPUT references.
-KIND is 'references or 'definitions."
-  (let ((xrefs (lsp-xref--get-references kind)))
+KIND is 'references, 'definitions or a custom kind."
+  (let ((xrefs (lsp-xref--get-references kind request param)))
     (unless xrefs
       (user-error "No %s found for: %s" (symbol-name kind) input))
     (xref-push-marker-stack)
@@ -396,12 +396,24 @@ KIND is 'references or 'definitions."
 (defun lsp-xref-find-references ()
   "Find references to the IDENTIFIER at point."
   (interactive)
-  (lsp-xref--find-xrefs (symbol-at-point) 'references))
+  (lsp-xref--find-xrefs (symbol-at-point)
+                        'references
+                        "textDocument/references"
+                        (lsp--make-reference-params)))
 
 (defun lsp-xref-find-definitions ()
   "Find definitions to the IDENTIFIER at point."
   (interactive)
-  (lsp-xref--find-xrefs (symbol-at-point) 'definitions))
+  (lsp-xref--find-xrefs (symbol-at-point)
+                        'definitions
+                        "textDocument/definition"))
+
+(defun lsp-xref-find-custom (kind request &optional param)
+  "Find custom references.
+KIND is a symbol to name the references (definition, reference, ..).
+REQUEST is the method string to send the the language server.
+PARAM is the method parameter.  If nil, it default to TextDocumentPositionParams."
+  (lsp-xref--find-xrefs (symbol-at-point) kind request param))
 
 (defun lsp-xref--extract-chunk-from-buffer (pos start end)
   "Return the chunk of code pointed to by POS (a Position object)..
@@ -471,16 +483,14 @@ interface Location {
             (seq-group-by it locations)
             (mapcar #'lsp-xref--get-xrefs-list it)))
 
-(defun lsp-xref--get-references (kind)
+(defun lsp-xref--get-references (kind request &optional param)
   "Get all references/definitions for the symbol under point.
 Returns item(s).
 KIND."
   (lsp--send-changes lsp--cur-workspace)
   (-some->> (lsp--send-request (lsp--make-request
-                                (pcase kind
-                                  ('references "textDocument/references")
-                                  ('definitions "textDocument/definition"))
-                                (lsp--make-reference-params)))
+                                request
+                                (or param (lsp--text-document-position-params))))
             (lsp-xref--locations-to-xref-items)
             (-filter 'identity)))
 
