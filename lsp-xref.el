@@ -86,7 +86,7 @@
   '((t :background "white"
        :foreground "black"
        :distant-foreground "white"
-       :box t))
+       :box (:line-width -1 :color "white")))
   "Face used to highlight the reference/definition."
   :group 'lsp-xref)
 
@@ -99,6 +99,7 @@
 
 (defvar-local lsp-xref--peek-overlay nil)
 (defvar-local lsp-xref--list nil)
+(defvar-local lsp-xref--last-xref nil)
 (defvar-local lsp-xref--selection 0)
 (defvar-local lsp-xref--offset 0)
 (defvar-local lsp-xref--size-list 0)
@@ -110,9 +111,10 @@
       (format "%s.." (substring s 0 (- len 2)))
     s))
 
-(defun lsp-xref--get-text-selection ()
+(defun lsp-xref--get-text-selection (&optional n)
   "."
-  (nth lsp-xref--selection lsp-xref--list))
+  (nth (or n lsp-xref--selection)
+       (--remove (get-text-property 0 'lsp-xref-hidden it) lsp-xref--list)))
 
 (defun lsp-xref--get-selection ()
   "."
@@ -170,7 +172,7 @@
   "Create a window to list references/defintions.
 XREFS is a list of list of references/definitions."
   (setq lsp-xref--win-start (window-start)
-        lsp-xref--selection 1
+        lsp-xref--selection nil
         lsp-xref--offset 0
         lsp-xref--size-list 0
         lsp-xref--list nil)
@@ -183,48 +185,89 @@ XREFS is a list of list of references/definitions."
     (-let (((&plist :file filename) (car xref-file))
            (len (number-to-string (length xref-file))))
       (push (concat (propertize (lsp-ui--workspace-path filename)
-                                'face 'lsp-xref-filename)
+                                'face 'lsp-xref-filename
+                                'file filename)
                     (propertize " " 'display `(space :align-to (- right-fringe ,(1+ (length len)))))
                     (propertize len 'face 'lsp-xref-filename))
             lsp-xref--list))
     (dolist (xref xref-file)
-      (-let* (((&plist :summary summary :line line) xref)
+      (-let* (((&plist :summary summary :line line :file file) xref)
               (string (format "%-3s %s"
                               (propertize (number-to-string (1+ line))
                                           'face 'lsp-xref-line-number)
-                              (string-trim summary))))
+                              (string-trim summary)))
+              (current-file (string= file buffer-file-name)))
+        (when current-file
+          (setq lsp-xref--selection 1))
         (setq lsp-xref--size-list (1+ lsp-xref--size-list))
-        (add-text-properties 0 (length string) `(lsp-xref ,xref) string)
+        (add-text-properties 0 (length string) `(lsp-xref ,xref lsp-xref-hidden ,(not current-file)) string)
         (push string lsp-xref--list))))
   (setq lsp-xref--list (nreverse lsp-xref--list))
+  (if (= lsp-xref--selection 1)
+      (while (not (equal buffer-file-name
+                         (plist-get (lsp-xref--get-selection) :file)))
+        (lsp-xref--select-next t))
+    (setq lsp-xref--selection 0))
+  (lsp-xref--recenter)
   (lsp-xref--peek))
+
+(defun lsp-xref--recenter ()
+  "."
+  (let ((half-height (/ lsp-xref-peek-height 2)))
+    (when (> lsp-xref--selection half-height)
+      (setq lsp-xref--offset (- lsp-xref--selection (1- half-height))))))
 
 (defun lsp-xref--peek ()
   "Show reference's chunk of code."
-  (-when-let (xref (lsp-xref--get-selection))
-    (-let* (((&plist :file file :chunk chunk) xref)
-            (header (concat " " (lsp-ui--workspace-path file) "\n"))
-            (header2 (format " %s references" lsp-xref--size-list))
-            (ref-view (--> chunk
-                           (subst-char-in-string ?\t ?\s it)
-                           (concat header it)
-                           (split-string it "\n")))
-            (list-refs (->> lsp-xref--list
-                            (-drop lsp-xref--offset)
-                            (-take (1- lsp-xref-peek-height))
-                            (-concat (list header2)))))
-      (lsp-xref--peek-new ref-view list-refs))))
+  (-let* ((xref (lsp-xref--get-selection))
+          ((&plist :file file :chunk chunk) (or xref lsp-xref--last-xref))
+          (header (concat " " (lsp-ui--workspace-path file) "\n"))
+          (header2 (format " %s references" lsp-xref--size-list))
+          (ref-view (--> chunk
+                         (subst-char-in-string ?\t ?\s it)
+                         (concat header it)
+                         (split-string it "\n")))
+          (list-refs (->> lsp-xref--list
+                          (--remove (get-text-property 0 'lsp-xref-hidden it))
+                          (-drop lsp-xref--offset)
+                          (-take (1- lsp-xref-peek-height))
+                          (-concat (list header2)))))
+    (setq lsp-xref--last-xref (or xref lsp-xref--last-xref))
+    (lsp-xref--peek-new ref-view list-refs)))
+
+(defun lsp-xref--toggle-text-prop (s)
+  "."
+  (let ((state (get-text-property 0 'lsp-xref-hidden s)))
+    (add-text-properties 0 (length s) `(lsp-xref-hidden ,(not state)) s)))
+
+(defun lsp-xref--toggle-hidden (file)
+  "."
+  (setq lsp-xref--list
+        (--map-when (string= (plist-get (get-text-property 0 'lsp-xref it) :file) file)
+                    (prog1 it (lsp-xref--toggle-text-prop it))
+                    lsp-xref--list)))
+
+(defun lsp-xref--toggle-file ()
+  "."
+  (interactive)
+  (-if-let* (((&plist :file file) (lsp-xref--get-selection)))
+      (progn
+        (lsp-xref--toggle-hidden file)
+        (while (not (equal file (get-text-property 0 'file (or (lsp-xref--get-text-selection)
+                                                               ""))))
+          (lsp-xref--select-prev t)))
+    (-let* ((file (get-text-property 0 'file (lsp-xref--get-text-selection))))
+      (lsp-xref--toggle-hidden file)))
+  (lsp-xref--peek))
 
 (defun lsp-xref--select (index)
   "INDEX."
-  (setq lsp-xref--selection (+ lsp-xref--selection index))
-  (unless (lsp-xref--get-selection)
-    (setq lsp-xref--selection (+ lsp-xref--selection index))))
+  (setq lsp-xref--selection (+ lsp-xref--selection index)))
 
 (defun lsp-xref--select-next (&optional no-update)
   "."
   (interactive)
-  (when (< lsp-xref--selection (- (length lsp-xref--list) 1))
+  (when (lsp-xref--get-text-selection (1+ lsp-xref--selection))
     (lsp-xref--select 1)
     (while (> (lsp-xref--visual-index) (- lsp-xref-peek-height 2))
       (setq lsp-xref--offset (1+ lsp-xref--offset)))
@@ -234,8 +277,7 @@ XREFS is a list of list of references/definitions."
 (defun lsp-xref--select-prev (&optional no-update)
   "."
   (interactive)
-  (if (= lsp-xref--selection 1)
-      (setq lsp-xref--offset 0)
+  (when (> lsp-xref--selection 0)
     (lsp-xref--select -1)
     (while (< (lsp-xref--visual-index) 0)
       (setq lsp-xref--offset (1- lsp-xref--offset))))
@@ -245,7 +287,6 @@ XREFS is a list of list of references/definitions."
 (defun lsp-xref--navigate (fn)
   "."
   (-let* (((&plist :file current-file) (lsp-xref--get-selection))
-          (half-height (/ lsp-xref-peek-height 2))
           (last-file current-file)
           (last-selection 0))
     (while (and (equal current-file last-file)
@@ -254,8 +295,7 @@ XREFS is a list of list of references/definitions."
       (funcall fn t)
       (setq current-file (let ((item (lsp-xref--get-selection)))
                            (plist-get item :file))))
-    (when (> lsp-xref--selection half-height)
-      (setq lsp-xref--offset (- lsp-xref--selection (1- half-height))))
+    (lsp-xref--recenter)
     (lsp-xref--peek)))
 
 (defun lsp-xref--select-prev-file ()
@@ -272,20 +312,22 @@ XREFS is a list of list of references/definitions."
   "Hide the chunk of code and restore previous state."
   (when (overlayp lsp-xref--peek-overlay)
     (delete-overlay lsp-xref--peek-overlay))
-  (setq lsp-xref--peek-overlay nil)
+  (setq lsp-xref--peek-overlay nil
+        lsp-xref--last-xref nil)
   (set-window-start (get-buffer-window) lsp-xref--win-start))
 
 (defun lsp-xref--goto-xref (&optional x)
   "Go to a reference/definition."
   (interactive)
-  (-when-let (xref (or x (lsp-xref--get-selection)))
-    (-let* (((&plist :file file :line line :column column) xref))
-      (lsp-xref--abort)
-      (find-file file)
-      (goto-char 1)
-      (forward-line line)
-      (forward-char column)
-      (run-hooks 'xref-after-jump-hook))))
+  (-if-let (xref (or x (lsp-xref--get-selection)))
+      (-let* (((&plist :file file :line line :column column) xref))
+        (lsp-xref--abort)
+        (find-file file)
+        (goto-char 1)
+        (forward-line line)
+        (forward-char column)
+        (run-hooks 'xref-after-jump-hook))
+    (lsp-xref--toggle-file)))
 
 (defvar lsp-xref-mode-map nil
   "Keymap uses with ‘lsp-xref-mode’.")
@@ -298,6 +340,7 @@ XREFS is a list of list of references/definitions."
     (define-key map (kbd "<left>") 'lsp-xref--select-prev-file)
     (define-key map (kbd "<down>") 'lsp-xref--select-next)
     (define-key map (kbd "<up>") 'lsp-xref--select-prev)
+    (define-key map (kbd "<tab>") 'lsp-xref--toggle-file)
     (define-key map (kbd "q") 'lsp-xref--abort)
     (define-key map (kbd "RET") 'lsp-xref--goto-xref)
     (setq lsp-xref-mode-map map)))
