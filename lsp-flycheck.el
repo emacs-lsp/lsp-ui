@@ -82,7 +82,8 @@ See https://github.com/emacs-lsp/lsp-mode."
   (unless (flycheck-checker-supports-major-mode-p 'lsp mode)
     (flycheck-add-mode 'lsp mode)))
 
-(defun lsp-flycheck-enable ()
+;; FIXME: Provide a way to disable lsp-flycheck
+(defun lsp-flycheck-enable (_)
   "Enable flycheck integration for the current buffer."
   (setq-local flycheck-check-syntax-automatically nil)
   (setq-local flycheck-checker 'lsp)
