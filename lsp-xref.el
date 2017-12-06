@@ -97,6 +97,12 @@
   "Face used for the headers."
   :group 'lsp-xref)
 
+(defvar lsp-xref-expand-function 'lsp-xref--expand-buffer
+  "A function used to determinate which file(s) to expand in the list of xrefs.
+The function takes one parameter: a list of cons where the car is the
+filename and the cdr is the number of references in that file.
+It should returns a list of filenames to expand.")
+
 (defvar-local lsp-xref--peek-overlay nil)
 (defvar-local lsp-xref--list nil)
 (defvar-local lsp-xref--last-xref nil)
@@ -178,11 +184,30 @@
     (overlay-put ov 'after-string (mapconcat 'identity string ""))
     (overlay-put ov 'window (get-buffer-window))))
 
+(defun lsp-xref--expand-buffer (_)
+  "."
+  (list buffer-file-name))
+
+(defun lsp-xref--expand (xrefs)
+  "XREFS."
+  (let* ((to-expand (->> (--map (cons (plist-get it :file) (plist-get it :count)) xrefs)
+                         (funcall lsp-xref-expand-function)))
+         first)
+    (while (nth lsp-xref--selection lsp-xref--list)
+      (when (and (lsp-xref--prop 'xrefs)
+                 (member (lsp-xref--prop 'file) to-expand))
+        (unless first
+          (setq first (1+ lsp-xref--selection)))
+        (lsp-xref--toggle-file t))
+      (setq lsp-xref--selection (1+ lsp-xref--selection)))
+    (setq lsp-xref--selection (or first 0))
+    (lsp-xref--recenter)))
+
 (defun lsp-xref--show (xrefs)
   "Create a window to list references/defintions.
 XREFS is a list of list of references/definitions."
   (setq lsp-xref--win-start (window-start)
-        lsp-xref--selection -1
+        lsp-xref--selection 0
         lsp-xref--offset 0
         lsp-xref--size-list 0
         lsp-xref--list nil)
@@ -192,12 +217,9 @@ XREFS is a list of list of references/definitions."
            (+ lsp-xref-peek-height 3))
     (recenter 15))
   (setq xrefs (--sort (string< (plist-get it :file) (plist-get other :file)) xrefs))
-  (--each-indexed xrefs
+  (--each xrefs
     (-let* (((&plist :file filename :xrefs xrefs :count count) it)
-            (len-str (number-to-string count))
-            (current-file (equal filename buffer-file-name)))
-      (when current-file
-        (setq lsp-xref--selection it-index))
+            (len-str (number-to-string count)))
       (setq lsp-xref--size-list (+ lsp-xref--size-list count))
       (push (concat (propertize (lsp-ui--workspace-path filename)
                                 'face 'lsp-xref-filename
@@ -207,11 +229,7 @@ XREFS is a list of list of references/definitions."
                     (propertize len-str 'face 'lsp-xref-filename))
             lsp-xref--list)))
   (setq lsp-xref--list (nreverse lsp-xref--list))
-  (if (= lsp-xref--selection -1)
-      (setq lsp-xref--selection 0)
-    (lsp-xref--toggle-file t)
-    (lsp-xref--select-next t)
-    (lsp-xref--recenter))
+  (lsp-xref--expand xrefs)
   (lsp-xref--peek))
 
 (defun lsp-xref--recenter ()
