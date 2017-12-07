@@ -53,6 +53,7 @@ CALLBACK is the status callback passed by Flycheck."
     (maphash (lambda (file diagnostics)
                (dolist (diag diagnostics)
                  (push (flycheck-error-new
+                        :buffer (current-buffer)
                         :checker checker
                         :filename file
                         :line (1+ (lsp-diagnostic-line diag))
