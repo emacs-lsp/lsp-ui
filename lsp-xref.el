@@ -238,6 +238,13 @@ XREFS is a list of list of references/definitions."
     (when (> lsp-xref--selection half-height)
       (setq lsp-xref--offset (- lsp-xref--selection (1- half-height))))))
 
+(defun lsp-xref--fill (min-len list)
+  "."
+  (let ((len (length list)))
+    (if (< len min-len)
+        (append list (-repeat (- min-len len) ""))
+      list)))
+
 (defun lsp-xref--peek ()
   "Show reference's chunk of code."
   (-let* ((xref (lsp-xref--get-selection))
@@ -252,6 +259,7 @@ XREFS is a list of list of references/definitions."
                           (--remove (lsp-xref--prop 'lsp-xref-hidden it))
                           (-drop lsp-xref--offset)
                           (-take (1- lsp-xref-peek-height))
+                          (lsp-xref--fill (1- lsp-xref-peek-height))
                           (-concat (list header2)))))
     (setq lsp-xref--last-xref (or xref lsp-xref--last-xref))
     (lsp-xref--peek-new ref-view list-refs)))
