@@ -370,11 +370,19 @@ XREFS is a list of list of references/definitions."
   (-if-let (xref (or x (lsp-xref--get-selection)))
       (-let* (((&plist :file file :line line :column column) xref))
         (lsp-xref--abort)
-        (find-file file)
-        (goto-char 1)
-        (forward-line line)
-        (forward-char column)
-        (run-hooks 'xref-after-jump-hook))
+        (let ((marker (with-current-buffer
+                          (or (get-file-buffer file)
+                              (find-file-noselect file))
+                        (save-restriction
+                          (widen)
+                          (save-excursion
+                            (goto-char 1)
+                            (forward-line line)
+                            (forward-char column)
+                            (point-marker))))))
+          (switch-to-buffer (marker-buffer marker))
+          (goto-char marker)
+          (run-hooks 'xref-after-jump-hook)))
     (lsp-xref--toggle-file)))
 
 (defvar lsp-xref-mode-map nil
@@ -396,8 +404,9 @@ XREFS is a list of list of references/definitions."
 (defun lsp-xref--abort ()
   "."
   (interactive)
-  (lsp-xref-mode -1)
-  (lsp-xref--peek-hide))
+  (when (bound-and-true-p lsp-xref-mode)
+    (lsp-xref-mode -1)
+    (lsp-xref--peek-hide)))
 
 (define-minor-mode lsp-xref-mode
   "Mode for lsp-xref."
