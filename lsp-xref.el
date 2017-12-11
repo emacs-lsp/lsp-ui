@@ -522,7 +522,6 @@ interface Location {
   "Get all references/definitions for the symbol under point.
 Returns item(s).
 KIND."
-  (lsp--send-changes lsp--cur-workspace)
   (-some->> (lsp--send-request (lsp--make-request
                                 request
                                 (or param (lsp--text-document-position-params))))
