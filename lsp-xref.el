@@ -62,6 +62,12 @@
   :type 'integer
   :group 'lsp-xref)
 
+(defcustom lsp-xref-force-fontify nil
+  "Force to fontify chunks of code (use semantics colors).  WARNING:
+This can heavily slow the processing."
+  :type 'boolean
+  :group 'lsp-xref)
+
 (defface lsp-xref-peek
   '((t :background "#031A25"))
   "Face used for the peek."
@@ -483,6 +489,18 @@ START and END are delimiters."
           :column start
           :len (- end start))))
 
+(defun lsp-xref--fontify-buffer (filename)
+  "."
+  (when lsp-xref-force-fontify
+    (unless buffer-file-name
+      (make-local-variable 'delay-mode-hooks)
+      (let ((buffer-file-name filename)
+            (enable-local-variables nil)
+            (inhibit-message t)
+            (delay-mode-hooks t))
+        (set-auto-mode)))
+    (font-lock-ensure)))
+
 (defun lsp-xref--get-xrefs-in-file (file)
   "Return all references that contain a file.
 FILE is a cons where its car is the filename and the cdr is a list of Locations
@@ -494,10 +512,12 @@ references.  The function returns a list of `ls-xref-item'."
     (cond
      (visiting
       (with-current-buffer visiting
+        (lsp-xref--fontify-buffer filename)
         (mapcar fn (cdr file))))
      ((file-readable-p filename)
       (with-temp-buffer
         (insert-file-contents-literally filename)
+        (lsp-xref--fontify-buffer filename)
         (mapcar fn (cdr file))))
      (t (user-error "Cannot read %s" filename)))))
 
