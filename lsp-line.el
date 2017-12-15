@@ -261,7 +261,7 @@ CURRENT is non-nil when the point is on the symbol."
             (string (concat (propertize " " 'display `(space :align-to (- right-fringe ,(1+ (length title)))))
                             title))
             (pos-ov (lsp-line--find-line (window-text-width) (length title) t))
-            (ov (make-overlay pos-ov pos-ov)))
+            (ov (and pos-ov (make-overlay pos-ov pos-ov))))
       (when pos-ov
         (overlay-put ov 'after-string string)
         (push ov lsp-line--ovs)))))
