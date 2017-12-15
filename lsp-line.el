@@ -256,8 +256,9 @@ CURRENT is non-nil when the point is on the symbol."
 (defun lsp-line--code-actions (actions)
   "Show code ACTIONS."
   (dolist (action actions)
-    (-let* (((&hash "title" title) action)
-            (title (concat lsp-line-code-actions-prefix title))
+    (-let* ((title (--> (gethash "title" action)
+                        (subst-char-in-string ?\n ?\s it t)
+                        (concat lsp-line-code-actions-prefix it)))
             (string (concat (propertize " " 'display `(space :align-to (- right-fringe ,(1+ (length title)))))
                             title))
             (pos-ov (lsp-line--find-line (window-text-width) (length title) t))
@@ -271,7 +272,6 @@ CURRENT is non-nil when the point is on the symbol."
 It loops on the symbols of the current line and request information
 to the language server."
   (lsp-line--delete-ov)
-  (lsp-line--flycheck)
   (when lsp--cur-workspace
     (let ((eol (line-end-position))
           (eob (buffer-end 1))
@@ -283,6 +283,7 @@ to the language server."
         (setq lsp-line--occupied-lines nil
               lsp-line--line line
               lsp-line--last-width (window-text-width))
+        (lsp-line--flycheck)
         (lsp--send-request-async (lsp--make-request
                                   "textDocument/codeAction"
                                   (list :textDocument (lsp--text-document-identifier)
