@@ -255,7 +255,7 @@ CURRENT is non-nil when the point is on the symbol."
 
 (defun lsp-line--code-actions (actions)
   "Show code ACTIONS."
-  (dolist (action actions)
+  (dolist (action (if actions actions '()))
     (-let* ((title (--> (gethash "title" action)
                         (subst-char-in-string ?\n ?\s it t)
                         (concat lsp-line-code-actions-prefix it)))
@@ -300,7 +300,7 @@ to the language server."
                 "textDocument/hover"
                 (list :textDocument doc-id
                       :position (lsp--position (1- line) (if (= column 0) 0 (1- column)))))
-               (lambda (info) (lsp-line--push-info symbol line bounds info))))
+               (lambda (info) (if info (lsp-line--push-info symbol line bounds info)))))
             (forward-symbol 1)))))))
 
 (defun lsp-line ()
