@@ -51,7 +51,7 @@
 (defcustom lsp-line-ignore-duplicate nil
   "Control to ignore duplicates when there is a same symbol with the same contents."
   :type 'boolean
-  :group 'lsp-ui)
+  :group 'lsp-line)
 
 (defvar lsp-line-code-actions-prefix
   (propertize "💡 " 'face '(:foreground "yellow"))
