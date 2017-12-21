@@ -116,6 +116,7 @@ It should returns a list of filenames to expand.")
 (defvar-local lsp-xref--offset 0)
 (defvar-local lsp-xref--size-list 0)
 (defvar-local lsp-xref--win-start nil)
+(defvar-local lsp-xref--kind nil)
 
 (defmacro lsp-xref--prop (prop &optional string)
   "PROP STRING."
@@ -256,7 +257,7 @@ XREFS is a list of list of references/definitions."
   (-let* ((xref (lsp-xref--get-selection))
           ((&plist :file file :chunk chunk) (or xref lsp-xref--last-xref))
           (header (concat " " (lsp-ui--workspace-path file) "\n"))
-          (header2 (format " %s references" lsp-xref--size-list))
+          (header2 (format " %s %s" lsp-xref--size-list (symbol-name lsp-xref--kind)))
           (ref-view (--> chunk
                          (subst-char-in-string ?\t ?\s it)
                          (concat header it)
@@ -421,6 +422,7 @@ XREFS is a list of list of references/definitions."
 (defun lsp-xref--find-xrefs (input kind &optional request param)
   "Find INPUT references.
 KIND is 'references, 'definitions or a custom kind."
+  (setq lsp-xref--kind kind)
   (let ((xrefs (lsp-xref--get-references kind request param)))
     (unless xrefs
       (user-error "No %s found for: %s" (symbol-name kind) input))
