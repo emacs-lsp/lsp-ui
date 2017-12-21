@@ -135,7 +135,7 @@ It should returns a list of filenames to expand.")
     s))
 
 (defun lsp-xref--get-text-selection (&optional n)
-  "."
+  "N."
   (nth (or n lsp-xref--selection)
        (--remove (get-text-property 0 'lsp-xref-hidden it) lsp-xref--list)))
 
@@ -246,7 +246,7 @@ XREFS is a list of list of references/definitions."
       (setq lsp-xref--offset (- lsp-xref--selection (1- half-height))))))
 
 (defun lsp-xref--fill (min-len list)
-  "."
+  "MIN-LEN LIST."
   (let ((len (length list)))
     (if (< len min-len)
         (append list (-repeat (- min-len len) ""))
@@ -272,19 +272,19 @@ XREFS is a list of list of references/definitions."
     (lsp-xref--peek-new ref-view list-refs)))
 
 (defun lsp-xref--toggle-text-prop (s)
-  "."
+  "S."
   (let ((state (lsp-xref--prop 'lsp-xref-hidden s)))
     (lsp-xref--add-prop `(lsp-xref-hidden ,(not state)) s)))
 
 (defun lsp-xref--toggle-hidden (file)
-  "."
+  "FILE."
   (setq lsp-xref--list
         (--map-when (string= (plist-get (lsp-xref--prop 'lsp-xref it) :file) file)
                     (prog1 it (lsp-xref--toggle-text-prop it))
                     lsp-xref--list)))
 
 (defun lsp-xref--make-ref-line (xref)
-  "."
+  "XREF."
   (-let* (((&plist :summary summary :line line :file file) xref)
           (string (format "%-3s %s"
                           (propertize (number-to-string (1+ line))
@@ -293,7 +293,7 @@ XREFS is a list of list of references/definitions."
     (lsp-xref--add-prop `(lsp-xref ,xref file ,file) string)))
 
 (defun lsp-xref--insert-xrefs (xrefs filename index)
-  "."
+  "XREFS FILENAME INDEX."
   (setq lsp-xref--list (--> (lsp-xref--get-xrefs-in-file (cons filename xrefs))
                             (-map 'lsp-xref--make-ref-line it)
                             (-insert-at (1+ index) it lsp-xref--list)
@@ -301,7 +301,7 @@ XREFS is a list of list of references/definitions."
   (lsp-xref--add-prop '(xrefs nil)))
 
 (defun lsp-xref--toggle-file (&optional no-update)
-  "."
+  "NO-UPDATE."
   (interactive)
   (-if-let* ((xrefs (lsp-xref--prop 'xrefs))
              (filename (lsp-xref--prop 'file))
@@ -320,7 +320,7 @@ XREFS is a list of list of references/definitions."
   (setq lsp-xref--selection (+ lsp-xref--selection index)))
 
 (defun lsp-xref--select-next (&optional no-update)
-  "."
+  "NO-UPDATE."
   (interactive)
   (when (lsp-xref--get-text-selection (1+ lsp-xref--selection))
     (lsp-xref--select 1)
@@ -330,7 +330,7 @@ XREFS is a list of list of references/definitions."
       (lsp-xref--peek))))
 
 (defun lsp-xref--select-prev (&optional no-update)
-  "."
+  "NO-UPDATE."
   (interactive)
   (when (> lsp-xref--selection 0)
     (lsp-xref--select -1)
@@ -340,7 +340,7 @@ XREFS is a list of list of references/definitions."
     (lsp-xref--peek)))
 
 (defun lsp-xref--navigate (fn)
-  "."
+  "FN."
   (-let* (((&plist :file current-file) (lsp-xref--get-selection))
           (last-file current-file)
           (last-selection 0))
@@ -372,7 +372,8 @@ XREFS is a list of list of references/definitions."
   (set-window-start (get-buffer-window) lsp-xref--win-start))
 
 (defun lsp-xref--goto-xref (&optional x)
-  "Go to a reference/definition."
+  "Go to a reference/definition.
+X."
   (interactive)
   (-if-let (xref (or x (lsp-xref--get-selection)))
       (-let* (((&plist :file file :line line :column column) xref))
@@ -421,7 +422,8 @@ XREFS is a list of list of references/definitions."
 
 (defun lsp-xref--find-xrefs (input kind &optional request param)
   "Find INPUT references.
-KIND is 'references, 'definitions or a custom kind."
+KIND is 'references, 'definitions or a custom kind.
+REQUEST PARAM."
   (setq lsp-xref--kind kind)
   (let ((xrefs (lsp-xref--get-references kind request param)))
     (unless xrefs
@@ -492,7 +494,7 @@ START and END are delimiters."
           :len (- end start))))
 
 (defun lsp-xref--fontify-buffer (filename)
-  "."
+  "FILENAME."
   (when lsp-xref-force-fontify
     (unless buffer-file-name
       (make-local-variable 'delay-mode-hooks)
@@ -543,7 +545,7 @@ interface Location {
 (defun lsp-xref--get-references (_kind request &optional param)
   "Get all references/definitions for the symbol under point.
 Returns item(s).
-KIND."
+KIND REQUEST PARAM."
   (-some->> (lsp--send-request (lsp--make-request
                                 request
                                 (or param (lsp--text-document-position-params))))

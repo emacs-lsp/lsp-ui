@@ -335,7 +335,7 @@ to the language server."
    ))
 
 (defun lsp-line-enable (enable)
-  "Enable/disable lsp-line-mode."
+  "ENABLE/disable lsp-line-mode."
   (if enable
       (lsp-line-mode 1)
     (lsp-line-mode -1)))
