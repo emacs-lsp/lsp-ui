@@ -15,7 +15,10 @@ To customize:
 `M-x customize-group [RET] lsp-ui [RET]`   
 
 ### lsp-line
+Show informations of the symbols on the current line.  
+It also show flycheck diagnostics and LSP code actions  
 ![lsp-line](images/lsp-line.gif)
 
 ### lsp-xref
+Add [peek](https://code.visualstudio.com/docs/editor/editingevolved#_peek) feature  
 ![lsp-xref](images/lsp-xref.gif)
