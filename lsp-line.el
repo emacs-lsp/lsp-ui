@@ -184,7 +184,7 @@ CURRENT is non-nil when the point is on the symbol."
                                            'face (if current 'lsp-line-current-symbol 'lsp-line-symbol))))
          (len (length str)))
     (concat
-     (propertize " " 'display `(space :align-to (- right-fringe ,(+ 1 (length str)))))
+     (propertize " " 'display `(space :align-to (- right-fringe ,(+ 1 len))))
      str)))
 
 (defun lsp-line--check-duplicate (symbol info)

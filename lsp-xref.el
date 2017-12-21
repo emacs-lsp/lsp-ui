@@ -218,7 +218,7 @@ XREFS is a list of list of references/definitions."
         lsp-xref--offset 0
         lsp-xref--size-list 0
         lsp-xref--list nil)
-  (when (oddp lsp-xref-peek-height)
+  (when (eq (logand lsp-xref-peek-height 1) 1)
     (setq lsp-xref-peek-height (1+ lsp-xref-peek-height)))
   (when (< (- (line-number-at-pos (window-end)) (line-number-at-pos))
            (+ lsp-xref-peek-height 3))
@@ -540,7 +540,7 @@ interface Location {
             (seq-group-by it locations)
             (mapcar #'lsp-xref--get-xrefs-list it)))
 
-(defun lsp-xref--get-references (kind request &optional param)
+(defun lsp-xref--get-references (_kind request &optional param)
   "Get all references/definitions for the symbol under point.
 Returns item(s).
 KIND."
