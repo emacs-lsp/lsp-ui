@@ -13,3 +13,9 @@ To enable the package and its features:
 
 To customize:  
 `M-x customize-group [RET] lsp-ui [RET]`   
+
+### lsp-line
+![lsp-line](images/lsp-line.gif)
+
+### lsp-xref
+![lsp-xref](images/lsp-xref.gif)
