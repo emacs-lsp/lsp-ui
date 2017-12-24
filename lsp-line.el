@@ -173,7 +173,7 @@ MARKED-STRING is the string returned by `lsp-line--extract-info'."
                                 (funcall renderer value)
                               value))))
     (add-face-text-property 0 (length marked-string) '(:slant italic :height 0.99) nil marked-string)
-    (subst-char-in-string ?\n ?\s marked-string t)))
+    (replace-regexp-in-string "[\n\t]+" " " marked-string)))
 
 (defun lsp-line--make-display-string (info symbol current)
   "Make final string to display on buffer.
@@ -257,7 +257,7 @@ CURRENT is non-nil when the point is on the symbol."
   "Show code ACTIONS."
   (dolist (action (if actions actions '()))
     (-let* ((title (--> (gethash "title" action)
-                        (subst-char-in-string ?\n ?\s it t)
+                        (replace-regexp-in-string "[\n\t]+" " " it)
                         (concat lsp-line-code-actions-prefix it)))
             (string (concat (propertize " " 'display `(space :align-to (- right-fringe ,(1+ (length title)))))
                             title))
