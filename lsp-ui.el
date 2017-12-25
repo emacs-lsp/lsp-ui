@@ -5,7 +5,7 @@
 ;; Author:  Tobias Pisani <topisani@hamsterpoison.com>
 ;; Keywords: lsp
 ;; URL: https://github.com/emacs-lsp/lsp-ui
-;; Package-Requires: ((emacs "25.1") (flycheck "30") (lsp-mode "3.4"))
+;; Package-Requires: ((emacs "25.1") (flycheck "30") (lsp-mode "3.4") (markdown-mode "2.0"))
 ;; Version: 0.0.1
 
 ;; Permission is hereby granted, free of charge, to any person obtaining a copy
@@ -43,6 +43,7 @@
 (require 'lsp-line)
 (require 'lsp-xref)
 (require 'lsp-flycheck)
+(require 'lsp-hover)
 
 (defun lsp-ui--workspace-path (path)
   "Return the path relative to the workspace.
@@ -55,7 +56,7 @@ If the path is not in the workspace, it returns the original PATH."
 
 (defun lsp-ui--toggle (enable)
   "ENABLE."
-  (dolist (feature '(lsp-flycheck lsp-xref lsp-line))
+  (dolist (feature '(lsp-flycheck lsp-xref lsp-line lsp-hover))
     (let* ((sym (intern-soft (concat (symbol-name feature) "-enable")))
            (value (symbol-value sym))
            (fn (symbol-function sym)))
