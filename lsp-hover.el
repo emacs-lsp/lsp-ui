@@ -6,7 +6,7 @@
 ;; URL: https://github.com/emacs-lsp/lsp-ui
 ;; Keywords: lsp, ui
 ;; Version: 0.0.1
-;; Package-Requires: ((emacs "25.1") (lsp-mode "3.4") (markdown-mode "1.0"))
+;; Package-Requires: ((emacs "26") (lsp-mode "3.4") (markdown-mode "1.0"))
 
 ;;; License
 ;;
@@ -135,8 +135,9 @@ We don't extract the string that `lps-line' is already displaying."
           (unless (equal lsp-hover--bounds bounds)
             (lsp--send-request-async (lsp--make-request "textDocument/hover"
                                                         (lsp--text-document-position-params))
-                                     (lambda (hover) (lsp-hover--callback hover bounds (current-buffer))))))
-      (setq lsp-hover--bounds nil)
+                                     (lambda (hover)
+                                       (lsp-hover--callback hover bounds (current-buffer))
+                                       ))))
       (lsp-hover--hide-frame))))
 
 (defun lsp-hover--callback (hover bounds buffer)
@@ -144,15 +145,18 @@ We don't extract the string that `lps-line' is already displaying."
 HOVER is the doc returned by the LS.
 BOUNDS are points of the symbol that have been requested.
 BUFFER is the buffer where the request has been made."
-  (when (and hover
+  (if (and hover
              (lsp--point-is-within-bounds-p (car bounds) (cdr bounds))
              (equal buffer (current-buffer)))
-    (setq lsp-hover--bounds bounds)
-    (let ((doc (lsp-hover--extract (gethash "contents" hover))))
-      (lsp-hover--display (thing-at-point 'symbol t) doc))))
+      (progn
+        (setq lsp-hover--bounds bounds)
+        (let ((doc (lsp-hover--extract (gethash "contents" hover))))
+          (lsp-hover--display (thing-at-point 'symbol t) doc)))
+    (lsp-hover--hide-frame)))
 
 (defun lsp-hover--hide-frame ()
   "Hide the frame."
+  (setq lsp-hover--bounds nil)
   (when lsp-hover--frame
     (lsp-hover--with-buffer
      (erase-buffer))
@@ -194,6 +198,7 @@ BUFFER is the buffer where the request has been made."
 
 (defun lsp-hover--move-frame (frame)
   "Place our FRAME on screen."
+  (lsp-hover--resize-buffer)
   (-let* (((_left top right _bottom) (window-edges nil nil t t))
           ((&alist 'outer-size child-frame-size) (frame-geometry frame))
           ((c-width . c-height) child-frame-size)
@@ -202,9 +207,7 @@ BUFFER is the buffer where the request has been made."
                                       ('top (+ top 10))
                                       ('bottom (- mode-line-posy c-height 10))))
     (set-frame-parameter frame 'left (- right c-width 10))
-    (lsp-hover--resize-buffer)
-    (fit-frame-to-buffer frame)
-    ))
+    (fit-frame-to-buffer frame)))
 
 (defun lsp-hover--render-buffer (string symbol)
   "Set the BUFFER with STRING.
@@ -253,6 +256,16 @@ SYMBOL STRING."
       (message "This feature (lsp-hover) requires Emacs >= 26")
     (let ((fn (if enable 'add-hook 'remove-hook)))
       (funcall fn 'post-command-hook 'lsp-hover--make-request t))))
+
+(define-minor-mode lsp-hover-mode
+  "Minor mode for showing hover information in child frame."
+  :init-value nil
+  :group lsp-hover
+  (cond
+   (lsp-hover-mode
+    (add-hook 'post-command-hook 'lsp-hover--make-request nil t))
+   (t
+    (remove-hook 'post-command-hook 'lsp-hover--make-request t))))
 
 (provide 'lsp-hover)
 ;;; lsp-hover.el ends here
