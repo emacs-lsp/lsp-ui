@@ -264,7 +264,7 @@ SYMBOL STRING."
       `((child-frame-parameters . ,params))))))
 
 (defadvice select-window (after lsp-hover--select-window activate)
-  "makes powerline aware of window changes"
+  "Make powerline aware of window change."
   (lsp-hover--hide-frame))
 
 (define-minor-mode lsp-hover-mode
@@ -278,6 +278,11 @@ SYMBOL STRING."
       (add-hook 'post-command-hook 'lsp-hover--make-request nil t))
      (t
       (remove-hook 'post-command-hook 'lsp-hover--make-request t)))))
+
+(defun lsp-hover-enable (enable)
+  "ENABLE/disable lsp-hover-mode.
+It is supposed to be called from `lsp-ui--toggle'"
+  (lsp-hover-mode (if enable 1 -1)))
 
 (provide 'lsp-hover)
 ;;; lsp-hover.el ends here
