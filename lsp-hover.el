@@ -124,7 +124,7 @@ We don't extract the string that `lps-line' is already displaying."
                                  contents)
                  "\n\n"))
      ((gethash "kind" contents) (gethash "value" contents)) ;; MarkupContent
-     ;; ((gethash "language" contents) (gethash "value" contents)) ;; MarkedString
+     ((gethash "language" contents) (gethash "value" contents)) ;; MarkedString
      )))
 
 (defun lsp-hover--make-request ()
@@ -144,7 +144,8 @@ We don't extract the string that `lps-line' is already displaying."
 HOVER is the doc returned by the LS.
 BOUNDS are points of the symbol that have been requested.
 BUFFER is the buffer where the request has been made."
-  (when (and (lsp--point-is-within-bounds-p (car bounds) (cdr bounds))
+  (when (and hover
+             (lsp--point-is-within-bounds-p (car bounds) (cdr bounds))
              (equal buffer (current-buffer)))
     (setq lsp-hover--bounds bounds)
     (let ((doc (lsp-hover--extract (gethash "contents" hover))))
@@ -193,8 +194,6 @@ BUFFER is the buffer where the request has been made."
 
 (defun lsp-hover--move-frame (frame)
   "Place our FRAME on screen."
-  (lsp-hover--resize-buffer)
-  (fit-frame-to-buffer frame)
   (-let* (((_left top right _bottom) (window-edges nil nil t t))
           ((&alist 'outer-size child-frame-size) (frame-geometry frame))
           ((c-width . c-height) child-frame-size)
@@ -202,7 +201,10 @@ BUFFER is the buffer where the request has been made."
     (set-frame-parameter frame 'top (pcase lsp-hover-position
                                       ('top (+ top 10))
                                       ('bottom (- mode-line-posy c-height 10))))
-    (set-frame-parameter frame 'left (- right c-width 10))))
+    (set-frame-parameter frame 'left (- right c-width 10))
+    (lsp-hover--resize-buffer)
+    (fit-frame-to-buffer frame)
+    ))
 
 (defun lsp-hover--render-buffer (string symbol)
   "Set the BUFFER with STRING.
@@ -226,7 +228,6 @@ SYMBOL STRING."
     (lsp-hover--render-buffer string symbol)
     (if (not (frame-live-p lsp-hover--frame))
         (setq lsp-hover--frame (lsp-hover--make-frame))
-      (lsp-hover--move-frame lsp-hover--frame)
       (unless (frame-visible-p lsp-hover--frame)
         (make-frame-visible lsp-hover--frame)))
     (lsp-hover--move-frame lsp-hover--frame)))
