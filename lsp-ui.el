@@ -40,10 +40,10 @@
   :link '(custom-manual "(lsp-ui) Top")
   :link '(info-link "(lsp-ui) Customizing"))
 
-(require 'lsp-line)
-(require 'lsp-xref)
-(require 'lsp-flycheck)
-(require 'lsp-hover)
+(require 'lsp-ui-sideline)
+(require 'lsp-ui-peek)
+(require 'lsp-ui-flycheck)
+(require 'lsp-ui-doc)
 
 (defun lsp-ui--workspace-path (path)
   "Return the path relative to the workspace.
@@ -56,7 +56,7 @@ If the path is not in the workspace, it returns the original PATH."
 
 (defun lsp-ui--toggle (enable)
   "ENABLE."
-  (dolist (feature '(lsp-flycheck lsp-xref lsp-line lsp-hover))
+  (dolist (feature '(lsp-ui-flycheck lsp-ui-peek lsp-ui-sideline lsp-ui-doc))
     (let* ((sym (intern-soft (concat (symbol-name feature) "-enable")))
            (value (symbol-value sym))
            (fn (symbol-function sym)))

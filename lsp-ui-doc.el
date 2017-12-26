@@ -1,4 +1,4 @@
-;;; lsp-hover.el --- Lsp-Hover  -*- lexical-binding: t -*-
+;;; lsp-ui-doc.el --- Lsp-Ui-Doc  -*- lexical-binding: t -*-
 
 ;; Copyright (C) 2017 Sebastien Chapuis
 
@@ -35,43 +35,43 @@
 (require 'dash)
 (require 'markdown-mode)
 
-(defgroup lsp-hover nil
+(defgroup lsp-ui-doc nil
   "Display informations of the current line."
   :group 'tools
   :group 'convenience
   :group 'lsp-ui
-  :link '(custom-manual "(lsp-hover) Top")
-  :link '(info-link "(lsp-hover) Customizing"))
+  :link '(custom-manual "(lsp-ui-doc) Top")
+  :link '(info-link "(lsp-ui-doc) Customizing"))
 
-(defcustom lsp-hover-enable t
-  "Whether or not to enable lsp-hover."
+(defcustom lsp-ui-doc-enable t
+  "Whether or not to enable lsp-ui-doc."
   :type 'boolean
   :group 'lsp-ui)
 
-(defcustom lsp-hover-header nil
+(defcustom lsp-ui-doc-header nil
   "Whether or not to enable the header which display the symbol string."
   :type 'boolean
-  :group 'lsp-hover)
+  :group 'lsp-ui-doc)
 
-(defcustom lsp-hover-position 'top
+(defcustom lsp-ui-doc-position 'top
   "Where to display the doc."
   :type '(choice (const :tag "Top" top)
                  (const :tag "Bottom" bottom))
-  :group 'lsp-hover)
+  :group 'lsp-ui-doc)
 
-(defcustom lsp-hover-background "#031A25"
+(defcustom lsp-ui-doc-background "#031A25"
   "Background color of the frame.  To more customize the frame, see the varia..
-ble `lsp-hover-frame-parameters'"
+ble `lsp-ui-doc-frame-parameters'"
   :type 'color
-  :group 'lsp-hover)
+  :group 'lsp-ui-doc)
 
-(defface lsp-hover-header
+(defface lsp-ui-doc-header
   '((t :foreground "black"
        :background "deep sky blue"))
   "Face used on the header."
-  :group 'lsp-hover)
+  :group 'lsp-ui-doc)
 
-(defvar lsp-hover-frame-parameters
+(defvar lsp-ui-doc-frame-parameters
   '((left . -1)
     (no-accept-focus . t)
     (min-width  . 0)
@@ -96,33 +96,33 @@ ble `lsp-hover-frame-parameters'"
     (no-special-glyphs . t))
   "Frame parameters used to create the frame.")
 
-(defvar-local lsp-hover--bounds nil)
+(defvar-local lsp-ui-doc--bounds nil)
 
-(declare-function lsp-line--get-language 'lsp-line)
+(declare-function lsp-ui-sideline--get-language 'lsp-ui-sideline)
 
-(defmacro lsp-hover--with-buffer (&rest body)
-  "Execute BODY in the lsp-hover buffer."
-  `(with-current-buffer (get-buffer-create (lsp-hover--make-buffer-name))
+(defmacro lsp-ui-doc--with-buffer (&rest body)
+  "Execute BODY in the lsp-ui-doc buffer."
+  `(with-current-buffer (get-buffer-create (lsp-ui-doc--make-buffer-name))
      (prog1 (let ((buffer-read-only nil))
               ,@body)
        (setq buffer-read-only t))))
 
-(defmacro lsp-hover--set-frame (frame)
-  "Set the frame parameter 'lsp-hover-frame to FRAME."
-  `(set-frame-parameter nil 'lsp-hover-frame ,frame))
+(defmacro lsp-ui-doc--set-frame (frame)
+  "Set the frame parameter 'lsp-ui-doc-frame to FRAME."
+  `(set-frame-parameter nil 'lsp-ui-doc-frame ,frame))
 
-(defmacro lsp-hover--get-frame ()
+(defmacro lsp-ui-doc--get-frame ()
   "Return the child frame."
-  `(frame-parameter nil 'lsp-hover-frame))
+  `(frame-parameter nil 'lsp-ui-doc-frame))
 
-(defun lsp-hover--make-buffer-name ()
+(defun lsp-ui-doc--make-buffer-name ()
   "Construct the buffer name, it should be unique for each frame."
-  (concat "*lsp-hover-"
+  (concat "*lsp-ui-doc-"
           (or (frame-parameter nil 'window-id)
               (frame-parameter nil 'name))
           "*"))
 
-(defun lsp-hover--extract (contents)
+(defun lsp-ui-doc--extract (contents)
   "Extract the documentation from CONTENTS.
 CONTENTS can be differents type of values:
 MarkedString | MarkedString[] | MarkupContent (as defined in the LSP).
@@ -134,27 +134,27 @@ We don't extract the string that `lps-line' is already displaying."
       (mapconcat (lambda (item) (if (stringp item) item (gethash "value" item)))
                  (--remove-first (when (hash-table-p it)
                                    (string= (gethash "language" it)
-                                            (lsp-line--get-language)))
+                                            (lsp-ui-sideline--get-language)))
                                  contents)
                  "\n\n"))
      ((gethash "kind" contents) (gethash "value" contents)) ;; MarkupContent
      ((gethash "language" contents) (gethash "value" contents)) ;; MarkedString
      )))
 
-(defun lsp-hover--make-request ()
+(defun lsp-ui-doc--make-request ()
   "Request the documentation to the LS."
   (when (bound-and-true-p lsp--cur-workspace)
     (if (symbol-at-point)
         (let ((bounds (bounds-of-thing-at-point 'symbol)))
-          (unless (equal lsp-hover--bounds bounds)
+          (unless (equal lsp-ui-doc--bounds bounds)
             (lsp--send-request-async (lsp--make-request "textDocument/hover"
                                                         (lsp--text-document-position-params))
                                      (lambda (hover)
-                                       (lsp-hover--callback hover bounds (current-buffer))
+                                       (lsp-ui-doc--callback hover bounds (current-buffer))
                                        ))))
-      (lsp-hover--hide-frame))))
+      (lsp-ui-doc--hide-frame))))
 
-(defun lsp-hover--callback (hover bounds buffer)
+(defun lsp-ui-doc--callback (hover bounds buffer)
   "Process the received documentation.
 HOVER is the doc returned by the LS.
 BOUNDS are points of the symbol that have been requested.
@@ -162,22 +162,22 @@ BUFFER is the buffer where the request has been made."
   (if (and hover
            (lsp--point-is-within-bounds-p (car bounds) (cdr bounds))
            (equal buffer (current-buffer)))
-      (let ((doc (lsp-hover--extract (gethash "contents" hover))))
-        (setq lsp-hover--bounds bounds)
-        (lsp-hover--display (thing-at-point 'symbol t) doc))
-    (lsp-hover--hide-frame)))
+      (let ((doc (lsp-ui-doc--extract (gethash "contents" hover))))
+        (setq lsp-ui-doc--bounds bounds)
+        (lsp-ui-doc--display (thing-at-point 'symbol t) doc))
+    (lsp-ui-doc--hide-frame)))
 
-(defun lsp-hover--hide-frame ()
+(defun lsp-ui-doc--hide-frame ()
   "Hide the frame."
-  (setq lsp-hover--bounds nil)
-  (when (lsp-hover--get-frame)
-    (lsp-hover--with-buffer
+  (setq lsp-ui-doc--bounds nil)
+  (when (lsp-ui-doc--get-frame)
+    (lsp-ui-doc--with-buffer
      (erase-buffer))
-    (make-frame-invisible (lsp-hover--get-frame))))
+    (make-frame-invisible (lsp-ui-doc--get-frame))))
 
-(defun lsp-hover--buffer-width ()
+(defun lsp-ui-doc--buffer-width ()
   "Calcul the max width of the buffer."
-  (lsp-hover--with-buffer
+  (lsp-ui-doc--with-buffer
    (save-excursion
      (let ((max 0))
        (goto-char (point-min))
@@ -188,101 +188,101 @@ BUFFER is the buffer where the request has been made."
          (forward-line 1))
        max))))
 
-(defun lsp-hover--line-height (&optional line)
+(defun lsp-ui-doc--line-height (&optional line)
   "Return the pos-y of the LINE on screen, in pixel."
   (nth 2 (or (window-line-height line)
              (and (redisplay t)
                   (window-line-height line)))))
 
-(defun lsp-hover--sideline-pos-y ()
+(defun lsp-ui-doc--sideline-pos-y ()
   "."
   (-> (when (bound-and-true-p lsp-line--occupied-lines)
         (-min lsp-line--occupied-lines))
       (line-number-at-pos)
-      (lsp-hover--line-height)))
+      (lsp-ui-doc--line-height)))
 
-(defun lsp-hover--resize-buffer ()
+(defun lsp-ui-doc--resize-buffer ()
   "If the buffer's width is larger than the current window, resize it."
   (let* ((window-width (window-width))
          (fill-column (- window-width 5)))
-    (when (> (lsp-hover--buffer-width) window-width)
-      (lsp-hover--with-buffer
+    (when (> (lsp-ui-doc--buffer-width) window-width)
+      (lsp-ui-doc--with-buffer
        (fill-region (point-min) (point-max))))))
 
-(defun lsp-hover--move-frame (frame)
+(defun lsp-ui-doc--move-frame (frame)
   "Place our FRAME on screen."
-  (lsp-hover--resize-buffer)
+  (lsp-ui-doc--resize-buffer)
   (fit-frame-to-buffer frame)
   (-let* (((_left top right _bottom) (window-edges nil nil t t))
           (c-width (frame-pixel-width))
           (c-height (frame-pixel-height))
-          (mode-line-posy (lsp-hover--line-height 'mode-line)))
-    (set-frame-parameter frame 'top (pcase lsp-hover-position
+          (mode-line-posy (lsp-ui-doc--line-height 'mode-line)))
+    (set-frame-parameter frame 'top (pcase lsp-ui-doc-position
                                       ('top (+ top 10))
                                       ('bottom (- mode-line-posy c-height 10))))
     (set-frame-parameter frame 'left (- right c-width 10))))
 
-(defun lsp-hover--render-buffer (string symbol)
+(defun lsp-ui-doc--render-buffer (string symbol)
   "Set the BUFFER with STRING.
 SYMBOL."
-  (lsp-hover--with-buffer
+  (lsp-ui-doc--with-buffer
    (erase-buffer)
    (insert string)
    (goto-char (point-min))
    (markdown-view-mode)
-   (setq-local face-remapping-alist `((header-line lsp-hover-header)))
+   (setq-local face-remapping-alist `((header-line lsp-ui-doc-header)))
    (setq-local window-min-height 1)
-   (setq header-line-format (when lsp-hover-header (concat " " symbol))
+   (setq header-line-format (when lsp-ui-doc-header (concat " " symbol))
          mode-line-format nil
          cursor-type nil)))
 
-(defun lsp-hover--display (symbol string)
+(defun lsp-ui-doc--display (symbol string)
   "Display the documentation on screen.
 SYMBOL STRING."
   (if (or (null string)
           (string-empty-p string))
-      (lsp-hover--hide-frame)
-    (lsp-hover--render-buffer string symbol)
-    (unless (frame-live-p (lsp-hover--get-frame))
-      (lsp-hover--set-frame (lsp-hover--make-frame)))
-    (lsp-hover--move-frame (lsp-hover--get-frame))
-    (unless (frame-visible-p (lsp-hover--get-frame))
-      (make-frame-visible (lsp-hover--get-frame)))))
+      (lsp-ui-doc--hide-frame)
+    (lsp-ui-doc--render-buffer string symbol)
+    (unless (frame-live-p (lsp-ui-doc--get-frame))
+      (lsp-ui-doc--set-frame (lsp-ui-doc--make-frame)))
+    (lsp-ui-doc--move-frame (lsp-ui-doc--get-frame))
+    (unless (frame-visible-p (lsp-ui-doc--get-frame))
+      (make-frame-visible (lsp-ui-doc--get-frame)))))
 
-(defun lsp-hover--make-frame ()
+(defun lsp-ui-doc--make-frame ()
   "Create the child frame and return it."
   (let ((after-make-frame-functions nil)
         (before-make-frame-hook nil)
-        (buffer (get-buffer (lsp-hover--make-buffer-name)))
-        (params (append lsp-hover-frame-parameters
+        (buffer (get-buffer (lsp-ui-doc--make-buffer-name)))
+        (params (append lsp-ui-doc-frame-parameters
                         `((default-minibuffer-frame . ,(selected-frame))
                           (minibuffer . ,(minibuffer-window))
-                          (background-color . ,lsp-hover-background)))))
+                          (background-color . ,lsp-ui-doc-background)))))
     (window-frame
      (display-buffer-in-child-frame
       buffer
       `((child-frame-parameters . ,params))))))
 
-(defadvice select-window (after lsp-hover--select-window activate)
+(defadvice select-window (after lsp-ui-doc--select-window activate)
   "Make powerline aware of window change."
-  (lsp-hover--hide-frame))
+  (lsp-ui-doc--hide-frame))
 
-(define-minor-mode lsp-hover-mode
+(define-minor-mode lsp-ui-doc-mode
   "Minor mode for showing hover information in child frame."
   :init-value nil
-  :group lsp-hover
+  :group lsp-ui-doc
   (if (< emacs-major-version 26)
-      (message "lsp-hover uses child frame which requires Emacs >= 26")
+      (message "lsp-ui-doc uses child frame which requires Emacs >= 26")
     (cond
-     (lsp-hover-mode
-      (add-hook 'post-command-hook 'lsp-hover--make-request nil t))
+     (lsp-ui-doc-mode
+      (add-hook 'post-command-hook 'lsp-ui-doc--make-request nil t))
      (t
-      (remove-hook 'post-command-hook 'lsp-hover--make-request t)))))
+      (remove-hook 'post-command-hook 'lsp-ui-doc--make-request t)))))
 
-(defun lsp-hover-enable (enable)
-  "ENABLE/disable lsp-hover-mode.
+(defun lsp-ui-doc-enable (enable)
+  "ENABLE/disable lsp-ui-doc-mode.
 It is supposed to be called from `lsp-ui--toggle'"
-  (lsp-hover-mode (if enable 1 -1)))
+  (lsp-ui-doc-mode (if enable 1 -1)))
 
-(provide 'lsp-hover)
-;;; lsp-hover.el ends here
+(provide 'lsp-ui-doc)
+;;; lsp-ui-doc.el ends here
