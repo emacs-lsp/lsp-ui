@@ -243,11 +243,11 @@ SYMBOL STRING."
           (string-empty-p string))
       (lsp-hover--hide-frame)
     (lsp-hover--render-buffer string symbol)
-    (if (not (frame-live-p (lsp-hover--get-frame)))
-        (lsp-hover--set-frame (lsp-hover--make-frame))
-      (unless (frame-visible-p (lsp-hover--get-frame))
-        (make-frame-visible (lsp-hover--get-frame))))
-    (lsp-hover--move-frame (lsp-hover--get-frame))))
+    (unless (frame-live-p (lsp-hover--get-frame))
+      (lsp-hover--set-frame (lsp-hover--make-frame)))
+    (lsp-hover--move-frame (lsp-hover--get-frame))
+    (unless (frame-visible-p (lsp-hover--get-frame))
+      (make-frame-visible (lsp-hover--get-frame)))))
 
 (defun lsp-hover--make-frame ()
   "Create the child frame and return it."
