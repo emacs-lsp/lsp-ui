@@ -217,7 +217,8 @@ SYMBOL."
    (setq-local face-remapping-alist `((header-line lsp-hover-header)))
    (setq-local window-min-height 1)
    (setq header-line-format (when lsp-hover-header (concat " " symbol))
-         mode-line-format nil)))
+         mode-line-format nil
+         cursor-type nil)))
 
 (defun lsp-hover--display (symbol string)
   "Display the documentation on screen.
