@@ -96,17 +96,31 @@ ble `lsp-hover-frame-parameters'"
     (no-special-glyphs . t))
   "Frame parameters used to create the frame.")
 
-(defvar lsp-hover--frame nil)
 (defvar-local lsp-hover--bounds nil)
 
 (declare-function lsp-line--get-language 'lsp-line)
 
 (defmacro lsp-hover--with-buffer (&rest body)
   "Execute BODY in the lsp-hover buffer."
-  `(with-current-buffer (get-buffer-create "*lsp-hover*")
+  `(with-current-buffer (get-buffer-create (lsp-hover--make-buffer-name))
      (prog1 (let ((buffer-read-only nil))
               ,@body)
        (setq buffer-read-only t))))
+
+(defmacro lsp-hover--set-frame (frame)
+  "Set the frame parameter 'lsp-hover-frame to FRAME."
+  `(set-frame-parameter nil 'lsp-hover-frame ,frame))
+
+(defmacro lsp-hover--get-frame ()
+  "Return the child frame."
+  `(frame-parameter nil 'lsp-hover-frame))
+
+(defun lsp-hover--make-buffer-name ()
+  "Construct the buffer name, it should be unique for each frame."
+  (concat "*lsp-hover-"
+          (or (frame-parameter nil 'window-id)
+              (frame-parameter nil 'name))
+          "*"))
 
 (defun lsp-hover--extract (contents)
   "Extract the documentation from CONTENTS.
@@ -146,21 +160,20 @@ HOVER is the doc returned by the LS.
 BOUNDS are points of the symbol that have been requested.
 BUFFER is the buffer where the request has been made."
   (if (and hover
-             (lsp--point-is-within-bounds-p (car bounds) (cdr bounds))
-             (equal buffer (current-buffer)))
-      (progn
+           (lsp--point-is-within-bounds-p (car bounds) (cdr bounds))
+           (equal buffer (current-buffer)))
+      (let ((doc (lsp-hover--extract (gethash "contents" hover))))
         (setq lsp-hover--bounds bounds)
-        (let ((doc (lsp-hover--extract (gethash "contents" hover))))
-          (lsp-hover--display (thing-at-point 'symbol t) doc)))
+        (lsp-hover--display (thing-at-point 'symbol t) doc))
     (lsp-hover--hide-frame)))
 
 (defun lsp-hover--hide-frame ()
   "Hide the frame."
   (setq lsp-hover--bounds nil)
-  (when lsp-hover--frame
+  (when (lsp-hover--get-frame)
     (lsp-hover--with-buffer
      (erase-buffer))
-    (make-frame-invisible lsp-hover--frame)))
+    (make-frame-invisible (lsp-hover--get-frame))))
 
 (defun lsp-hover--buffer-width ()
   "Calcul the max width of the buffer."
@@ -230,17 +243,17 @@ SYMBOL STRING."
           (string-empty-p string))
       (lsp-hover--hide-frame)
     (lsp-hover--render-buffer string symbol)
-    (if (not (frame-live-p lsp-hover--frame))
-        (setq lsp-hover--frame (lsp-hover--make-frame))
-      (unless (frame-visible-p lsp-hover--frame)
-        (make-frame-visible lsp-hover--frame)))
-    (lsp-hover--move-frame lsp-hover--frame)))
+    (if (not (frame-live-p (lsp-hover--get-frame)))
+        (lsp-hover--set-frame (lsp-hover--make-frame))
+      (unless (frame-visible-p (lsp-hover--get-frame))
+        (make-frame-visible (lsp-hover--get-frame))))
+    (lsp-hover--move-frame (lsp-hover--get-frame))))
 
 (defun lsp-hover--make-frame ()
   "Create the child frame and return it."
   (let ((after-make-frame-functions nil)
         (before-make-frame-hook nil)
-        (buffer (get-buffer "*lsp-hover*"))
+        (buffer (get-buffer (lsp-hover--make-buffer-name)))
         (params (append lsp-hover-frame-parameters
                         `((default-minibuffer-frame . ,(selected-frame))
                           (minibuffer . ,(minibuffer-window))
