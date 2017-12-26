@@ -96,7 +96,7 @@ ble `lsp-hover-frame-parameters'"
     (no-special-glyphs . t))
   "Frame parameters used to create the frame.")
 
-(defvar-local lsp-hover--frame nil)
+(defvar lsp-hover--frame nil)
 (defvar-local lsp-hover--bounds nil)
 
 (declare-function lsp-line--get-language 'lsp-line)
@@ -250,22 +250,21 @@ SYMBOL STRING."
       buffer
       `((child-frame-parameters . ,params))))))
 
-(defun lsp-hover-enable (enable)
-  "ENABLE."
-  (if (< emacs-major-version 26)
-      (message "This feature (lsp-hover) requires Emacs >= 26")
-    (let ((fn (if enable 'add-hook 'remove-hook)))
-      (funcall fn 'post-command-hook 'lsp-hover--make-request t))))
+(defadvice select-window (after lsp-hover--select-window activate)
+  "makes powerline aware of window changes"
+  (lsp-hover--hide-frame))
 
 (define-minor-mode lsp-hover-mode
   "Minor mode for showing hover information in child frame."
   :init-value nil
   :group lsp-hover
-  (cond
-   (lsp-hover-mode
-    (add-hook 'post-command-hook 'lsp-hover--make-request nil t))
-   (t
-    (remove-hook 'post-command-hook 'lsp-hover--make-request t))))
+  (if (< emacs-major-version 26)
+      (message "lsp-hover uses child frame which requires Emacs >= 26")
+    (cond
+     (lsp-hover-mode
+      (add-hook 'post-command-hook 'lsp-hover--make-request nil t))
+     (t
+      (remove-hook 'post-command-hook 'lsp-hover--make-request t)))))
 
 (provide 'lsp-hover)
 ;;; lsp-hover.el ends here
