@@ -212,15 +212,15 @@ BUFFER is the buffer where the request has been made."
 (defun lsp-hover--move-frame (frame)
   "Place our FRAME on screen."
   (lsp-hover--resize-buffer)
+  (fit-frame-to-buffer frame)
   (-let* (((_left top right _bottom) (window-edges nil nil t t))
-          ((&alist 'outer-size child-frame-size) (frame-geometry frame))
-          ((c-width . c-height) child-frame-size)
+          (c-width (frame-pixel-width))
+          (c-height (frame-pixel-height))
           (mode-line-posy (lsp-hover--line-height 'mode-line)))
     (set-frame-parameter frame 'top (pcase lsp-hover-position
                                       ('top (+ top 10))
                                       ('bottom (- mode-line-posy c-height 10))))
-    (set-frame-parameter frame 'left (- right c-width 10))
-    (fit-frame-to-buffer frame)))
+    (set-frame-parameter frame 'left (- right c-width 10))))
 
 (defun lsp-hover--render-buffer (string symbol)
   "Set the BUFFER with STRING.
