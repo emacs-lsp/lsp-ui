@@ -22,3 +22,7 @@ It also show flycheck diagnostics and LSP code actions
 ### lsp-ui-peek:
 Add [peek](https://code.visualstudio.com/docs/editor/editingevolved#_peek) feature  
 ![lsp-xref](images/lsp-xref.gif)
+
+### lsp-ui-doc:
+Show object documentation at point in a child frame.  
+![lsp-ui-doc](images/lsp-ui-doc.gif)
