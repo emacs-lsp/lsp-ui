@@ -196,8 +196,8 @@ BUFFER is the buffer where the request has been made."
 
 (defun lsp-ui-doc--sideline-pos-y ()
   "."
-  (-> (when (bound-and-true-p lsp-line--occupied-lines)
-        (-min lsp-line--occupied-lines))
+  (-> (when (bound-and-true-p lsp-ui-sideline--occupied-lines)
+        (-min lsp-ui-sideline--occupied-lines))
       (line-number-at-pos)
       (lsp-ui-doc--line-height)))
 

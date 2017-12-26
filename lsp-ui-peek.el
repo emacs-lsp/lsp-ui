@@ -69,12 +69,14 @@ This can heavily slow the processing."
   :group 'lsp-ui-peek)
 
 (defface lsp-ui-peek-peek
-  '((t :background "#031A25"))
+  '((default :background "#031A25")
+    (((background light)) (:background "light gray")))
   "Face used for the peek."
   :group 'lsp-ui-peek)
 
 (defface lsp-ui-peek-list
-  '((t :background "#181818"))
+  '((default :background "#181818")
+    (((background light)) (:background "light gray")))
   "Face used to list references."
   :group 'lsp-ui-peek)
 
@@ -89,17 +91,21 @@ This can heavily slow the processing."
   :group 'lsp-ui-peek)
 
 (defface lsp-ui-peek-highlight
-  '((t :background "white"
-       :foreground "black"
-       :distant-foreground "white"
-       :box (:line-width -1 :color "white")))
+  '((default :background "white"
+      :foreground "black"
+      :distant-foreground "white"
+      :box (:line-width -1 :color "white"))
+    (((background light)) (:background "black"
+                                       :foreground "white"
+                                       :distant-foreground "black"
+                                       :box (:line-width -1 :color "black"))))
   "Face used to highlight the reference/definition."
   :group 'lsp-ui-peek)
 
 (defface lsp-ui-peek-header
-  '((t :background "white"
-       :foreground "black"
-       :overline t))
+  '((default :background "white" :foreground "black")
+    (((background light)) (:background "black" :foreground "white"))
+    (t :overline t))
   "Face used for the headers."
   :group 'lsp-ui-peek)
 
@@ -109,7 +115,7 @@ The function takes one parameter: a list of cons where the car is the
 filename and the cdr is the number of references in that file.
 It should returns a list of filenames to expand.")
 
-(defvar-local lsp-ui-peek--peek-overlay nil)
+(defvar-local lsp-ui-peek--overlay nil)
 (defvar-local lsp-ui-peek--list nil)
 (defvar-local lsp-ui-peek--last-xref nil)
 (defvar-local lsp-ui-peek--selection 0)
@@ -185,9 +191,9 @@ It should returns a list of filenames to expand.")
                             (--map (lsp-ui-peek--adjust win-width it))
                             (-map-indexed 'lsp-ui-peek--make-line)))
           (next-line (line-beginning-position 2))
-          (ov (or (when (overlayp lsp-ui-peek--peek-overlay) lsp-ui-peek--peek-overlay)
+          (ov (or (when (overlayp lsp-ui-peek--overlay) lsp-ui-peek--overlay)
                   (make-overlay next-line next-line))))
-    (setq lsp-ui-peek--peek-overlay ov)
+    (setq lsp-ui-peek--overlay ov)
     (overlay-put ov 'after-string (mapconcat 'identity string ""))
     (overlay-put ov 'window (get-buffer-window))))
 
@@ -365,9 +371,9 @@ XREFS is a list of list of references/definitions."
 
 (defun lsp-ui-peek--peek-hide ()
   "Hide the chunk of code and restore previous state."
-  (when (overlayp lsp-ui-peek--peek-overlay)
-    (delete-overlay lsp-ui-peek--peek-overlay))
-  (setq lsp-ui-peek--peek-overlay nil
+  (when (overlayp lsp-ui-peek--overlay)
+    (delete-overlay lsp-ui-peek--overlay))
+  (setq lsp-ui-peek--overlay nil
         lsp-ui-peek--last-xref nil)
   (set-window-start (get-buffer-window) lsp-ui-peek--win-start))
 
