@@ -145,19 +145,16 @@ MarkedString | MarkedString[] | MarkupContent (as defined in the LSP).
 We prioritize string with a language (which is probably a type or a
 function signature)."
   (when contents
-    (let* ((strings (when (listp contents) (seq-group-by 'hash-table-p contents)))
-           (string (alist-get nil strings))
-           (strings-with-language (alist-get t strings)))
-      (or (when (stringp contents) contents)
-          (when (hash-table-p contents) contents)
-          (when (listp strings-with-language)
-            (or (car (seq-filter (lambda (s) (string= (gethash "language" s)
-                                                      (lsp-ui-sideline--get-language)))
-                                 strings-with-language))
-                (car strings-with-language)))
-          strings-with-language
-          (when (listp string) (car string))
-          string))))
+    (cond
+     ((stringp contents) contents)
+     ((listp contents) ;; MarkedString[]
+      (--first (and (hash-table-p it)
+                    (lsp-ui-sideline--get-renderer (gethash "language" it)))
+               contents))
+     ((gethash "kind" contents) (gethash "value" contents)) ;; MarkupContent
+     ((gethash "language" contents) ;; MarkedString
+      (and (lsp-ui-sideline--get-renderer (gethash "language" contents))
+           (gethash "value" contents))))))
 
 (defun lsp-ui-sideline--format-info (marked-string)
   "Format MARKED-STRING.
