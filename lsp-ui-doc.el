@@ -127,6 +127,25 @@ ble `lsp-ui-doc-frame-parameters'"
               (frame-parameter nil 'name))
           "*"))
 
+(defun lsp-ui-doc--extract-marked-string (marked-string)
+  "Render the MARKED-STRING."
+  (string-trim-right
+   (let* ((string (if (stringp marked-string)
+                      marked-string
+                    (gethash "value" marked-string)))
+          (with-lang (hash-table-p marked-string))
+          (language (and with-lang (gethash "language" marked-string)))
+          (render-fn (and with-lang (lsp-ui-sideline--get-renderer language))))
+     (if render-fn
+         (funcall render-fn string)
+       (with-temp-buffer
+         (insert string)
+         (delay-mode-hooks
+           (funcall (cond ((and with-lang (string= "text" language)) 'text-mode)
+                          (t 'markdown-view-mode)))
+           (font-lock-ensure))
+         (buffer-string))))))
+
 (defun lsp-ui-doc--extract (contents)
   "Extract the documentation from CONTENTS.
 CONTENTS can be differents type of values:
@@ -136,27 +155,14 @@ We don't extract the string that `lps-line' is already displaying."
     (cond
      ((stringp contents) contents)
      ((listp contents) ;; MarkedString[]
-      (mapconcat (lambda (item)
-                   (string-trim-right
-                    (-if-let (render-fn (and (hash-table-p item)
-                                             (lsp-ui-sideline--get-renderer (gethash "language" item))))
-                        (funcall render-fn (gethash "value" item))
-                      (with-temp-buffer
-                        (insert (if (stringp item) item (gethash "value" item)))
-                        (delay-mode-hooks
-                          (funcall (cond
-                                    ((and (hash-table-p item) (string= "text" (gethash "language" item)))
-                                     'text-mode)
-                                    (t 'markdown-view-mode)))
-                          (font-lock-ensure))
-                        (buffer-string)))))
+      (mapconcat 'lsp-ui-doc--extract-marked-string
                  contents
                  "\n\n"
                  ;; (propertize "\n\n" 'face '(:height 0.4))
                  ))
      ((gethash "kind" contents) (gethash "value" contents)) ;; MarkupContent
-     ((gethash "language" contents) (gethash "value" contents)) ;; MarkedString
-     )))
+     ((gethash "language" contents) ;; MarkedString
+      (lsp-ui-doc--extract-marked-string contents)))))
 
 (defun lsp-ui-doc--make-request ()
   "Request the documentation to the LS."
