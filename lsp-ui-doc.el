@@ -71,6 +71,11 @@ ble `lsp-ui-doc-frame-parameters'"
   "Face used on the header."
   :group 'lsp-ui-doc)
 
+(defface lsp-ui-doc-url
+  '((t :inherit link))
+  "Face used on links."
+  :group 'lsp-ui-doc)
+
 (defvar lsp-ui-doc-frame-parameters
   '((left . -1)
     (no-accept-focus . t)
@@ -131,17 +136,24 @@ We don't extract the string that `lps-line' is already displaying."
     (cond
      ((stringp contents) contents)
      ((listp contents) ;; MarkedString[]
-      (mapconcat
-       (lambda (item) (if (stringp item) item (gethash "value" item)))
-       (let ((language-id (lsp-ui-sideline--get-language)))
-         (--remove-first
-          (when (hash-table-p it)
-            (let ((lang (gethash "language" it)))
-              (or (string= language-id lang)
-                  ;; A language server supporting language-id "cpp" may respond MarkedString{"language":"c"}
-                  (and (string= language-id "cpp") (string= lang "c")))))
-          contents))
-       "\n\n"))
+      (mapconcat (lambda (item)
+                   (string-trim-right
+                    (-if-let (render-fn (and (hash-table-p item)
+                                             (lsp-ui-sideline--get-renderer (gethash "language" item))))
+                        (funcall render-fn (gethash "value" item))
+                      (with-temp-buffer
+                        (insert (if (stringp item) item (gethash "value" item)))
+                        (delay-mode-hooks
+                          (funcall (cond
+                                    ((and (hash-table-p item) (string= "text" (gethash "language" item)))
+                                     'text-mode)
+                                    (t 'markdown-view-mode)))
+                          (font-lock-ensure))
+                        (buffer-string)))))
+                 contents
+                 "\n\n"
+                 ;; (propertize "\n\n" 'face '(:height 0.4))
+                 ))
      ((gethash "kind" contents) (gethash "value" contents)) ;; MarkupContent
      ((gethash "language" contents) (gethash "value" contents)) ;; MarkedString
      )))
@@ -227,14 +239,29 @@ BUFFER is the buffer where the request has been made."
                                       ('bottom (- mode-line-posy c-height 10))))
     (set-frame-parameter frame 'left (- right c-width 10))))
 
+(defun lsp-ui-doc--make-clickable-link ()
+  "."
+  (goto-char (point-min))
+  (save-excursion
+    (condition-case nil
+        (while (search-forward-regexp "http[s]?://")
+          (let ((bounds (thing-at-point-bounds-of-url-at-point))
+                (map (make-sparse-keymap)))
+            (define-key map [down-mouse-1] 'browse-url-at-mouse)
+            (put-text-property (car bounds) (cdr bounds) 'keymap map)
+            (put-text-property (car bounds) (cdr bounds) 'mouse-face
+                               (list :inherit 'lsp-ui-doc-url
+                                     :box `(:line-width -1 :color ,(face-foreground 'lsp-ui-doc-url))))
+            (add-face-text-property (car bounds) (cdr bounds) 'lsp-ui-doc-url)))
+      (search-failed nil))))
+
 (defun lsp-ui-doc--render-buffer (string symbol)
   "Set the BUFFER with STRING.
 SYMBOL."
   (lsp-ui-doc--with-buffer
    (erase-buffer)
    (insert string)
-   (goto-char (point-min))
-   (markdown-view-mode)
+   (lsp-ui-doc--make-clickable-link)
    (setq-local face-remapping-alist `((header-line lsp-ui-doc-header)))
    (setq-local window-min-height 1)
    (setq header-line-format (when lsp-ui-doc-header (concat " " symbol))
