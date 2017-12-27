@@ -53,6 +53,11 @@
   :type 'boolean
   :group 'lsp-ui-doc)
 
+(defcustom lsp-ui-doc-include-signature t
+  "Whether or not to include the object signature/type in the frame."
+  :type 'boolean
+  :group 'lsp-ui-doc)
+
 (defcustom lsp-ui-doc-position 'top
   "Where to display the doc."
   :type '(choice (const :tag "Top" top)
@@ -156,7 +161,10 @@ We don't extract the string that `lps-line' is already displaying."
      ((stringp contents) contents)
      ((listp contents) ;; MarkedString[]
       (mapconcat 'lsp-ui-doc--extract-marked-string
-                 contents
+                 (--filter (or lsp-ui-doc-include-signature
+                               (not (and (hash-table-p it)
+                                         (lsp-ui-sideline--get-renderer (gethash "language" it)))))
+                           contents)
                  "\n\n"
                  ;; (propertize "\n\n" 'face '(:height 0.4))
                  ))
