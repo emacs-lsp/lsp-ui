@@ -244,7 +244,7 @@ BUFFER is the buffer where the request has been made."
   "Place our FRAME on screen."
   (lsp-ui-doc--resize-buffer)
   (fit-frame-to-buffer frame)
-  (-let* (((_left top right _bottom) (window-edges nil nil t t))
+  (-let* (((_left top right _bottom) (window-edges nil nil nil t))
           (c-width (frame-pixel-width))
           (c-height (frame-pixel-height))
           (mode-line-posy (lsp-ui-doc--line-height 'mode-line)))
