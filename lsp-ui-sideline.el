@@ -245,7 +245,7 @@ CURRENT is non-nil when the point is on the symbol."
                                                          ('warning 'warning)
                                                          (_ 'success)))))
              (pos-ov (lsp-ui-sideline--find-line (window-text-width) (length message) t))
-             (ov (make-overlay pos-ov pos-ov)))
+             (ov (and pos-ov (make-overlay pos-ov pos-ov))))
         (when pos-ov
           (overlay-put ov 'after-string string)
           (push ov lsp-ui-sideline--ovs))))))
