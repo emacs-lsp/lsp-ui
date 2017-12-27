@@ -53,6 +53,11 @@
   :type 'boolean
   :group 'lsp-ui-sideline)
 
+(defcustom lsp-ui-sideline-show-symbol t
+  "Whether to show the symbol on the right of the information"
+  :type 'boolean
+  :group 'lsp-ui-sideline)
+
 (defvar lsp-ui-sideline-code-actions-prefix
   (propertize "💡 " 'face '(:foreground "yellow"))
   "Prefix to insert before the code action title.")
@@ -177,8 +182,10 @@ MARKED-STRING is the string returned by `lsp-ui-sideline--extract-info'."
 INFO is the information to display.
 SYMBOL is the symbol associated to the info.
 CURRENT is non-nil when the point is on the symbol."
-  (let* ((str (concat info " " (propertize (concat " " symbol " ")
-                                           'face (if current 'lsp-ui-sideline-current-symbol 'lsp-ui-sideline-symbol))))
+  (let* ((str (if lsp-ui-sideline-show-symbol
+                  (concat info " " (propertize (concat " " symbol " ")
+                                               'face (if current 'lsp-ui-sideline-current-symbol 'lsp-ui-sideline-symbol)))
+                info))
          (len (length str)))
     (concat
      (propertize " " 'display `(space :align-to (- right-fringe ,(+ 1 len))))
