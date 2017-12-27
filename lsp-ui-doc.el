@@ -131,12 +131,17 @@ We don't extract the string that `lps-line' is already displaying."
     (cond
      ((stringp contents) contents)
      ((listp contents) ;; MarkedString[]
-      (mapconcat (lambda (item) (if (stringp item) item (gethash "value" item)))
-                 (--remove-first (when (hash-table-p it)
-                                   (string= (gethash "language" it)
-                                            (lsp-ui-sideline--get-language)))
-                                 contents)
-                 "\n\n"))
+      (mapconcat
+       (lambda (item) (if (stringp item) item (gethash "value" item)))
+       (let ((language-id (lsp-ui-sideline--get-language)))
+         (--remove-first
+          (when (hash-table-p it)
+            (let ((lang (gethash "language" it)))
+              (or (string= language-id lang)
+                  ;; A language server supporting language-id "cpp" may respond MarkedString{"language":"c"}
+                  (and (string= language-id "cpp") (string= lang "c")))))
+          contents))
+       "\n\n"))
      ((gethash "kind" contents) (gethash "value" contents)) ;; MarkupContent
      ((gethash "language" contents) (gethash "value" contents)) ;; MarkedString
      )))
