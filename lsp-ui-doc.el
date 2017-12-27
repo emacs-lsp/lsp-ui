@@ -53,7 +53,7 @@
   :type 'boolean
   :group 'lsp-ui-doc)
 
-(defcustom lsp-ui-doc-include-signature t
+(defcustom lsp-ui-doc-include-signature nil
   "Whether or not to include the object signature/type in the frame."
   :type 'boolean
   :group 'lsp-ui-doc)
@@ -107,6 +107,7 @@ ble `lsp-ui-doc-frame-parameters'"
   "Frame parameters used to create the frame.")
 
 (defvar-local lsp-ui-doc--bounds nil)
+(defvar-local lsp-ui-doc--string-eldoc nil)
 
 (declare-function lsp-ui-sideline--get-language 'lsp-ui-sideline)
 
@@ -132,6 +133,16 @@ ble `lsp-ui-doc-frame-parameters'"
               (frame-parameter nil 'name))
           "*"))
 
+(defun lsp-ui-doc--set-eldoc (marked-string)
+  "MARKED-STRING."
+  (when marked-string
+    (let ((string (lsp-ui-doc--extract-marked-string marked-string)))
+      (setq lsp-ui-doc--string-eldoc string))))
+
+(defun lsp-ui-doc--eldoc (&rest _)
+  "."
+  lsp-ui-doc--string-eldoc)
+
 (defun lsp-ui-doc--extract-marked-string (marked-string)
   "Render the MARKED-STRING."
   (string-trim-right
@@ -151,6 +162,16 @@ ble `lsp-ui-doc-frame-parameters'"
            (font-lock-ensure))
          (buffer-string))))))
 
+(defun lsp-ui-doc--filter-marked-string (list-marked-string)
+  "LIST-MARKED-STRING."
+  (let ((groups (--separate (and (hash-table-p it)
+                                 (lsp-ui-sideline--get-renderer (gethash "language" it)))
+                            list-marked-string)))
+    (lsp-ui-doc--set-eldoc (caar groups))
+    (if lsp-ui-doc-include-signature
+        list-marked-string
+      (cadr groups))))
+
 (defun lsp-ui-doc--extract (contents)
   "Extract the documentation from CONTENTS.
 CONTENTS can be differents type of values:
@@ -161,10 +182,7 @@ We don't extract the string that `lps-line' is already displaying."
      ((stringp contents) contents)
      ((listp contents) ;; MarkedString[]
       (mapconcat 'lsp-ui-doc--extract-marked-string
-                 (--filter (or lsp-ui-doc-include-signature
-                               (not (and (hash-table-p it)
-                                         (lsp-ui-sideline--get-renderer (gethash "language" it)))))
-                           contents)
+                 (lsp-ui-doc--filter-marked-string contents)
                  "\n\n"
                  ;; (propertize "\n\n" 'face '(:height 0.4))
                  ))
@@ -183,6 +201,7 @@ We don't extract the string that `lps-line' is already displaying."
                                      (lambda (hover)
                                        (lsp-ui-doc--callback hover bounds (current-buffer))
                                        ))))
+      (setq lsp-ui-doc--string-eldoc nil)
       (lsp-ui-doc--hide-frame))))
 
 (defun lsp-ui-doc--callback (hover bounds buffer)
@@ -196,6 +215,7 @@ BUFFER is the buffer where the request has been made."
       (let ((doc (lsp-ui-doc--extract (gethash "contents" hover))))
         (setq lsp-ui-doc--bounds bounds)
         (lsp-ui-doc--display (thing-at-point 'symbol t) doc))
+    (setq lsp-ui-doc--string-eldoc nil)
     (lsp-ui-doc--hide-frame)))
 
 (defun lsp-ui-doc--hide-frame ()
@@ -313,6 +333,10 @@ SYMBOL STRING."
   "Make powerline aware of window change."
   (lsp-ui-doc--hide-frame))
 
+(defun lsp-ui-doc-enable-eldoc ()
+  "."
+  (setq-local eldoc-documentation-function 'lsp-ui-doc--eldoc))
+
 (define-minor-mode lsp-ui-doc-mode
   "Minor mode for showing hover information in child frame."
   :init-value nil
@@ -321,9 +345,13 @@ SYMBOL STRING."
       (message "lsp-ui-doc uses child frame which requires Emacs >= 26")
     (cond
      (lsp-ui-doc-mode
-      (add-hook 'post-command-hook 'lsp-ui-doc--make-request nil t))
+      (progn
+        (add-hook 'lsp-after-open-hook 'lsp-ui-doc-enable-eldoc nil t)
+        (add-hook 'post-command-hook 'lsp-ui-doc--make-request nil t)))
      (t
-      (remove-hook 'post-command-hook 'lsp-ui-doc--make-request t)))))
+      (remove-hook 'post-command-hook 'lsp-ui-doc--make-request t)
+      (remove-hook 'lsp-after-open-hook 'lsp-ui-doc-enable-eldoc t)
+      (setq-local eldoc-documentation-function 'lsp--on-hover)))))
 
 (defun lsp-ui-doc-enable (enable)
   "ENABLE/disable lsp-ui-doc-mode.
