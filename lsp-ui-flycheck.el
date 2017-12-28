@@ -71,7 +71,7 @@ CALLBACK is the status callback passed by Flycheck."
              lsp--diagnostics)
     (funcall callback 'finished errors)))
 
-(flycheck-define-generic-checker 'lsp
+(flycheck-define-generic-checker 'lsp-ui
   "A syntax checker using the Language Server Protocol (RLS)
 provided by lsp-mode.
 
@@ -83,16 +83,16 @@ See https://github.com/emacs-lsp/lsp-mode."
 
 (defun lsp-ui-flycheck-add-mode (mode)
   "Add MODE as a valid major mode for the lsp checker."
-  (unless (flycheck-checker-supports-major-mode-p 'lsp mode)
-    (flycheck-add-mode 'lsp mode)))
+  (unless (flycheck-checker-supports-major-mode-p 'lsp-ui mode)
+    (flycheck-add-mode 'lsp-ui mode)))
 
 ;; FIXME: Provide a way to disable lsp-ui-flycheck
 (defun lsp-ui-flycheck-enable (_)
   "Enable flycheck integration for the current buffer."
   (setq-local flycheck-check-syntax-automatically nil)
-  (setq-local flycheck-checker 'lsp)
+  (setq-local flycheck-checker 'lsp-ui)
   (lsp-ui-flycheck-add-mode major-mode)
-  (add-to-list 'flycheck-checkers 'lsp)
+  (add-to-list 'flycheck-checkers 'lsp-ui)
   (add-hook 'lsp-after-diagnostics-hook (lambda ()
                                           (when flycheck-mode
                                             (flycheck-buffer)))))
