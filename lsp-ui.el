@@ -72,5 +72,16 @@ If the path is not in the workspace, it returns the original PATH."
   :group lsp-ui
   (lsp-ui--toggle lsp-ui-mode))
 
+;; The request is delegated to xref-backend-apropos defined in lsp-mode.
+;; xref-find-apropos does similar job but is less appealing because it splits and
+;; regex quotes the pattern. The language server likely knows more about how
+;; to do fuzzy matching.
+(defun lsp-ui-workspace-symbol (pattern)
+  "List project-wide symbols matching the query string"
+  (interactive (list (read-string
+                      "workspace/symbol: "
+                      nil 'xref--read-pattern-history)))
+  (xref--find-xrefs pattern 'apropos pattern nil))
+
 (provide 'lsp-ui)
 ;;; lsp-ui.el ends here
