@@ -109,14 +109,27 @@ ble `lsp-ui-doc-frame-parameters'"
 (defvar-local lsp-ui-doc--bounds nil)
 (defvar-local lsp-ui-doc--string-eldoc nil)
 
-(declare-function lsp-ui-sideline--get-language 'lsp-ui-sideline)
+(declare-function lsp-ui-sideline--get-renderer 'lsp-ui-sideline)
+
+(defvar-local lsp-ui-doc--parent-vars nil
+  "Variables from the parents frame that we want to access in the child.
+Because some variables are buffer local.")
 
 (defmacro lsp-ui-doc--with-buffer (&rest body)
   "Execute BODY in the lsp-ui-doc buffer."
-  `(with-current-buffer (get-buffer-create (lsp-ui-doc--make-buffer-name))
-     (prog1 (let ((buffer-read-only nil))
-              ,@body)
-       (setq buffer-read-only t))))
+  `(let ((parent-vars (list :buffer (current-buffer)
+                            :window (get-buffer-window)
+                            :workspace-root (when lsp--cur-workspace
+                                              (lsp--workspace-root lsp--cur-workspace)))))
+     (with-current-buffer (get-buffer-create (lsp-ui-doc--make-buffer-name))
+       (setq lsp-ui-doc--parent-vars parent-vars)
+       (prog1 (let ((buffer-read-only nil))
+                ,@body)
+         (setq buffer-read-only t)))))
+
+(defmacro lsp-ui-doc--get-parent (var)
+  "Return VAR in `lsp-ui-doc--parent-vars'."
+  `(plist-get lsp-ui-doc--parent-vars ,var))
 
 (defmacro lsp-ui-doc--set-frame (frame)
   "Set the frame parameter 'lsp-ui-doc-frame to FRAME."
@@ -273,20 +286,47 @@ BUFFER is the buffer where the request has been made."
                                       ('bottom (- mode-line-posy c-height 10))))
     (set-frame-parameter frame 'left (- right c-width 10))))
 
+(defun lsp-ui-doc--visit-file (filename)
+  "Visit FILENAME in the parent frame."
+  (-some->> (find-file-noselect filename)
+            (set-window-buffer (lsp-ui-doc--get-parent :window))))
+
+(defun lsp-ui-doc--put-click (bounds fn)
+  "Add text properties on text to make it clickable.
+The text delimiters are BOUNDS.
+FN is the function to call on click."
+  (let ((map (make-sparse-keymap)))
+    (define-key map [down-mouse-1] fn)
+    (put-text-property (car bounds) (cdr bounds) 'keymap map)
+    (put-text-property (car bounds) (cdr bounds) 'mouse-face
+                       (list :inherit 'lsp-ui-doc-url
+                             :box (list :line-width -1
+                                        :color (face-foreground 'lsp-ui-doc-url))))
+    (add-face-text-property (car bounds) (cdr bounds) 'lsp-ui-doc-url)))
+
 (defun lsp-ui-doc--make-clickable-link ()
-  "."
+  "Find paths and urls in the buffer and make them clickable."
   (goto-char (point-min))
   (save-excursion
+    (while (not (eobp))
+      ;;; TODO:
+      ;;;  Search path in the whole buffer.
+      ;;;  For now, it searches only on beginning of lines.
+      (-when-let* ((filename (thing-at-point 'filename))
+                   (path (if (file-readable-p filename) filename
+                           (let ((full (concat (lsp-ui-doc--get-parent :workspace-root)
+                                               filename)))
+                             (and (file-readable-p full)
+                                  full)))))
+        (lsp-ui-doc--put-click (bounds-of-thing-at-point 'filename)
+                               (lambda () (interactive)
+                                 (lsp-ui-doc--visit-file path))))
+      (forward-line 1))
+    (goto-char (point-min))
     (condition-case nil
         (while (search-forward-regexp "http[s]?://")
-          (let ((bounds (thing-at-point-bounds-of-url-at-point))
-                (map (make-sparse-keymap)))
-            (define-key map [down-mouse-1] 'browse-url-at-mouse)
-            (put-text-property (car bounds) (cdr bounds) 'keymap map)
-            (put-text-property (car bounds) (cdr bounds) 'mouse-face
-                               (list :inherit 'lsp-ui-doc-url
-                                     :box `(:line-width -1 :color ,(face-foreground 'lsp-ui-doc-url))))
-            (add-face-text-property (car bounds) (cdr bounds) 'lsp-ui-doc-url)))
+          (lsp-ui-doc--put-click (thing-at-point-bounds-of-url-at-point)
+                                 'browse-url-at-mouse))
       (search-failed nil))))
 
 (defun lsp-ui-doc--render-buffer (string symbol)
