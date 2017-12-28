@@ -104,8 +104,7 @@ This can heavily slow the processing."
 
 (defface lsp-ui-peek-header
   '((default :background "white" :foreground "black")
-    (((background light)) (:background "black" :foreground "white"))
-    (t :overline t))
+    (((background light)) (:background "black" :foreground "white")))
   "Face used for the headers."
   :group 'lsp-ui-peek)
 
