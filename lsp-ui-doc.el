@@ -317,17 +317,18 @@ SYMBOL STRING."
 
 (defun lsp-ui-doc--make-frame ()
   "Create the child frame and return it."
-  (let ((after-make-frame-functions nil)
-        (before-make-frame-hook nil)
-        (buffer (get-buffer (lsp-ui-doc--make-buffer-name)))
-        (params (append lsp-ui-doc-frame-parameters
-                        `((default-minibuffer-frame . ,(selected-frame))
-                          (minibuffer . ,(minibuffer-window))
-                          (background-color . ,lsp-ui-doc-background)))))
-    (window-frame
-     (display-buffer-in-child-frame
-      buffer
-      `((child-frame-parameters . ,params))))))
+  (let* ((after-make-frame-functions nil)
+         (before-make-frame-hook nil)
+         (buffer (get-buffer (lsp-ui-doc--make-buffer-name)))
+         (params (append lsp-ui-doc-frame-parameters
+                         `((default-minibuffer-frame . ,(selected-frame))
+                           (minibuffer . ,(minibuffer-window))
+                           (background-color . ,lsp-ui-doc-background))))
+         (window (display-buffer-in-child-frame
+                  buffer
+                  `((child-frame-parameters . ,params)))))
+    (set-window-dedicated-p window t)
+    (window-frame window)))
 
 (defadvice select-window (after lsp-ui-doc--select-window activate)
   "Make powerline aware of window change."
