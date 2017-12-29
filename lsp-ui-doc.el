@@ -278,8 +278,8 @@ BUFFER is the buffer where the request has been made."
   (lsp-ui-doc--resize-buffer)
   (fit-frame-to-buffer frame)
   (-let* (((_left top right _bottom) (window-edges nil nil nil t))
-          (c-width (frame-pixel-width))
-          (c-height (frame-pixel-height))
+          (c-width (frame-pixel-width frame))
+          (c-height (frame-pixel-height frame))
           (mode-line-posy (lsp-ui-doc--line-height 'mode-line)))
     (set-frame-parameter frame 'top (pcase lsp-ui-doc-position
                                       ('top (+ top 10))
