@@ -351,20 +351,6 @@ XREFS is a list of list of references/definitions."
   (unless no-update
     (lsp-ui-peek--peek)))
 
-(defun lsp-ui-peek--navigate (fn)
-  "FN."
-  (-let* (((&plist :file current-file) (lsp-ui-peek--get-selection))
-          (last-file current-file)
-          (last-selection 0))
-    (while (and (equal current-file last-file)
-                (not (equal lsp-ui-peek--selection last-selection)))
-      (setq last-selection lsp-ui-peek--selection)
-      (funcall fn t)
-      (setq current-file (let ((item (lsp-ui-peek--get-selection)))
-                           (plist-get item :file))))
-    (lsp-ui-peek--recenter)
-    (lsp-ui-peek--peek)))
-
 (defun lsp-ui-peek--select-prev-file ()
   "."
   (interactive)
@@ -381,6 +367,7 @@ XREFS is a list of list of references/definitions."
                   (plist-get (lsp-ui-peek--get-selection) :line))
         (lsp-ui-peek--select-prev t)))
     (lsp-ui-peek--remove-hidden (lsp-ui-peek--prop 'file))
+    (lsp-ui-peek--recenter)
     (lsp-ui-peek--select-next)))
 
 (defun lsp-ui-peek--select-next-file ()
@@ -408,6 +395,7 @@ XREFS is a list of list of references/definitions."
             (lsp-ui-peek--select-next t)))
       ;; On a file, move to the first entry
       (lsp-ui-peek--select-next t))
+    (lsp-ui-peek--recenter)
     (lsp-ui-peek--peek)))
 
 (defun lsp-ui-peek--peek-hide ()
