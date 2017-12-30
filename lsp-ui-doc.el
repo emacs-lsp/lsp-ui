@@ -106,6 +106,12 @@ ble `lsp-ui-doc-frame-parameters'"
     (no-special-glyphs . t))
   "Frame parameters used to create the frame.")
 
+(defvar lsp-ui-doc-render-function nil
+  "Function called to format the documentation.
+The function takes a string as parameter and should return a string.
+If this variable is nil (the default), the documentation will be rendered
+as markdown.")
+
 (defvar-local lsp-ui-doc--bounds nil)
 (defvar-local lsp-ui-doc--string-eldoc nil)
 
@@ -164,7 +170,9 @@ Because some variables are buffer local.")
                     (gethash "value" marked-string)))
           (with-lang (hash-table-p marked-string))
           (language (and with-lang (gethash "language" marked-string)))
-          (render-fn (and with-lang (lsp-ui-sideline--get-renderer language))))
+          (render-fn (if with-lang (lsp-ui-sideline--get-renderer language)
+                       (and (functionp lsp-ui-doc-render-function)
+                            lsp-ui-doc-render-function))))
      (if render-fn
          (funcall render-fn string)
        (with-temp-buffer
