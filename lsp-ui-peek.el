@@ -288,6 +288,13 @@ XREFS is a list of list of references/definitions."
                     (prog1 it (lsp-ui-peek--toggle-text-prop it))
                     lsp-ui-peek--list)))
 
+(defun lsp-ui-peek--remove-hidden (file)
+  "FILE."
+  (setq lsp-ui-peek--list
+        (--map-when (string= (plist-get (lsp-ui-peek--prop 'lsp-ui-peek it) :file) file)
+                    (prog1 it (lsp-ui-peek--add-prop '(lsp-ui-peek-hidden nil) it))
+                    lsp-ui-peek--list)))
+
 (defun lsp-ui-peek--make-ref-line (xref)
   "XREF."
   (-let* (((&plist :summary summary :line line :file file) xref)
@@ -366,7 +373,28 @@ XREFS is a list of list of references/definitions."
 (defun lsp-ui-peek--select-next-file ()
   "."
   (interactive)
-  (lsp-ui-peek--navigate 'lsp-ui-peek--select-next))
+  (-let* ((last-file (lsp-ui-peek--prop 'file))
+          (last-line (plist-get (lsp-ui-peek--get-selection) :line))
+          (last-selection lsp-ui-peek--selection)
+          (current-file nil))
+    ;; Unfold
+    (lsp-ui-peek--remove-hidden last-file)
+    (if last-line
+        ;; Not on a file, skip all entries of the same file
+        (progn
+          (while
+              (progn
+                (lsp-ui-peek--select-next)
+                (setq current-file (lsp-ui-peek--prop 'file))
+                (and (equal current-file last-file)
+                     (not (= lsp-ui-peek--selection last-selection))))
+            (setq last-file current-file))
+          ;; Unfold the next file if necessary
+          (when (null (plist-get (lsp-ui-peek--get-selection) :line))
+            (lsp-ui-peek--remove-hidden (lsp-ui-peek--prop 'file))
+            (lsp-ui-peek--select-next)))
+      ;; On a file, move to the first entry
+      (lsp-ui-peek--select-next))))
 
 (defun lsp-ui-peek--peek-hide ()
   "Hide the chunk of code and restore previous state."
