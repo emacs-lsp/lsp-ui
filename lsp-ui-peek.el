@@ -392,8 +392,13 @@ X."
                             (goto-char 1)
                             (forward-line line)
                             (forward-char column)
-                            (point-marker))))))
+                            (point-marker)))))
+              (current-workspace lsp--cur-workspace))
           (switch-to-buffer (marker-buffer marker))
+          (unless lsp--cur-workspace
+            (setq lsp--cur-workspace current-workspace))
+          (unless lsp-mode
+            (lsp-mode 1))
           (goto-char marker)
           (run-hooks 'xref-after-jump-hook)))
     (lsp-ui-peek--toggle-file)))
