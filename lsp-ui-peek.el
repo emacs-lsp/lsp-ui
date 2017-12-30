@@ -498,6 +498,16 @@ REQUEST PARAM."
                            'definitions
                            "textDocument/definition"))
 
+(defun lsp-ui-peek-find-workspace-symbol (pattern)
+  "Find symbols in the worskpace.
+The symbols are found matching PATTERN."
+  (interactive (list (read-string "workspace/symbol: "
+                                  nil 'xref--read-pattern-history)))
+  (lsp-ui-peek--find-xrefs pattern
+                           'symbols
+                           "workspace/symbol"
+                           (list :query pattern)))
+
 (defun lsp-ui-peek-find-custom (kind request &optional param)
   "Find custom references.
 KIND is a symbol to name the references (definition, reference, ..).
@@ -525,8 +535,12 @@ START and END are delimiters."
         `(,line . ,(concat before line after))))))
 
 (defun lsp-ui-peek--xref-make-item (filename location)
-  "Return an item from a LOCATION in FILENAME."
-  (-let* ((range (gethash "range" location))
+  "Return an item from a LOCATION in FILENAME.
+LOCATION can be either a LSP Location or SymbolInformation."
+  ;; TODO: Read more informations from SymbolInformation.
+  ;;       For now, only the location is used.
+  (-let* ((location (or (gethash "location" location) location))
+          (range (gethash "range" location))
           ((&hash "start" pos-start "end" pos-end) range)
           (start (gethash "character" pos-start))
           (end (gethash "character" pos-end))
@@ -583,7 +597,8 @@ interface Location {
 	uri: DocumentUri;
 	range: Range;
 }"
-  (-some--> (lambda (loc) (string-remove-prefix "file://" (gethash "uri" loc)))
+  (-some--> (lambda (loc) (string-remove-prefix "file://"
+                                                (gethash "uri" (or (gethash "location" loc) loc))))
             (seq-group-by it locations)
             (mapcar #'lsp-ui-peek--get-xrefs-list it)))
 
