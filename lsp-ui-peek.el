@@ -184,12 +184,29 @@ It should returns a list of filenames to expand.")
     (cons (lsp-ui-peek--truncate (- width (1+ lsp-ui-peek-list-width)) s1)
           (lsp-ui-peek--truncate (1- lsp-ui-peek-list-width) s2))))
 
+(defun lsp-ui-peek--make-footer ()
+  "."
+  ;; Character-only terminals don't support characters of different height
+  (when (window-system)
+    (list
+     (concat
+      (propertize " "
+                  'face `(:background ,(face-background 'lsp-ui-peek-header) :height 1)
+                  'display `(space :align-to (- right-fringe ,(1+ lsp-ui-peek-list-width))))
+      (propertize "          " 'face '(:height 1))
+      (propertize " "
+                  'face `(:background ,(face-background 'lsp-ui-peek-header) :height 1)
+                  'display `(space :align-to (- right-fringe 0)))
+      (propertize "\n" 'face '(:height 1))
+      (propertize "\n" 'face '(:height 0.5))))))
+
 (defun lsp-ui-peek--peek-new (src1 src2)
   "SRC1 SRC2."
   (-let* ((win-width (window-text-width))
-          (string (-some->> (-zip-fill "" src1 src2)
-                            (--map (lsp-ui-peek--adjust win-width it))
-                            (-map-indexed 'lsp-ui-peek--make-line)))
+          (string (-some--> (-zip-fill "" src1 src2)
+                            (--map (lsp-ui-peek--adjust win-width it) it)
+                            (-map-indexed 'lsp-ui-peek--make-line it)
+                            (-concat it (lsp-ui-peek--make-footer))))
           (next-line (line-beginning-position 2))
           (ov (or (when (overlayp lsp-ui-peek--overlay) lsp-ui-peek--overlay)
                   (make-overlay next-line next-line))))
