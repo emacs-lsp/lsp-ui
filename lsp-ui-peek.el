@@ -368,33 +368,47 @@ XREFS is a list of list of references/definitions."
 (defun lsp-ui-peek--select-prev-file ()
   "."
   (interactive)
-  (lsp-ui-peek--navigate 'lsp-ui-peek--select-prev))
+  (-let* ((last-file (lsp-ui-peek--prop 'file))
+          (current-file nil))
+    (lsp-ui-peek--select-prev t)
+    (when (and (equal last-file (lsp-ui-peek--prop 'file))
+               (not (plist-get (lsp-ui-peek--get-selection) :line)))
+      (lsp-ui-peek--select-prev t))
+    (when (or (equal last-file (lsp-ui-peek--prop 'file))
+              (plist-get (lsp-ui-peek--get-selection) :line))
+      (setq last-file (lsp-ui-peek--prop 'file))
+      (while (and (equal last-file (lsp-ui-peek--prop 'file))
+                  (plist-get (lsp-ui-peek--get-selection) :line))
+        (lsp-ui-peek--select-prev t)))
+    (lsp-ui-peek--remove-hidden (lsp-ui-peek--prop 'file))
+    (lsp-ui-peek--select-next)))
 
 (defun lsp-ui-peek--select-next-file ()
   "."
   (interactive)
   (-let* ((last-file (lsp-ui-peek--prop 'file))
-          (last-line (plist-get (lsp-ui-peek--get-selection) :line))
           (last-selection lsp-ui-peek--selection)
           (current-file nil))
     ;; Unfold
     (lsp-ui-peek--remove-hidden last-file)
-    (if last-line
+    (if (plist-get (lsp-ui-peek--get-selection) :line)
         ;; Not on a file, skip all entries of the same file
         (progn
           (while
               (progn
-                (lsp-ui-peek--select-next)
+                (lsp-ui-peek--select-next t)
                 (setq current-file (lsp-ui-peek--prop 'file))
                 (and (equal current-file last-file)
                      (not (= lsp-ui-peek--selection last-selection))))
-            (setq last-file current-file))
+            (setq last-file current-file)
+            (setq last-selection lsp-ui-peek--selection))
           ;; Unfold the next file if necessary
           (when (null (plist-get (lsp-ui-peek--get-selection) :line))
             (lsp-ui-peek--remove-hidden (lsp-ui-peek--prop 'file))
-            (lsp-ui-peek--select-next)))
+            (lsp-ui-peek--select-next t)))
       ;; On a file, move to the first entry
-      (lsp-ui-peek--select-next))))
+      (lsp-ui-peek--select-next t))
+    (lsp-ui-peek--peek)))
 
 (defun lsp-ui-peek--peek-hide ()
   "Hide the chunk of code and restore previous state."
