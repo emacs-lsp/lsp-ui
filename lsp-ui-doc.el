@@ -172,7 +172,8 @@ Because some variables are buffer local.")
          (delay-mode-hooks
            (funcall (cond ((and with-lang (string= "text" language)) 'text-mode)
                           (t 'markdown-view-mode)))
-           (font-lock-ensure))
+           (ignore-errors
+             (font-lock-ensure)))
          (buffer-string))))))
 
 (defun lsp-ui-doc--filter-marked-string (list-marked-string)
