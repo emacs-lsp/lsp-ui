@@ -465,6 +465,7 @@ X."
     (define-key map (kbd "<tab>") 'lsp-ui-peek--toggle-file)
     (define-key map (kbd "q") 'lsp-ui-peek--abort)
     (define-key map (kbd "RET") 'lsp-ui-peek--goto-xref)
+    (define-key map [t]'lsp-ui-peek--abort)
     (setq lsp-ui-peek-mode-map map)))
 
 (defun lsp-ui-peek--abort ()
