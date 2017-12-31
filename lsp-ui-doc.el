@@ -361,9 +361,9 @@ SYMBOL STRING."
     (lsp-ui-doc--render-buffer string symbol)
     (unless (frame-live-p (lsp-ui-doc--get-frame))
       (lsp-ui-doc--set-frame (lsp-ui-doc--make-frame)))
-    (lsp-ui-doc--move-frame (lsp-ui-doc--get-frame))
     (unless (frame-visible-p (lsp-ui-doc--get-frame))
-      (make-frame-visible (lsp-ui-doc--get-frame)))))
+      (make-frame-visible (lsp-ui-doc--get-frame)))
+    (lsp-ui-doc--move-frame (lsp-ui-doc--get-frame))))
 
 (defun lsp-ui-doc--make-frame ()
   "Create the child frame and return it."
