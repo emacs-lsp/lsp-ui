@@ -473,14 +473,16 @@ X."
   (interactive)
   (when (bound-and-true-p lsp-ui-peek-mode)
     (lsp-ui-peek-mode -1)
-    (when-let* ((fn lsp-ui-peek--deactivate-keymap-fn))
-      (setq lsp-ui-peek--deactivate-keymap-fn nil)
-      (funcall fn))
     (lsp-ui-peek--peek-hide)))
 
 (define-minor-mode lsp-ui-peek-mode
   "Mode for lsp-ui-peek."
-  :init-value nil)
+  :init-value nil
+  (if lsp-ui-peek-mode
+      (setq lsp-ui-peek--deactivate-keymap-fn (set-transient-map lsp-ui-peek-mode-map t 'lsp-ui-peek--abort))
+    (when-let* ((fn lsp-ui-peek--deactivate-keymap-fn))
+      (setq lsp-ui-peek--deactivate-keymap-fn nil)
+      (funcall fn))))
 
 (defun lsp-ui-peek--find-xrefs (input kind &optional request param)
   "Find INPUT references.
@@ -498,7 +500,6 @@ REQUEST PARAM."
                 ((&hash "line" line "character" col) (gethash "start" range)))
           (lsp-ui-peek--goto-xref `(:file ,(string-remove-prefix "file://" file) :line ,line :column ,col)))
       (lsp-ui-peek-mode)
-      (setq lsp-ui-peek--deactivate-keymap-fn (set-transient-map lsp-ui-peek-mode-map t 'lsp-ui-peek--abort))
       (lsp-ui-peek--show xrefs))))
 
 (defun lsp-ui-peek-find-references ()
