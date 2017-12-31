@@ -426,9 +426,9 @@ XREFS is a list of list of references/definitions."
         lsp-ui-peek--last-xref nil)
   (set-window-start (get-buffer-window) lsp-ui-peek--win-start))
 
-(defun lsp-ui-peek--goto-xref (&optional x)
+(defun lsp-ui-peek--goto-xref (&optional x other-window)
   "Go to a reference/definition.
-X."
+X OTHER-WINDOW."
   (interactive)
   (-if-let (xref (or x (lsp-ui-peek--get-selection)))
       (-let* (((&plist :file file :line line :column column) xref))
@@ -444,7 +444,9 @@ X."
                             (forward-char column)
                             (point-marker)))))
               (current-workspace lsp--cur-workspace))
-          (switch-to-buffer (marker-buffer marker))
+          (if other-window
+              (pop-to-buffer (marker-buffer marker))
+            (switch-to-buffer (marker-buffer marker)))
           (unless lsp--cur-workspace
             (setq lsp--cur-workspace current-workspace))
           (unless lsp-mode
@@ -452,6 +454,11 @@ X."
           (goto-char marker)
           (run-hooks 'xref-after-jump-hook)))
     (lsp-ui-peek--toggle-file)))
+
+(defun lsp-ui-peek--goto-xref-other-window ()
+  "."
+  (interactive)
+  (lsp-ui-peek--goto-xref nil t))
 
 (defvar lsp-ui-peek-mode-map nil
   "Keymap uses with ‘lsp-ui-peek-mode’.")
@@ -467,6 +474,7 @@ X."
     (define-key map (kbd "<tab>") 'lsp-ui-peek--toggle-file)
     (define-key map (kbd "q") 'lsp-ui-peek--abort)
     (define-key map (kbd "<return>") 'lsp-ui-peek--goto-xref)
+    (define-key map (kbd "<M-return>") 'lsp-ui-peek--goto-xref-other-window)
     (define-key map [t]'lsp-ui-peek--abort)
     (setq lsp-ui-peek-mode-map map)))
 
