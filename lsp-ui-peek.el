@@ -168,8 +168,10 @@ It should returns a list of filenames to expand.")
       (add-face-text-property 0 len-s2 face-right nil s2))
     (unless (get-text-property 0 'lsp-ui-peek-faced s2)
       (add-face-text-property 0 len-s2 face-right t s2)
-      (add-text-properties 0 len-s2 '(lsp-ui-peek-faced t) s2))
+      (add-text-properties 0 len-s2 '(lsp-ui-peek-faced t) s2)
+      (add-face-text-property 0 len-s2 'default t s2))
     (add-face-text-property 0 len-s1 face-left t s1)
+    (add-face-text-property 0 len-s1 'default t s1)
     (concat
      s1
      (propertize "_" 'face face-left 'display `(space :align-to (- right-fringe ,(1+ lsp-ui-peek-list-width))))
