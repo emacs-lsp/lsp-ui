@@ -24,7 +24,7 @@
 ;; Flycheck integration for lsp-mode.  To enable, put this in your config:
 ;; (require 'lsp-ui-flycheck)
 ;; (with-eval-after-load 'lsp-mode
-;;   (add-hook 'lsp-after-open-hook 'lsp-ui-flycheck-enable))
+;;   (add-hook 'lsp-after-open-hook (lambda () (lsp-ui-flycheck-enable 1))))
 
 ;;; Code:
 
