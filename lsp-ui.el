@@ -76,7 +76,7 @@ If the path is not in the workspace, it returns the original PATH."
 ;; xref-find-apropos does similar job but is less appealing because it splits and
 ;; regex quotes the pattern. The language server likely knows more about how
 ;; to do fuzzy matching.
-(defun lsp-ui-workspace-symbol (pattern)
+(defun lsp-ui-find-workspace-symbol (pattern)
   "List project-wide symbols matching the query string"
   (interactive (list (read-string
                       "workspace/symbol: "
