@@ -195,7 +195,8 @@ It should returns a list of filenames to expand.")
       (propertize " "
                   'face `(:background ,(face-background 'lsp-ui-peek-header) :height 1)
                   'display `(space :align-to (- right-fringe ,(1+ lsp-ui-peek-list-width))))
-      (propertize "          " 'face '(:height 1))
+      (propertize " " 'face '(:height 1)
+                  'display `(space :align-to (- right-fringe ,lsp-ui-peek-list-width)))
       (propertize " "
                   'face `(:background ,(face-background 'lsp-ui-peek-header) :height 1)
                   'display `(space :align-to (- right-fringe 0)))
