@@ -264,7 +264,8 @@ CURRENT is non-nil when the point is on the symbol."
   (let ((bol (line-beginning-position))
         (eol (line-end-position)))
     (dolist (e (flycheck-overlay-errors-in bol (1+ eol)))
-      (let* ((message (flycheck-error-format-message-and-id e))
+      (let* ((message (->> (flycheck-error-format-message-and-id e)
+                           (replace-regexp-in-string "[\n\t]+" " ")))
 	     (level (flycheck-error-level e))
 	     (string (concat (propertize " " 'display `(space :align-to (- right-fringe ,(1+ (length message)))))
                              (propertize message 'face (pcase level
@@ -280,9 +281,9 @@ CURRENT is non-nil when the point is on the symbol."
 (defun lsp-ui-sideline--code-actions (actions)
   "Show code ACTIONS."
   (dolist (action (if actions actions '()))
-    (-let* ((title (--> (gethash "title" action)
-                        (replace-regexp-in-string "[\n\t]+" " " it)
-                        (concat lsp-ui-sideline-code-actions-prefix it)))
+    (-let* ((title (->> (gethash "title" action)
+                        (replace-regexp-in-string "[\n\t]+" " ")
+                        (concat lsp-ui-sideline-code-actions-prefix)))
             (string (concat (propertize " " 'display `(space :align-to (- right-fringe ,(1+ (length title)))))
                             (propertize title 'face 'lsp-ui-sideline-code-action)))
             (pos-ov (lsp-ui-sideline--find-line (window-text-width) (length title) t))
