@@ -189,7 +189,7 @@ It should returns a list of filenames to expand.")
 (defun lsp-ui-peek--make-footer ()
   "."
   ;; Character-only terminals don't support characters of different height
-  (when (window-system)
+  (when (display-graphic-p)
     (list
      (concat
       (propertize " "
