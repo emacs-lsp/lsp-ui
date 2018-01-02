@@ -292,13 +292,17 @@ CURRENT is non-nil when the point is on the symbol."
 
 (defun lsp-ui-sideline--code-actions (actions)
   "Show code ACTIONS."
-  (dolist (action (if actions actions '()))
+  (dolist (action actions)
     (-let* ((title (->> (gethash "title" action)
                         (replace-regexp-in-string "[\n\t]+" " ")
                         (concat lsp-ui-sideline-code-actions-prefix)))
             (margin (lsp-ui-sideline--margin-width))
+            (keymap (let ((map (make-sparse-keymap)))
+                      (define-key map [down-mouse-1] (lambda () (interactive) (lsp-execute-code-action action)))
+                      map))
             (string (concat (propertize " " 'display `(space :align-to (- right-fringe ,(+ 1 (length title) margin))))
-                            (propertize title 'face 'lsp-ui-sideline-code-action)))
+                            (propertize title 'face 'lsp-ui-sideline-code-action
+                                        'keymap keymap 'mouse-face 'highlight)))
             (pos-ov (lsp-ui-sideline--find-line (length title) t))
             (ov (and pos-ov (make-overlay pos-ov pos-ov))))
       (when pos-ov
