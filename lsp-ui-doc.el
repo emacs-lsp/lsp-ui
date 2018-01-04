@@ -375,6 +375,7 @@ SYMBOL STRING."
 
 (defun lsp-ui-doc--make-frame ()
   "Create the child frame and return it."
+  (lsp-ui-doc--delete-frame)
   (let* ((after-make-frame-functions nil)
          (before-make-frame-hook nil)
          (buffer (get-buffer (lsp-ui-doc--make-buffer-name)))
@@ -388,9 +389,19 @@ SYMBOL STRING."
     (set-window-dedicated-p window t)
     (window-frame window)))
 
+(defun lsp-ui-doc--delete-frame ()
+  "Delete the child frame if it exists."
+  (when-let* ((frame (lsp-ui-doc--get-frame)))
+    (delete-frame frame)
+    (lsp-ui-doc--set-frame nil)))
+
 (defadvice select-window (after lsp-ui-doc--select-window activate)
   "Make powerline aware of window change."
   (lsp-ui-doc--hide-frame))
+
+(defadvice load-theme (after lsp-ui-doc--delete-frame-on-theme-load activate)
+  "Force a frame refresh on theme reload"
+  (lsp-ui-doc--delete-frame))
 
 (defun lsp-ui-doc-enable-eldoc ()
   "."
