@@ -365,6 +365,15 @@ to the language server."
       (setq lsp-ui-sideline--timer
             (run-with-idle-timer 0.2 nil 'lsp-ui-sideline--run)))))
 
+(defun lsp-ui-sideline-toggle-symbols-info ()
+  "Toggle display of symbols informations.
+This does not toggle display of flycheck diagnostics or code actions."
+  (interactive)
+  (when (bound-and-true-p lsp-ui-sideline-mode)
+    (setq lsp-ui-sideline-show-hover
+          (not lsp-ui-sideline-show-hover))
+    (lsp-ui-sideline--run)))
+
 (define-minor-mode lsp-ui-sideline-mode
   "Minor mode for showing information of current line."
   :init-value nil
