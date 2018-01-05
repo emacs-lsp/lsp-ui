@@ -67,7 +67,12 @@ If the path is not in the workspace, it returns the original PATH."
 (defvar lsp-ui-mode-map (make-sparse-keymap))
 
 (define-minor-mode lsp-ui-mode
-  "Minor mode that contains a series of useful UI integrations for lsp-mode."
+  "Toggle language server UI mode on or off.
+‘lsp-ui-mode’ is a minor mode that contains a series of useful UI
+integrations for ‘lsp-mode’.  With a prefix argument ARG, enable
+language server UI mode if ARG is positive, and disable it
+otherwise.  If called from Lisp, enable the mode if ARG is
+omitted or nil, and toggle it if ARG is ‘toggle’."
   :init-value nil
   :group lsp-ui
   (lsp-ui--toggle lsp-ui-mode))
