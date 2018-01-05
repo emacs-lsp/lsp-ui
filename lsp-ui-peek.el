@@ -479,12 +479,17 @@ X OTHER-WINDOW."
     (define-key map [t]'lsp-ui-peek--abort)
     (setq lsp-ui-peek-mode-map map)))
 
-(defun lsp-ui-peek--abort ()
-  "."
-  (interactive)
+(defun lsp-ui-peek--disable ()
+  "Do not call this function, call `lsp-ui-peek--abort' instead."
   (when (bound-and-true-p lsp-ui-peek-mode)
     (lsp-ui-peek-mode -1)
     (lsp-ui-peek--peek-hide)))
+
+(defun lsp-ui-peek--abort ()
+  "."
+  (interactive)
+  ;; The timer fixes https://github.com/emacs-lsp/lsp-ui/issues/33
+  (run-with-idle-timer 0 nil 'lsp-ui-peek--disable))
 
 (define-minor-mode lsp-ui-peek-mode
   "Mode for lsp-ui-peek."
