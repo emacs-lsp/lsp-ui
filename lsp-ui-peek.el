@@ -433,27 +433,29 @@ X OTHER-WINDOW."
   (interactive)
   (-if-let (xref (or x (lsp-ui-peek--get-selection)))
       (-let* (((&plist :file file :line line :column column) xref))
-        (lsp-ui-peek--abort)
-        (let ((marker (with-current-buffer
-                          (or (get-file-buffer file)
-                              (find-file-noselect file))
-                        (save-restriction
-                          (widen)
-                          (save-excursion
-                            (goto-char 1)
-                            (forward-line line)
-                            (forward-char column)
-                            (point-marker)))))
-              (current-workspace lsp--cur-workspace))
-          (if other-window
-              (pop-to-buffer (marker-buffer marker))
-            (switch-to-buffer (marker-buffer marker)))
-          (unless lsp--cur-workspace
-            (setq lsp--cur-workspace current-workspace))
-          (unless lsp-mode
-            (lsp-mode 1))
-          (goto-char marker)
-          (run-hooks 'xref-after-jump-hook)))
+        (if (not (file-readable-p file))
+            (user-error "File not readable: %s" file)
+          (lsp-ui-peek--abort)
+          (let ((marker (with-current-buffer
+                            (or (get-file-buffer file)
+                                (find-file-noselect file))
+                          (save-restriction
+                            (widen)
+                            (save-excursion
+                              (goto-char 1)
+                              (forward-line line)
+                              (forward-char column)
+                              (point-marker)))))
+                (current-workspace lsp--cur-workspace))
+            (if other-window
+                (pop-to-buffer (marker-buffer marker))
+              (switch-to-buffer (marker-buffer marker)))
+            (unless lsp--cur-workspace
+              (setq lsp--cur-workspace current-workspace))
+            (unless lsp-mode
+              (lsp-mode 1))
+            (goto-char marker)
+            (run-hooks 'xref-after-jump-hook))))
     (lsp-ui-peek--toggle-file)))
 
 (defun lsp-ui-peek--goto-xref-other-window ()
@@ -513,8 +515,9 @@ REQUEST PARAM."
              (= (length (plist-get (car xrefs) :xrefs)) 1))
         (-let* ((xref (car (plist-get (car xrefs) :xrefs)))
                 ((&hash "uri" file "range" range) xref)
-                ((&hash "line" line "character" col) (gethash "start" range)))
-          (lsp-ui-peek--goto-xref `(:file ,(string-remove-prefix "file://" file) :line ,line :column ,col)))
+                ((&hash "line" line "character" col) (gethash "start" range))
+                (file (string-remove-prefix "file://" file)))
+          (lsp-ui-peek--goto-xref `(:file ,file :line ,line :column ,col)))
       (lsp-ui-peek-mode)
       (lsp-ui-peek--show xrefs))))
 
