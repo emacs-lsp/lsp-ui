@@ -73,6 +73,11 @@
   :type 'boolean
   :group 'lsp-ui-sideline)
 
+(defcustom lsp-ui-sideline-delay 0.2
+  "Number of seconds to wait before showing sideline."
+  :type 'number
+  :group 'lsp-ui-sideline)
+
 (defvar lsp-ui-sideline-code-actions-prefix
   (propertize "💡 " 'face '(:foreground "yellow"))
   "Prefix to insert before the code action title.")
@@ -111,6 +116,17 @@ It is used to know when the window has changed of width.")
 (defface lsp-ui-sideline-code-action
   '((t :foreground "yellow"))
   "Face used to highlight code action text."
+  :group 'lsp-ui-sideline)
+
+(defface lsp-ui-sideline-symbol-info
+  '((t :slant italic :height 0.99))
+  "Face used to highlight the symbols informations (LSP hover)."
+  :group 'lsp-ui-sideline)
+
+(defface lsp-ui-sideline-global
+  '((t))
+  "Face which apply to all overlays.
+This face have a low priority over the others."
   :group 'lsp-ui-sideline)
 
 (defun lsp-ui-sideline--calc-space (win-width str-len index)
@@ -195,7 +211,8 @@ MARKED-STRING is the string returned by `lsp-ui-sideline--extract-info'."
         (setq marked-string (if (and (functionp renderer) value)
                                 (funcall renderer value)
                               value))))
-    (add-face-text-property 0 (length marked-string) '(:slant italic :height 0.99) nil marked-string)
+    (add-face-text-property 0 (length marked-string) 'lsp-ui-sideline-symbol-info nil marked-string)
+    (add-face-text-property 0 (length marked-string) 'default t marked-string)
     (replace-regexp-in-string "[\n\t]+" " " marked-string)))
 
 (defun lsp-ui-sideline--make-display-string (info symbol current)
@@ -209,6 +226,7 @@ CURRENT is non-nil when the point is on the symbol."
                 info))
          (len (length str))
          (margin (lsp-ui-sideline--margin-width)))
+    (add-face-text-property 0 len 'lsp-ui-sideline-global nil str)
     (concat
      (propertize " " 'display `(space :align-to (- right-fringe ,(+ 1 len margin))))
      str)))
@@ -277,14 +295,16 @@ CURRENT is non-nil when the point is on the symbol."
     (dolist (e (flycheck-overlay-errors-in bol (1+ eol)))
       (let* ((message (->> (flycheck-error-format-message-and-id e)
                            (replace-regexp-in-string "[\n\t]+" " ")))
+             (len (length message))
 	     (level (flycheck-error-level e))
+             (face (if (eq level 'info) 'success level))
              (margin (lsp-ui-sideline--margin-width))
-	     (string (concat (propertize " " 'display `(space :align-to (- right-fringe ,(+ 1 (length message) margin))))
-                             (propertize message 'face (pcase level
-                                                         ('error 'error)
-                                                         ('warning 'warning)
-                                                         (_ 'success)))))
-             (pos-ov (lsp-ui-sideline--find-line (length message) t))
+             (message (progn (add-face-text-property 0 len 'lsp-ui-sideline-global nil message)
+                             (add-face-text-property 0 len face nil message)
+                             message))
+             (string (concat (propertize " " 'display `(space :align-to (- right-fringe ,(+ 1 len margin))))
+                             message))
+             (pos-ov (lsp-ui-sideline--find-line len t))
              (ov (and pos-ov (make-overlay pos-ov pos-ov))))
         (when pos-ov
           (overlay-put ov 'after-string string)
@@ -298,11 +318,17 @@ CURRENT is non-nil when the point is on the symbol."
                         (concat lsp-ui-sideline-code-actions-prefix)))
             (margin (lsp-ui-sideline--margin-width))
             (keymap (let ((map (make-sparse-keymap)))
-                      (define-key map [down-mouse-1] (lambda () (interactive) (lsp-execute-code-action action)))
+                      (define-key map [down-mouse-1] (lambda () (interactive)
+                                                       (save-excursion
+                                                         (lsp-execute-code-action action))))
                       map))
+            (len (length title))
+            (title (progn (add-face-text-property 0 len 'lsp-ui-sideline-global nil title)
+                          (add-face-text-property 0 len 'lsp-ui-sideline-code-action nil title)
+                          (add-text-properties 0 len `(keymap ,keymap mouse-face highlight) title)
+                          title))
             (string (concat (propertize " " 'display `(space :align-to (- right-fringe ,(+ 1 (length title) margin))))
-                            (propertize title 'face 'lsp-ui-sideline-code-action
-                                        'keymap keymap 'mouse-face 'highlight)))
+                            title))
             (pos-ov (lsp-ui-sideline--find-line (length title) t))
             (ov (and pos-ov (make-overlay pos-ov pos-ov))))
       (when pos-ov
@@ -363,7 +389,7 @@ to the language server."
       (when lsp-ui-sideline--timer
         (cancel-timer lsp-ui-sideline--timer))
       (setq lsp-ui-sideline--timer
-            (run-with-idle-timer 0.2 nil 'lsp-ui-sideline--run)))))
+            (run-with-idle-timer lsp-ui-sideline-delay nil 'lsp-ui-sideline--run)))))
 
 (defun lsp-ui-sideline-toggle-symbols-info ()
   "Toggle display of symbols informations.
