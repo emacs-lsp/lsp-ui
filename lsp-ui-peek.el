@@ -453,7 +453,8 @@ X OTHER-WINDOW."
             (unless lsp--cur-workspace
               (setq lsp--cur-workspace current-workspace))
             (unless lsp-mode
-              (lsp-mode 1))
+              (lsp-mode 1)
+              (lsp-on-open))
             (goto-char marker)
             (run-hooks 'xref-after-jump-hook))))
     (lsp-ui-peek--toggle-file)))
