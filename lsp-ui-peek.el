@@ -147,7 +147,7 @@ It should returns a list of filenames to expand.")
 
 (defun lsp-ui-peek--get-selection ()
   "."
-  (get-text-property 0 'lsp-ui-peek (lsp-ui-peek--get-text-selection)))
+  (get-text-property 0 'lsp-ui-peek (or (lsp-ui-peek--get-text-selection) "")))
 
 (defun lsp-ui-peek--visual-index ()
   "."
