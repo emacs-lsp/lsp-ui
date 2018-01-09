@@ -70,6 +70,11 @@ ble `lsp-ui-doc-frame-parameters'"
   :type 'color
   :group 'lsp-ui-doc)
 
+(defcustom lsp-ui-doc-border "white"
+  "Border color of the frame."
+  :type 'color
+  :group 'lsp-ui-doc)
+
 (defface lsp-ui-doc-header
   '((t :foreground "black"
        :background "deep sky blue"))
@@ -88,7 +93,7 @@ ble `lsp-ui-doc-frame-parameters'"
     (width  . 0)
     (min-height  . 0)
     (height  . 0)
-    (internal-border-width . 10)
+    (internal-border-width . 1)
     (vertical-scroll-bars . nil)
     (horizontal-scroll-bars . nil)
     (left-fringe . 0)
@@ -286,15 +291,19 @@ BUFFER is the buffer where the request has been made."
 (defun lsp-ui-doc--move-frame (frame)
   "Place our FRAME on screen."
   (lsp-ui-doc--resize-buffer)
-  (fit-frame-to-buffer frame)
   (-let* (((_left top right _bottom) (window-edges nil nil nil t))
-          (c-width (frame-pixel-width frame))
-          (c-height (frame-pixel-height frame))
-          (mode-line-posy (lsp-ui-doc--line-height 'mode-line)))
-    (set-frame-parameter frame 'top (pcase lsp-ui-doc-position
-                                      ('top (+ top 10))
-                                      ('bottom (- mode-line-posy c-height 10))))
-    (set-frame-parameter frame 'left (- right c-width 10))))
+          (window (frame-root-window frame))
+          ((width . height) (window-text-pixel-size window nil nil 10000 10000))
+          (width (+ width (* (frame-char-width frame) 2))) ;; margins
+          (frame-resize-pixelwise t))
+    (set-window-margins window 1 1)
+    (set-frame-size frame width height t)
+    (set-frame-position frame (- right width 10)
+                        (pcase lsp-ui-doc-position
+                          ('top (+ top 10))
+                          ('bottom (- (lsp-ui-doc--line-height 'mode-line)
+                                      height
+                                      10))))))
 
 (defun lsp-ui-doc--visit-file (filename)
   "Visit FILENAME in the parent frame."
@@ -344,7 +353,9 @@ FN is the function to call on click."
 SYMBOL."
   (lsp-ui-doc--with-buffer
    (erase-buffer)
-   (insert string)
+   (insert (concat (propertize "\n" 'face '(:height 0.2))
+                   string
+                   (propertize "\n\n" 'face '(:height 0.3))))
    (lsp-ui-doc--make-clickable-link)
    (setq-local face-remapping-alist `((header-line lsp-ui-doc-header)))
    (setq-local window-min-height 1)
@@ -385,9 +396,11 @@ SYMBOL STRING."
                            (background-color . ,lsp-ui-doc-background))))
          (window (display-buffer-in-child-frame
                   buffer
-                  `((child-frame-parameters . ,params)))))
+                  `((child-frame-parameters . ,params))))
+         (frame (window-frame window)))
     (set-window-dedicated-p window t)
-    (window-frame window)))
+    (set-face-background 'internal-border lsp-ui-doc-border frame)
+    frame))
 
 (defun lsp-ui-doc--delete-frame ()
   "Delete the child frame if it exists."
