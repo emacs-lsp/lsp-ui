@@ -184,7 +184,8 @@ Because some variables are buffer local.")
          (insert string)
          (delay-mode-hooks
            (funcall (cond ((and with-lang (string= "text" language)) 'text-mode)
-                          (t 'markdown-view-mode)))
+                          ((fboundp 'markdown-view-mode) 'markdown-view-mode)
+                          (t 'markdown-mode)))
            (ignore-errors
              (font-lock-ensure)))
          (buffer-string))))))
