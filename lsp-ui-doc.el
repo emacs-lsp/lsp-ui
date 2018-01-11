@@ -364,11 +364,6 @@ SYMBOL."
          mode-line-format nil
          cursor-type nil)))
 
-(defun lsp-ui-doc--buggy-system-p ()
-  "Return non-nil if there is a bug with frames on the system.
-https://github.com/emacs-lsp/lsp-ui/issues/21"
-  (eq 'ns (window-system)))
-
 (defun lsp-ui-doc--display (symbol string)
   "Display the documentation on screen.
 SYMBOL STRING."
@@ -378,12 +373,9 @@ SYMBOL STRING."
     (lsp-ui-doc--render-buffer string symbol)
     (unless (frame-live-p (lsp-ui-doc--get-frame))
       (lsp-ui-doc--set-frame (lsp-ui-doc--make-frame)))
-    (unless (lsp-ui-doc--buggy-system-p)
-      (lsp-ui-doc--move-frame (lsp-ui-doc--get-frame)))
+    (lsp-ui-doc--move-frame (lsp-ui-doc--get-frame))
     (unless (frame-visible-p (lsp-ui-doc--get-frame))
-      (make-frame-visible (lsp-ui-doc--get-frame)))
-    (when (lsp-ui-doc--buggy-system-p)
-      (lsp-ui-doc--move-frame (lsp-ui-doc--get-frame)))))
+      (make-frame-visible (lsp-ui-doc--get-frame)))))
 
 (defun lsp-ui-doc--make-frame ()
   "Create the child frame and return it."
