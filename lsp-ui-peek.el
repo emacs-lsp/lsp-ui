@@ -499,7 +499,7 @@ X OTHER-WINDOW."
   :init-value nil
   (if lsp-ui-peek-mode
       (setq lsp-ui-peek--deactivate-keymap-fn (set-transient-map lsp-ui-peek-mode-map t 'lsp-ui-peek--abort))
-    (when-let* ((fn lsp-ui-peek--deactivate-keymap-fn))
+    (-when-let (fn lsp-ui-peek--deactivate-keymap-fn)
       (setq lsp-ui-peek--deactivate-keymap-fn nil)
       (funcall fn))))
 
