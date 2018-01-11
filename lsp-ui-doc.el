@@ -422,6 +422,16 @@ SYMBOL STRING."
     (cond
      (lsp-ui-doc-mode
       (progn
+        (with-eval-after-load 'frameset
+          ;; The documentation frame can’t be properly restored.  Especially
+          ;; ‘desktop-save’ will misbehave and save a bogus string "Unprintable
+          ;; entity" in the desktop file.  Therefore we have to prevent
+          ;; ‘frameset-save’ from saving the parameter.
+          (unless (assq 'lsp-ui-doc-frame frameset-filter-alist)
+            ;; Copy the variable first.  See the documentation of
+            ;; ‘frameset-filter-alist’ for explanation.
+            (cl-callf copy-tree frameset-filter-alist)
+            (push '(lsp-ui-doc-frame . :never) frameset-filter-alist)))
         (add-hook 'lsp-after-open-hook 'lsp-ui-doc-enable-eldoc nil t)
         (add-hook 'post-command-hook 'lsp-ui-doc--make-request nil t)))
      (t
