@@ -375,8 +375,7 @@ XREFS is a list of list of references/definitions."
 (defun lsp-ui-peek--select-prev-file ()
   "."
   (interactive)
-  (-let* ((last-file (lsp-ui-peek--prop 'file))
-          (current-file nil))
+  (let ((last-file (lsp-ui-peek--prop 'file)))
     (lsp-ui-peek--select-prev t)
     (when (and (equal last-file (lsp-ui-peek--prop 'file))
                (not (plist-get (lsp-ui-peek--get-selection) :line)))
@@ -664,6 +663,10 @@ KIND REQUEST PARAM."
         (define-key lsp-ui-mode-map [remap xref-find-references] #'lsp-ui-peek-find-references))
     (define-key lsp-ui-mode-map [remap xref-find-definitions] nil)
     (define-key lsp-ui-mode-map [remap xref-find-references] nil)))
+
+;; lsp-ui.el loads lsp-ui-peek.el, so we can’t ‘require’ lsp-ui.
+;; FIXME: Remove this cyclic dependency.
+(declare-function lsp-ui--workspace-path "lsp-ui" (path))
 
 (provide 'lsp-ui-peek)
 ;;; lsp-ui-peek.el ends here
