@@ -417,6 +417,7 @@ SYMBOL STRING."
                   `((child-frame-parameters . ,params))))
          (frame (window-frame window)))
     (set-window-dedicated-p window t)
+    (redirect-frame-focus frame (frame-parent frame))
     (set-face-background 'internal-border lsp-ui-doc-border frame)
     (run-hook-with-args 'lsp-ui-doc-frame-hook frame window)
     frame))
