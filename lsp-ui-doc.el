@@ -117,6 +117,11 @@ The function takes a string as parameter and should return a string.
 If this variable is nil (the default), the documentation will be rendered
 as markdown.")
 
+(defvar lsp-ui-doc-custom-markup-modes
+  '((rust-mode "no_run" "rust,no_run" "rust,ignore" "rust,should_panic"))
+  "Mode to uses with markdown code blocks.
+They are added to `markdown-code-lang-modes'")
+
 (defvar-local lsp-ui-doc--bounds nil)
 (defvar-local lsp-ui-doc--string-eldoc nil)
 
@@ -167,6 +172,16 @@ Because some variables are buffer local.")
   "."
   lsp-ui-doc--string-eldoc)
 
+(defun lsp-ui-doc--setup-markdown (mode)
+  "Setup the markdown-mode in the frame.
+MODE is the mode used in the parent frame."
+  (make-local-variable 'markdown-code-lang-modes)
+  (dolist (mark (alist-get mode lsp-ui-doc-custom-markup-modes))
+    (add-to-list 'markdown-code-lang-modes (cons mark mode)))
+  (setq-local markdown-fontify-code-blocks-natively t)
+  (setq-local markdown-fontify-code-block-default-mode mode)
+  (setq-local markdown-hide-markup t))
+
 (defun lsp-ui-doc--extract-marked-string (marked-string)
   "Render the MARKED-STRING."
   (string-trim-right
@@ -177,7 +192,8 @@ Because some variables are buffer local.")
           (language (and with-lang (gethash "language" marked-string)))
           (render-fn (if with-lang (lsp-ui-sideline--get-renderer language)
                        (and (functionp lsp-ui-doc-render-function)
-                            lsp-ui-doc-render-function))))
+                            lsp-ui-doc-render-function)))
+          (mode major-mode))
      (if render-fn
          (funcall render-fn string)
        (with-temp-buffer
@@ -186,6 +202,8 @@ Because some variables are buffer local.")
            (funcall (cond ((and with-lang (string= "text" language)) 'text-mode)
                           ((fboundp 'markdown-view-mode) 'markdown-view-mode)
                           (t 'markdown-mode)))
+           (when (derived-mode-p 'markdown-mode)
+             (lsp-ui-doc--setup-markdown mode))
            (ignore-errors
              (font-lock-ensure)))
          (buffer-string))))))
