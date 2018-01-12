@@ -397,7 +397,7 @@ SYMBOL STRING."
 
 (defun lsp-ui-doc--delete-frame ()
   "Delete the child frame if it exists."
-  (when-let* ((frame (lsp-ui-doc--get-frame)))
+  (-when-let (frame (lsp-ui-doc--get-frame))
     (delete-frame frame)
     (lsp-ui-doc--set-frame nil)))
 
