@@ -89,6 +89,7 @@ ble `lsp-ui-doc-frame-parameters'"
 (defvar lsp-ui-doc-frame-parameters
   '((left . -1)
     (no-accept-focus . t)
+    (no-focus-on-map . t)
     (min-width  . 0)
     (width  . 0)
     (min-height  . 0)
@@ -108,6 +109,8 @@ ble `lsp-ui-doc-frame-parameters'"
     (mouse-wheel-frame . nil)
     (no-other-frame . t)
     (cursor-type . nil)
+    (inhibit-double-buffering . t)
+    (drag-internal-border . t)
     (no-special-glyphs . t))
   "Frame parameters used to create the frame.")
 
