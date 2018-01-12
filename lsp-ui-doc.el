@@ -164,7 +164,7 @@ Because some variables are buffer local.")
 
 (defun lsp-ui-doc--make-buffer-name ()
   "Construct the buffer name, it should be unique for each frame."
-  (concat "*lsp-ui-doc-"
+  (concat " *lsp-ui-doc-"
           (or (frame-parameter nil 'window-id)
               (frame-parameter nil 'name))
           "*"))
@@ -407,7 +407,8 @@ SYMBOL STRING."
   (lsp-ui-doc--delete-frame)
   (let* ((after-make-frame-functions nil)
          (before-make-frame-hook nil)
-         (buffer (get-buffer (lsp-ui-doc--make-buffer-name)))
+         (name-buffer (lsp-ui-doc--make-buffer-name))
+         (buffer (get-buffer name-buffer))
          (params (append lsp-ui-doc-frame-parameters
                          `((default-minibuffer-frame . ,(selected-frame))
                            (minibuffer . ,(minibuffer-window))
@@ -416,6 +417,7 @@ SYMBOL STRING."
                   buffer
                   `((child-frame-parameters . ,params))))
          (frame (window-frame window)))
+    (set-frame-parameter nil 'lsp-ui-doc-buffer buffer)
     (set-window-dedicated-p window t)
     (redirect-frame-focus frame (frame-parent frame))
     (set-face-background 'internal-border lsp-ui-doc-border frame)
@@ -440,6 +442,13 @@ SYMBOL STRING."
   "."
   (setq-local eldoc-documentation-function 'lsp-ui-doc--eldoc))
 
+(defun lsp-ui-doc--on-delete (frame)
+  "Function called when a FRAME is deleted."
+  (-some--> (frame-parameter frame 'lsp-ui-doc-buffer)
+            (get-buffer it)
+            (and (buffer-live-p it) it)
+            (kill-buffer it)))
+
 (define-minor-mode lsp-ui-doc-mode
   "Minor mode for showing hover information in child frame."
   :init-value nil
@@ -460,8 +469,10 @@ SYMBOL STRING."
             (cl-callf copy-tree frameset-filter-alist)
             (push '(lsp-ui-doc-frame . :never) frameset-filter-alist)))
         (add-hook 'lsp-after-open-hook 'lsp-ui-doc-enable-eldoc nil t)
-        (add-hook 'post-command-hook 'lsp-ui-doc--make-request nil t)))
+        (add-hook 'post-command-hook 'lsp-ui-doc--make-request nil t)
+        (add-hook 'delete-frame-functions 'lsp-ui-doc--on-delete nil t)))
      (t
+      (remove-hook 'delete-frame-functions 'lsp-ui-doc--on-delete t)
       (remove-hook 'post-command-hook 'lsp-ui-doc--make-request t)
       (remove-hook 'lsp-after-open-hook 'lsp-ui-doc-enable-eldoc t)
       (setq-local eldoc-documentation-function 'lsp--on-hover)))))
