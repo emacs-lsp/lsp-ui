@@ -124,6 +124,25 @@ It should returns a list of filenames to expand.")
 (defvar-local lsp-ui-peek--kind nil)
 (defvar-local lsp-ui-peek--deactivate-keymap-fn nil)
 
+(defvar lsp-ui-peek--jumps (make-hash-table)
+  "Hashtable which stores all jumps on a per window basis.")
+
+(defmacro lsp-ui-peek--with-evil-jumps (&rest body)
+  "Make `evil-jumps.el' commands work on `lsp-ui-peek--jumps'."
+  (declare (indent 1))
+  `(let ((evil--jumps-window-jumps ,lsp-ui-peek--jumps))
+     ,@body))
+
+(with-eval-after-load 'evil-jumps
+  (evil-define-motion lsp-ui-peek-jump-backward (count)
+    (lsp-ui-peek--with-evil-jumps
+        (evil--jump-backward count)
+      (run-hooks 'xref-after-return-hook)))
+  (evil-define-motion lsp-ui-peek-jump-forward (count)
+    (lsp-ui-peek--with-evil-jumps
+        (evil--jump-forward count)
+      (run-hooks 'xref-after-return-hook))))
+
 (defmacro lsp-ui-peek--prop (prop &optional string)
   "PROP STRING."
   `(get-text-property 0 ,prop (or ,string (lsp-ui-peek--get-text-selection) "")))
@@ -511,6 +530,8 @@ REQUEST PARAM."
     (unless xrefs
       (user-error "No %s found for: %s" (symbol-name kind) input))
     (xref-push-marker-stack)
+    (when (featurep 'evil-jumps)
+      (lsp-ui-peek--with-evil-jumps (evil-set-jump)))
     (if (and (not (cdr xrefs))
              (= (length (plist-get (car xrefs) :xrefs)) 1))
         (-let* ((xref (car (plist-get (car xrefs) :xrefs)))
