@@ -122,6 +122,10 @@ as markdown.")
   "Mode to uses with markdown code blocks.
 They are added to `markdown-code-lang-modes'")
 
+(defvar lsp-ui-doc-frame-hook nil
+  "Hooks run on child-frame creation.
+The functions receive 2 parameters: the frame and its window.")
+
 (defvar-local lsp-ui-doc--bounds nil)
 (defvar-local lsp-ui-doc--string-eldoc nil)
 
@@ -411,6 +415,7 @@ SYMBOL STRING."
          (frame (window-frame window)))
     (set-window-dedicated-p window t)
     (set-face-background 'internal-border lsp-ui-doc-border frame)
+    (run-hook-with-args 'lsp-ui-doc-frame-hook frame window)
     frame))
 
 (defun lsp-ui-doc--delete-frame ()
