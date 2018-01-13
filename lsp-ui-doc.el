@@ -61,7 +61,8 @@
 (defcustom lsp-ui-doc-position 'top
   "Where to display the doc."
   :type '(choice (const :tag "Top" top)
-                 (const :tag "Bottom" bottom))
+                 (const :tag "Bottom" bottom)
+                 (const :tag "At point" at-point))
   :group 'lsp-ui-doc)
 
 (defcustom lsp-ui-doc-background "#031A25"
@@ -314,22 +315,40 @@ BUFFER is the buffer where the request has been made."
       (lsp-ui-doc--with-buffer
        (fill-region (point-min) (point-max))))))
 
+(defun lsp-ui-doc--mv-at-point (frame height start-x start-y)
+  "Move the FRAME at point.
+HEIGHT is the child frame height.
+START-X is the position x of the current window.
+START-Y is the position y of the current window."
+  (-let* (((x . y) (--> (bounds-of-thing-at-point 'symbol)
+                        (nth 2 (posn-at-point (car it)))))
+          (mode-line-y (lsp-ui-doc--line-height 'mode-line))
+          (char-height (frame-char-height))
+          (y (or (and (> y (/ mode-line-y 2))
+                      (<= (- mode-line-y y) (+ char-height height))
+                      (> (- y height) 0)
+                      (- y height))
+                 (+ y char-height))))
+    (set-frame-position frame (+ x start-x) (+ y start-y))))
+
 (defun lsp-ui-doc--move-frame (frame)
   "Place our FRAME on screen."
   (lsp-ui-doc--resize-buffer)
-  (-let* (((_left top right _bottom) (window-edges nil nil nil t))
+  (-let* (((left top right _bottom) (window-edges nil nil nil t))
           (window (frame-root-window frame))
           ((width . height) (window-text-pixel-size window nil nil 10000 10000))
           (width (+ width (* (frame-char-width frame) 2))) ;; margins
           (frame-resize-pixelwise t))
     (set-window-margins window 1 1)
     (set-frame-size frame width height t)
-    (set-frame-position frame (- right width 10)
-                        (pcase lsp-ui-doc-position
-                          ('top (+ top 10))
-                          ('bottom (- (lsp-ui-doc--line-height 'mode-line)
-                                      height
-                                      10))))))
+    (if (eq lsp-ui-doc-position 'at-point)
+        (lsp-ui-doc--mv-at-point frame height left top)
+      (set-frame-position frame (- right width 10)
+                          (pcase lsp-ui-doc-position
+                            ('top (+ top 10))
+                            ('bottom (- (lsp-ui-doc--line-height 'mode-line)
+                                        height
+                                        10)))))))
 
 (defun lsp-ui-doc--visit-file (filename)
   "Visit FILENAME in the parent frame."
