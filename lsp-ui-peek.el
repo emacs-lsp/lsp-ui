@@ -445,6 +445,12 @@ XREFS is a list of list of references/definitions."
         lsp-ui-peek--last-xref nil)
   (set-window-start (get-buffer-window) lsp-ui-peek--win-start))
 
+(defun lsp-ui-peek--deactivate-keymap ()
+  "Deactivate keymap."
+  (-when-let (fn lsp-ui-peek--deactivate-keymap-fn)
+    (setq lsp-ui-peek--deactivate-keymap-fn nil)
+    (funcall fn)))
+
 (defun lsp-ui-peek--goto-xref (&optional x other-window)
   "Go to a reference/definition.
 X OTHER-WINDOW."
@@ -465,6 +471,7 @@ X OTHER-WINDOW."
                               (forward-char column)
                               (point-marker)))))
                 (current-workspace lsp--cur-workspace))
+            (lsp-ui-peek--deactivate-keymap)
             (if other-window
                 (pop-to-buffer (marker-buffer marker))
               (switch-to-buffer (marker-buffer marker)))
@@ -517,9 +524,7 @@ X OTHER-WINDOW."
   :init-value nil
   (if lsp-ui-peek-mode
       (setq lsp-ui-peek--deactivate-keymap-fn (set-transient-map lsp-ui-peek-mode-map t 'lsp-ui-peek--abort))
-    (-when-let (fn lsp-ui-peek--deactivate-keymap-fn)
-      (setq lsp-ui-peek--deactivate-keymap-fn nil)
-      (funcall fn))))
+    (lsp-ui-peek--deactivate-keymap)))
 
 (defun lsp-ui-peek--find-xrefs (input kind &optional request param)
   "Find INPUT references.
