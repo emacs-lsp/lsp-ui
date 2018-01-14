@@ -459,6 +459,7 @@ X OTHER-WINDOW."
       (-let* (((&plist :file file :line line :column column) xref))
         (if (not (file-readable-p file))
             (user-error "File not readable: %s" file)
+          (setq lsp-ui-peek--win-start nil)
           (lsp-ui-peek--abort)
           (let ((marker (with-current-buffer
                             (or (get-file-buffer file)
