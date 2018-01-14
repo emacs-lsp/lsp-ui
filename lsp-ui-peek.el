@@ -68,6 +68,12 @@ This can heavily slow the processing."
   :type 'boolean
   :group 'lsp-ui-peek)
 
+(defcustom lsp-ui-peek-always-show nil
+  "Show the peek view even if there is only 1 cross reference.
+By default, the peek view isn't shown if there is 1 xref."
+  :type 'boolean
+  :group 'lsp-ui-peek)
+
 (defface lsp-ui-peek-peek
   '((default :background "#031A25")
     (((background light)) (:background "light gray")))
@@ -538,7 +544,8 @@ REQUEST PARAM."
     (xref-push-marker-stack)
     (when (featurep 'evil-jumps)
       (lsp-ui-peek--with-evil-jumps (evil-set-jump)))
-    (if (and (not (cdr xrefs))
+    (if (and (not lsp-ui-peek-always-show)
+             (not (cdr xrefs))
              (= (length (plist-get (car xrefs) :xrefs)) 1))
         (-let* ((xref (car (plist-get (car xrefs) :xrefs)))
                 ((&hash "uri" file "range" range) xref)
