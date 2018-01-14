@@ -178,6 +178,9 @@ Because some variables are buffer local.")
 
 (defun lsp-ui-doc--eldoc (&rest _)
   "."
+  (when (and (lsp--capability "documentHighlightProvider")
+             lsp-highlight-symbol-at-point)
+    (lsp-symbol-highlight))
   lsp-ui-doc--string-eldoc)
 
 (defun lsp-ui-doc--setup-markdown (mode)
@@ -450,7 +453,7 @@ SYMBOL STRING."
     (lsp-ui-doc--set-frame nil)))
 
 (defadvice select-window (after lsp-ui-doc--select-window activate)
-  "Make powerline aware of window change."
+  "Delete the child fram if window changes."
   (lsp-ui-doc--hide-frame))
 
 (defadvice load-theme (after lsp-ui-doc--delete-frame-on-theme-load activate)
