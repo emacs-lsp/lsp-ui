@@ -75,19 +75,20 @@ By default, the peek view isn't shown if there is 1 xref."
   :group 'lsp-ui-peek)
 
 (defface lsp-ui-peek-peek
-  '((default :background "#031A25")
-    (((background light)) (:background "light gray")))
+  '((((background light)) :background "light gray")
+    (t :background "#031A25"))
   "Face used for the peek."
   :group 'lsp-ui-peek)
 
 (defface lsp-ui-peek-list
-  '((default :background "#181818")
-    (((background light)) (:background "light gray")))
+  '((((background light)) :background "light gray")
+    (t :background "#181818"))
   "Face used to list references."
   :group 'lsp-ui-peek)
 
 (defface lsp-ui-peek-filename
-  '((t :foreground "dark orange"))
+  '((((background light)) :foreground "red")
+    (t :foreground "dark orange"))
   "Face used for the filename's reference in the list."
   :group 'lsp-ui-peek)
 
@@ -97,21 +98,35 @@ By default, the peek view isn't shown if there is 1 xref."
   :group 'lsp-ui-peek)
 
 (defface lsp-ui-peek-highlight
-  '((default :background "white"
-      :foreground "black"
-      :distant-foreground "white"
-      :box (:line-width -1 :color "white"))
-    (((background light)) (:background "black"
-                                       :foreground "white"
-                                       :distant-foreground "black"
-                                       :box (:line-width -1 :color "black"))))
-  "Face used to highlight the reference/definition."
+  '((((background light)) :background "dim gray"
+     :foreground "white"
+     :distant-foreground "black")
+    (t :background "white"
+       :foreground "black"
+       :distant-foreground "white"
+       :box (:line-width -1 :color "white")))
+  "Face used to highlight the reference/definition.  Do not use box,
+underline or overline prop. If you want to use box, use a negative value for
+its width. Thoses properties deform the whole overlay."
   :group 'lsp-ui-peek)
 
 (defface lsp-ui-peek-header
-  '((default :background "white" :foreground "black")
-    (((background light)) (:background "black" :foreground "white")))
+  '((((background light)) :background "grey30" :foreground "white")
+    (t :background "white" :foreground "black"))
   "Face used for the headers."
+  :group 'lsp-ui-peek)
+
+(defface lsp-ui-peek-footer
+  '((t :inherit lsp-ui-peek-header))
+  "Face used for the footers. Only the background of this face is used."
+  :group 'lsp-ui-peek)
+
+(defface lsp-ui-peek-selection
+  '((((background light)) :background "grey30" :foreground "white")
+    (t :background "white" :foreground "black"))
+  "Face used for the current selection. Do not use box, underline or overline..
+ prop. If you want to use box, use a negative value for its width.
+Thoses properties deform the whole overlay."
   :group 'lsp-ui-peek)
 
 (defvar lsp-ui-peek-expand-function 'lsp-ui-peek--expand-buffer
@@ -185,7 +200,7 @@ It should returns a list of filenames to expand.")
           (len-s2 (length s2))
           (on-selection (= (1+ (lsp-ui-peek--visual-index)) index))
           (face-left (if (= index 0) 'lsp-ui-peek-header 'lsp-ui-peek-peek))
-          (face-right (cond (on-selection 'lsp-ui-peek-header)
+          (face-right (cond (on-selection 'lsp-ui-peek-selection)
                             ((= index 0) 'lsp-ui-peek-header)
                             (t 'lsp-ui-peek-list))))
     (when on-selection
@@ -218,12 +233,12 @@ It should returns a list of filenames to expand.")
     (list
      (concat
       (propertize " "
-                  'face `(:background ,(face-background 'lsp-ui-peek-header) :height 1)
+                  'face `(:background ,(face-background 'lsp-ui-peek-footer nil t) :height 1)
                   'display `(space :align-to (- right-fringe ,(1+ lsp-ui-peek-list-width))))
       (propertize " " 'face '(:height 1)
                   'display `(space :align-to (- right-fringe ,lsp-ui-peek-list-width)))
       (propertize " "
-                  'face `(:background ,(face-background 'lsp-ui-peek-header) :height 1)
+                  'face `(:background ,(face-background 'lsp-ui-peek-footer nil t) :height 1)
                   'display `(space :align-to (- right-fringe 0)))
       (propertize "\n" 'face '(:height 1))
       (propertize "\n" 'face '(:height 0.5))))))
