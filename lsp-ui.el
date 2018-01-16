@@ -43,6 +43,7 @@
 (require 'lsp-ui-sideline)
 (require 'lsp-ui-peek)
 (require 'lsp-ui-flycheck)
+(require 'lsp-ui-imenu)
 
 ;; Child frames are only available since Emacs 26, so don’t require
 ;; ‘lsp-ui-doc’ unconditionally.
