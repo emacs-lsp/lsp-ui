@@ -1,3 +1,5 @@
+[![MELPA](https://melpa.org/packages/lsp-ui-badge.svg)](https://melpa.org/#/lsp-ui)
+
 # lsp-ui
 
 This contains all the higher level UI modules of `lsp-mode`, like flycheck support and code lenses.
