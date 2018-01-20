@@ -65,7 +65,7 @@
                  (const :tag "At point" at-point))
   :group 'lsp-ui-doc)
 
-(defcustom lsp-ui-doc-background "#031A25"
+(defcustom lsp-ui-doc-background "#272A36"
   "Background color of the frame.  To more customize the frame, see the varia..
 ble `lsp-ui-doc-frame-parameters'"
   :type 'color
