@@ -257,9 +257,11 @@ It should returns a list of filenames to expand.")
     (overlay-put ov 'after-string (mapconcat 'identity string ""))
     (overlay-put ov 'window (get-buffer-window))))
 
-(defun lsp-ui-peek--expand-buffer (_)
-  "."
-  (list buffer-file-name))
+(defun lsp-ui-peek--expand-buffer (files)
+  "FILES."
+  (if (--any? (equal (car it) buffer-file-name) files)
+      (list buffer-file-name)
+    (list (caar files))))
 
 (defun lsp-ui-peek--expand (xrefs)
   "XREFS."
