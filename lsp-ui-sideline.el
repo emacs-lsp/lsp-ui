@@ -355,7 +355,7 @@ to the language server."
               lsp-ui-sideline--last-width (window-text-width))
         (when lsp-ui-sideline-show-flycheck
           (lsp-ui-sideline--flycheck))
-        (when lsp-ui-sideline-show-code-actions
+        (when (and lsp-ui-sideline-show-code-actions (lsp--capability "codeActionProvider"))
           (lsp--send-request-async (lsp--make-request
                                     "textDocument/codeAction"
                                     (list :textDocument doc-id
