@@ -573,7 +573,7 @@ REQUEST PARAM."
         (-let* ((xref (car (plist-get (car xrefs) :xrefs)))
                 ((&hash "uri" file "range" range) xref)
                 ((&hash "line" line "character" col) (gethash "start" range))
-                (file (string-remove-prefix "file://" file)))
+                (file (lsp--uri-to-path file)))
           (lsp-ui-peek--goto-xref `(:file ,file :line ,line :column ,col)))
       (lsp-ui-peek-mode)
       (lsp-ui-peek--show xrefs))))
@@ -692,8 +692,7 @@ interface Location {
 	uri: DocumentUri;
 	range: Range;
 }"
-  (-some--> (lambda (loc) (string-remove-prefix "file://"
-                                                (gethash "uri" (or (gethash "location" loc) loc))))
+  (-some--> (lambda (loc) (lsp--uri-to-path (gethash "uri" (or (gethash "location" loc) loc))))
             (seq-group-by it locations)
             (mapcar #'lsp-ui-peek--get-xrefs-list it)))
 
