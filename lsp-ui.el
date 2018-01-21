@@ -94,5 +94,55 @@ omitted or nil, and toggle it if ARG is ‘toggle’."
                       nil 'xref--read-pattern-history)))
   (xref--find-xrefs pattern 'apropos pattern nil))
 
+(defun lsp-ui--location< (x y)
+  "Comparator of (filename line column)."
+  (if (not (string= (car x) (car y)))
+      (string< (car x) (car y))
+    (if (not (= (cadr x) (cadr y)))
+        (< (cadr x) (cadr y))
+      (< (caddr x) (caddr y)))))
+
+(defun lsp-ui--reference-triples ()
+  "Returns references in (filename line column) triples."
+  (let ((refs (lsp--send-request (lsp--make-request
+                                  "textDocument/references"
+                                  (lsp--make-reference-params)))))
+    (sort
+     (mapcar
+      (lambda (ref)
+        (-let* (((&hash "uri" uri "range" range) ref)
+                ((&hash "line" line "character" col) (gethash "start" range)))
+          (list (lsp--uri-to-path uri) line col))) refs)
+     #'lsp-ui--location<)))
+
+;; TODO Make it efficient
+(defun lsp-ui-find-next-reference ()
+  "Find next reference of the symbol at point."
+  (interactive)
+  (let* ((cur (list buffer-file-name (lsp--cur-line) (lsp--cur-column)))
+         (refs (lsp-ui--reference-triples))
+         (res (-first (lambda (ref) (lsp-ui--location< cur ref)) refs)))
+    (when res
+      (find-file (car res))
+      (goto-char 1)
+      (forward-line (cadr res))
+      (forward-char (caddr res))
+      nil)))
+
+;; TODO Make it efficient
+(defun lsp-ui-find-previous-reference ()
+  "Find previous reference of the symbol at point."
+  (interactive)
+  (let* ((cur (list buffer-file-name (lsp--cur-line) (lsp--cur-column)))
+         (refs (lsp-ui--reference-triples))
+         (res (-last (lambda (ref) (lsp-ui--location< ref cur)) refs)))
+    (when res
+      (find-file (car res))
+      (goto-char 1)
+      (forward-line (cadr res))
+      (forward-char (caddr res))
+      nil)))
+
+
 (provide 'lsp-ui)
 ;;; lsp-ui.el ends here
