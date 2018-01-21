@@ -713,13 +713,7 @@ KIND REQUEST PARAM."
   "ENABLE."
   (interactive)
   (unless (bound-and-true-p lsp-ui-mode-map)
-    (user-error "Please load lsp-ui before trying to enable lsp-ui-peek"))
-  (if enable
-      (progn
-        (define-key lsp-ui-mode-map [remap xref-find-definitions] #'lsp-ui-peek-find-definitions)
-        (define-key lsp-ui-mode-map [remap xref-find-references] #'lsp-ui-peek-find-references))
-    (define-key lsp-ui-mode-map [remap xref-find-definitions] nil)
-    (define-key lsp-ui-mode-map [remap xref-find-references] nil)))
+    (user-error "Please load lsp-ui before trying to enable lsp-ui-peek")))
 
 ;; lsp-ui.el loads lsp-ui-peek.el, so we can’t ‘require’ lsp-ui.
 ;; FIXME: Remove this cyclic dependency.

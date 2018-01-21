@@ -25,6 +25,28 @@ It also show flycheck diagnostics and LSP code actions
 Add [peek](https://code.visualstudio.com/docs/editor/editingevolved#_peek) feature  
 ![lsp-xref](images/lsp-xref.gif)
 
+You may remap `xref-find-{definitions,references}` (bound to <kbd>M-.</kbd> <kbd>M-?</kbd> by default):
+
+```elisp
+(define-key lsp-ui-mode-map [remap xref-find-definitions] #'lsp-ui-peek-find-definitions)
+(define-key lsp-ui-mode-map [remap xref-find-references] #'lsp-ui-peek-find-references)
+```
+
+There is a window-local jump list dedicated to cross references:
+```elisp
+(lsp-ui-peek-jump-backward)
+(lsp-ui-peek-jump-forward)
+```
+
+Other cross references:
+```elisp
+(lsp-ui-peek-find-workspace-symbol "pattern 0")
+;; If the server supports custom cross references
+(lsp-ui-peek-find-custom 'base "$cquery/base")
+```
+
+### lsp-ui-imenu:
+
 ### lsp-ui-doc:
 Show object documentation at point in a child frame.  
 ![lsp-ui-doc](images/lsp-ui-doc.gif)
