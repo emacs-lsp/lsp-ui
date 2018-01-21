@@ -479,7 +479,8 @@ XREFS is a list of list of references/definitions."
 X OTHER-WINDOW."
   (interactive)
   (-if-let (xref (or x (lsp-ui-peek--get-selection)))
-      (-let* (((&plist :file file :line line :column column) xref))
+      (-let (((&plist :file file :line line :column column) xref)
+             (buffer (current-buffer)))
         (if (not (file-readable-p file))
             (user-error "File not readable: %s" file)
           (setq lsp-ui-peek--win-start nil)
@@ -495,10 +496,11 @@ X OTHER-WINDOW."
                               (forward-char column)
                               (point-marker)))))
                 (current-workspace lsp--cur-workspace))
-            (lsp-ui-peek--deactivate-keymap)
             (if other-window
                 (pop-to-buffer (marker-buffer marker))
               (switch-to-buffer (marker-buffer marker)))
+            (with-current-buffer buffer
+              (lsp-ui-peek-mode -1))
             (unless lsp--cur-workspace
               (setq lsp--cur-workspace current-workspace))
             (unless lsp-mode
@@ -554,7 +556,8 @@ X OTHER-WINDOW."
   :init-value nil
   (if lsp-ui-peek-mode
       (setq lsp-ui-peek--deactivate-keymap-fn (set-transient-map lsp-ui-peek-mode-map t 'lsp-ui-peek--abort))
-    (lsp-ui-peek--deactivate-keymap)))
+    (lsp-ui-peek--deactivate-keymap)
+    (lsp-ui-peek--peek-hide)))
 
 (defun lsp-ui-peek--find-xrefs (input kind &optional request param)
   "Find INPUT references.
