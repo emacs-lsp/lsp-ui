@@ -137,6 +137,7 @@
         queue)
     (with-current-buffer (get-buffer-create "*lsp-ui-imenu*")
       (setq buffer-read-only nil)
+      (remove-overlays)
       (erase-buffer)
       (let ((padding (or (and (eq lsp-ui-imenu-kind-position 'top) 1)
                          (--> (--filter (imenu--subalist-p it) list)
