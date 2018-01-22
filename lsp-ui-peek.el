@@ -149,21 +149,28 @@ It should returns a list of filenames to expand.")
 (defvar lsp-ui-peek--jumps (make-hash-table)
   "Hashtable which stores all jumps on a per window basis.")
 
+(defvar evil--jumps-window-jumps)  ; defined in evil-jumps.el
+
 (defmacro lsp-ui-peek--with-evil-jumps (&rest body)
   "Make `evil-jumps.el' commands work on `lsp-ui-peek--jumps'."
   (declare (indent 1))
-  `(let ((evil--jumps-window-jumps ,lsp-ui-peek--jumps))
+  `(let ((evil--jumps-window-jumps lsp-ui-peek--jumps))
      ,@body))
 
 (with-eval-after-load 'evil-jumps
-  (evil-define-motion lsp-ui-peek-jump-backward (count)
-    (lsp-ui-peek--with-evil-jumps
-        (evil--jump-backward count)
-      (run-hooks 'xref-after-return-hook)))
-  (evil-define-motion lsp-ui-peek-jump-forward (count)
-    (lsp-ui-peek--with-evil-jumps
-        (evil--jump-forward count)
-      (run-hooks 'xref-after-return-hook))))
+  ;; We need to jump through some hoops to prevent the byte-compiler from
+  ;; compiling this code.  We can’t compile the code without requiring
+  ;; ‘evil-macros’.
+  (eval '(progn
+          (evil-define-motion lsp-ui-peek-jump-backward (count)
+            (lsp-ui-peek--with-evil-jumps
+             (evil--jump-backward count)
+             (run-hooks 'xref-after-return-hook)))
+          (evil-define-motion lsp-ui-peek-jump-forward (count)
+            (lsp-ui-peek--with-evil-jumps
+             (evil--jump-forward count)
+             (run-hooks 'xref-after-return-hook))))
+        t))
 
 (defmacro lsp-ui-peek--prop (prop &optional string)
   `(get-text-property 0 ,prop (or ,string (lsp-ui-peek--get-text-selection) "")))
@@ -679,7 +686,7 @@ Returns item(s)."
 
 (defvar lsp-ui-mode-map)
 
-(defun lsp-ui-peek-enable (enable)
+(defun lsp-ui-peek-enable (_enable)
   (interactive)
   (unless (bound-and-true-p lsp-ui-mode-map)
     (user-error "Please load lsp-ui before trying to enable lsp-ui-peek")))
@@ -687,6 +694,8 @@ Returns item(s)."
 ;; lsp-ui.el loads lsp-ui-peek.el, so we can’t ‘require’ lsp-ui.
 ;; FIXME: Remove this cyclic dependency.
 (declare-function lsp-ui--workspace-path "lsp-ui" (path))
+
+(declare-function evil-set-jump "evil-jumps.el" (&optional pos))
 
 (provide 'lsp-ui-peek)
 ;;; lsp-ui-peek.el ends here
