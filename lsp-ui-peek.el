@@ -6,7 +6,6 @@
 ;; URL: https://github.com/emacs-lsp/lsp-ui
 ;; Keywords: lsp, ui
 ;; Version: 0.0.1
-;; Package-Requires: ((emacs "25.1") (lsp-mode "3.4") (dash "0.13"))
 
 ;;; License
 ;;
