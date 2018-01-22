@@ -34,7 +34,7 @@
 ;;; Code:
 
 (defgroup lsp-ui nil
-  "lsp-ui contains a series of useful UI integrations for lsp-mode."
+  "‘lsp-ui’ contains a series of useful UI integrations for ‘lsp-mode’."
   :group 'tools
   :group 'convenience
   :link '(custom-manual "(lsp-ui) Top")
@@ -51,8 +51,8 @@
   (require 'lsp-ui-doc))
 
 (defun lsp-ui--workspace-path (path)
-  "Return the path relative to the workspace.
-If the path is not in the workspace, it returns the original PATH."
+  "Return the PATH relative to the workspace.
+If the PATH is not in the workspace, it returns the original PATH."
   (let* ((root (lsp--workspace-root lsp--cur-workspace))
          (in-workspace (string-prefix-p root path)))
     (if in-workspace
@@ -60,7 +60,6 @@ If the path is not in the workspace, it returns the original PATH."
       path)))
 
 (defun lsp-ui--toggle (enable)
-  "ENABLE."
   (dolist (feature '(lsp-ui-flycheck lsp-ui-peek lsp-ui-sideline lsp-ui-doc))
     (when (featurep feature)
       (let* ((sym (intern-soft (concat (symbol-name feature) "-enable")))
@@ -88,14 +87,15 @@ omitted or nil, and toggle it if ARG is ‘toggle’."
 ;; regex quotes the pattern. The language server likely knows more about how
 ;; to do fuzzy matching.
 (defun lsp-ui-find-workspace-symbol (pattern)
-  "List project-wide symbols matching the query string"
+  "List project-wide symbols matching the query string PATTERN."
   (interactive (list (read-string
                       "workspace/symbol: "
                       nil 'xref--read-pattern-history)))
   (xref--find-xrefs pattern 'apropos pattern nil))
 
 (defun lsp-ui--location< (x y)
-  "Comparator of (filename line column)."
+  "Compares two triples X and Y.
+Both should have the form (FILENAME LINE COLUMN)."
   (if (not (string= (car x) (car y)))
       (string< (car x) (car y))
     (if (not (= (cadr x) (cadr y)))
@@ -103,7 +103,7 @@ omitted or nil, and toggle it if ARG is ‘toggle’."
       (< (caddr x) (caddr y)))))
 
 (defun lsp-ui--reference-triples ()
-  "Returns references in (filename line column) triples."
+  "Return references as a list of (FILENAME LINE COLUMN) triples."
   (let ((refs (lsp--send-request (lsp--make-request
                                   "textDocument/references"
                                   (lsp--make-reference-params)))))
