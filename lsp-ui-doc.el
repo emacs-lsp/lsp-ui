@@ -190,6 +190,10 @@ Because some variables are buffer local.")
     (lsp-symbol-highlight))
   lsp-ui-doc--string-eldoc)
 
+;; ‘markdown-fontify-code-block-default-mode’ isn’t yet available in
+;; Markdown 2.3.
+(defvar markdown-fontify-code-block-default-mode)
+
 (defun lsp-ui-doc--setup-markdown (mode)
   "Setup the ‘markdown-mode’ in the frame.
 MODE is the mode used in the parent frame."
