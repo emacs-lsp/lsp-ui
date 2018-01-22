@@ -42,7 +42,7 @@
   :link '(info-link "(lsp-ui-flycheck) Customizing"))
 
 (defcustom lsp-ui-flycheck-enable t
-  "Whether or not to enable lsp-ui-flycheck."
+  "Whether or not to enable ‘lsp-ui-flycheck’."
   :type 'boolean
   :group 'lsp-ui)
 

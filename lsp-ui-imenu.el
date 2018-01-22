@@ -47,7 +47,7 @@
   :link '(info-link "(lsp-ui-imenu) Customizing"))
 
 (defcustom lsp-ui-imenu-enable t
-  "Whether or not to enable lsp-ui-imenu."
+  "Whether or not to enable ‘lsp-ui-imenu’."
   :type 'boolean
   :group 'lsp-ui)
 
@@ -65,17 +65,14 @@
 (defvar imenu--index-alist)
 
 (defun lsp-ui-imenu--pad (s len color &optional no-bar)
-  "S LEN COLOR NO-BAR."
   (let ((n (- len (length s))))
     (propertize (concat (make-string n ?\s) s (unless no-bar " ┃ "))
                 'face `(:foreground ,color))))
 
 (defun lsp-ui-imenu--get-color (index)
-  "INDEX."
   (nth (mod index (length lsp-ui-imenu-colors)) lsp-ui-imenu-colors))
 
 (defun lsp-ui-imenu--make-line (title index padding entry color-index)
-  "TITLE INDEX PADDING ENTRY COLOR-INDEX."
   (let* ((color (lsp-ui-imenu--get-color color-index))
          (prefix (if (and (= index 0) (eq lsp-ui-imenu-kind-position 'left)) title " "))
          (text (concat (lsp-ui-imenu--pad prefix padding color)
@@ -91,12 +88,10 @@
 (defvar-local lsp-ui-imenu-ov nil)
 
 (defun lsp-ui-imenu--make-ov nil
-  "."
   (or (and (overlayp lsp-ui-imenu-ov) lsp-ui-imenu-ov)
       (setq lsp-ui-imenu-ov (make-overlay 1 1))))
 
 (defun lsp-ui-imenu--post-command nil
-  "."
   (when (eobp)
     (forward-line -1))
   (-when-let (padding (get-char-property (point) 'padding))
@@ -122,12 +117,10 @@
 (defvar lsp-ui-imenu--origin nil)
 
 (defun lsp-ui-imenu--put-separator nil
-  "."
   (let ((ov (make-overlay (point) (point))))
     (overlay-put ov 'after-string (propertize "\n" 'face '(:height 0.6)))))
 
 (defun lsp-ui-imenu--put-kind (title padding color-index)
-  "TITLE PADDING COLOR-INDEX."
   (when (eq lsp-ui-imenu-kind-position 'top)
     (let ((ov (make-overlay (point) (point)))
           (color (lsp-ui-imenu--get-color color-index)))
@@ -139,7 +132,6 @@
                (propertize "\n" 'face '(:height 0.3)))))))
 
 (defun lsp-ui-imenu nil
-  "."
   (interactive)
   (setq lsp-ui-imenu--origin (current-buffer))
   (imenu--make-index-alist)
@@ -187,12 +179,10 @@
       (window-resize win 3 t))))
 
 (defun lsp-ui-imenu--kill nil
-  "."
   (interactive)
   (kill-buffer-and-window))
 
 (defun lsp-ui-imenu--jump (direction)
-  "."
   (let ((current (get-text-property (point) 'title)))
     (forward-line direction)
     (while (and current
@@ -201,19 +191,16 @@
       (forward-line direction))))
 
 (defun lsp-ui-imenu--next-kind nil
-  "."
   (interactive)
   (lsp-ui-imenu--jump 1))
 
 (defun lsp-ui-imenu--prev-kind nil
-  "."
   (interactive)
   (lsp-ui-imenu--jump -1)
   (while (not (= (get-text-property (point) 'index) 0))
     (forward-line -1)))
 
 (defun lsp-ui-imenu--go nil
-  "."
   (interactive)
   (let ((marker (get-text-property (point) 'marker)))
     (select-window (get-buffer-window lsp-ui-imenu--origin))
@@ -221,7 +208,6 @@
     (pulse-momentary-highlight-one-line (point) 'next-error)))
 
 (defun lsp-ui-imenu--look nil
-  "."
   (interactive)
   (let ((marker (get-text-property (point) 'marker)))
     (with-selected-window (get-buffer-window lsp-ui-imenu--origin)
@@ -230,7 +216,7 @@
       (pulse-momentary-highlight-one-line (point) 'next-error))))
 
 (defvar lsp-ui-imenu-mode-map nil
-  "Keymap uses with ‘lsp-ui-peek-mode’.")
+  "Keymap for ‘lsp-ui-peek-mode’.")
 (unless lsp-ui-imenu-mode-map
   (let ((map (make-sparse-keymap)))
     (define-key map (kbd "q") 'lsp-ui-imenu--kill)
