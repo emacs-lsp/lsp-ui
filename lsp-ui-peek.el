@@ -675,12 +675,18 @@ interface Location {
             (seq-group-by it locations)
             (mapcar #'lsp-ui-peek--get-xrefs-list it)))
 
+(defun lsp-ui-peek--to-sequence (maybe-sequence)
+  "If maybe-sequence is not a sequence, wraps it into a single-element sequence."
+  (if (sequencep maybe-sequence) maybe-sequence (list maybe-sequence)))
+
 (defun lsp-ui-peek--get-references (_kind request &optional param)
   "Get all references/definitions for the symbol under point.
 Returns item(s)."
   (-some->> (lsp--send-request (lsp--make-request
                                 request
                                 (or param (lsp--text-document-position-params))))
+            ;; Language servers may return a single LOCATION instead of a sequence of them.
+            (lsp-ui-peek--to-sequence)
             (lsp-ui-peek--locations-to-xref-items)
             (-filter 'identity)))
 
