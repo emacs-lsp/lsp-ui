@@ -60,7 +60,7 @@ If the PATH is not in the workspace, it returns the original PATH."
       path)))
 
 (defun lsp-ui--toggle (enable)
-  (dolist (feature '(lsp-ui-flycheck lsp-ui-peek lsp-ui-sideline lsp-ui-doc))
+  (dolist (feature '(lsp-ui-flycheck lsp-ui-peek lsp-ui-sideline lsp-ui-doc lsp-ui-imenu))
     (when (featurep feature)
       (let* ((sym (intern-soft (concat (symbol-name feature) "-enable")))
              (value (symbol-value sym))
