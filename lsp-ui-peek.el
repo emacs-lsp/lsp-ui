@@ -253,6 +253,7 @@ It should returns a list of filenames to expand.")
                   (make-overlay next-line next-line))))
     (setq lsp-ui-peek--overlay ov)
     (overlay-put ov 'after-string (mapconcat 'identity string ""))
+    (overlay-put ov 'display-line-numbers-disable t)
     (overlay-put ov 'window (get-buffer-window))))
 
 (defun lsp-ui-peek--expand-buffer (files)
