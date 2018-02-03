@@ -485,29 +485,27 @@ FN is the function to call on click."
   "Minor mode for showing hover information in child frame."
   :init-value nil
   :group lsp-ui-doc
-  (if (< emacs-major-version 26)
-      (message "lsp-ui-doc uses child frame which requires Emacs >= 26")
-    (cond
-     (lsp-ui-doc-mode
-      (progn
-        (with-eval-after-load 'frameset
-          ;; The documentation frame can’t be properly restored.  Especially
-          ;; ‘desktop-save’ will misbehave and save a bogus string "Unprintable
-          ;; entity" in the desktop file.  Therefore we have to prevent
-          ;; ‘frameset-save’ from saving the parameter.
-          (unless (assq 'lsp-ui-doc-frame frameset-filter-alist)
-            ;; Copy the variable first.  See the documentation of
-            ;; ‘frameset-filter-alist’ for explanation.
-            (cl-callf copy-tree frameset-filter-alist)
-            (push '(lsp-ui-doc-frame . :never) frameset-filter-alist)))
-        (add-hook 'lsp-after-open-hook 'lsp-ui-doc-enable-eldoc nil t)
-        (add-hook 'post-command-hook 'lsp-ui-doc--make-request nil t)
-        (add-hook 'delete-frame-functions 'lsp-ui-doc--on-delete nil t)))
-     (t
-      (remove-hook 'delete-frame-functions 'lsp-ui-doc--on-delete t)
-      (remove-hook 'post-command-hook 'lsp-ui-doc--make-request t)
-      (remove-hook 'lsp-after-open-hook 'lsp-ui-doc-enable-eldoc t)
-      (setq-local eldoc-documentation-function 'lsp--on-hover)))))
+  (cond
+   (lsp-ui-doc-mode
+    (progn
+      (with-eval-after-load 'frameset
+        ;; The documentation frame can’t be properly restored.  Especially
+        ;; ‘desktop-save’ will misbehave and save a bogus string "Unprintable
+        ;; entity" in the desktop file.  Therefore we have to prevent
+        ;; ‘frameset-save’ from saving the parameter.
+        (unless (assq 'lsp-ui-doc-frame frameset-filter-alist)
+          ;; Copy the variable first.  See the documentation of
+          ;; ‘frameset-filter-alist’ for explanation.
+          (cl-callf copy-tree frameset-filter-alist)
+          (push '(lsp-ui-doc-frame . :never) frameset-filter-alist)))
+      (add-hook 'lsp-after-open-hook 'lsp-ui-doc-enable-eldoc nil t)
+      (add-hook 'post-command-hook 'lsp-ui-doc--make-request nil t)
+      (add-hook 'delete-frame-functions 'lsp-ui-doc--on-delete nil t)))
+   (t
+    (remove-hook 'delete-frame-functions 'lsp-ui-doc--on-delete t)
+    (remove-hook 'post-command-hook 'lsp-ui-doc--make-request t)
+    (remove-hook 'lsp-after-open-hook 'lsp-ui-doc-enable-eldoc t)
+    (setq-local eldoc-documentation-function 'lsp--on-hover))))
 
 (defun lsp-ui-doc-enable (enable)
   "Enable/disable ‘lsp-ui-doc-mode’.
