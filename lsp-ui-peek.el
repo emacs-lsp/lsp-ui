@@ -465,9 +465,13 @@ XREFS is a list of references/definitions."
                           (save-restriction
                             (widen)
                             (save-excursion
-                              (goto-char 1)
-                              (forward-line line)
-                              (forward-char column)
+                              ;; When we jump to a file with line/column unspecified,
+                              ;; we do not want to move the point if the buffer exists.
+                              ;; We interpret line=column=0 differently here.
+                              (when (> (+ line column) 0)
+                                (goto-char 1)
+                                (forward-line line)
+                                (forward-char column))
                               (point-marker)))))
                 (current-workspace lsp--cur-workspace))
             (if other-window
