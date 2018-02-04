@@ -165,7 +165,7 @@
           (insert (lsp-ui-imenu--make-line " " 0 padding it color-index)))
         (lsp-ui-imenu-mode)
         (setq header-line-format " ")
-        (setq mode-line-format nil)
+        (setq mode-line-format '(:eval (lsp-ui-imenu--win-separator)))
         (goto-char 1)
         (add-hook 'post-command-hook 'lsp-ui-imenu--post-command nil t)
         ))
@@ -175,8 +175,15 @@
       (select-window win)
       (set-window-start win 1)
       (set-window-dedicated-p win t)
-      (fit-window-to-buffer win)
+      (let ((fit-window-to-buffer-horizontally 'only))
+        (fit-window-to-buffer win))
       (window-resize win 3 t))))
+
+(defun lsp-ui-imenu--win-separator ()
+  (when (and (window-combined-p)
+             (window-next-sibling)
+             (= (window-bottom-divider-width) 0))
+    (propertize (make-string (window-total-width) ?\─) 'face 'window-divider)))
 
 (defun lsp-ui-imenu--kill nil
   (interactive)
