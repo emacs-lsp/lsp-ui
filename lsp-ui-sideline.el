@@ -76,9 +76,9 @@
   :type 'number
   :group 'lsp-ui-sideline)
 
-(defvar lsp-ui-sideline-code-actions-prefix
-  (propertize "💡 " 'face '(:foreground "yellow"))
-  "Prefix to insert before the code action title.")
+(defvar lsp-ui-sideline-code-actions-prefix ""
+  "Prefix to insert before the code action title.
+This can be used to insert, for example, an unicode character: 💡")
 
 (defvar-local lsp-ui-sideline--ovs nil
   "Overlays used by `lsp-ui-sideline'.")
@@ -325,7 +325,7 @@ CURRENT is non-nil when the point is on the symbol."
                           title))
             (string (concat (propertize " " 'display `(space :align-to (- right-fringe ,(+ 1 (length title) margin))))
                             title))
-            (pos-ov (lsp-ui-sideline--find-line (length title) t))
+            (pos-ov (lsp-ui-sideline--find-line (1+ (length title)) t))
             (ov (and pos-ov (make-overlay pos-ov pos-ov))))
       (when pos-ov
         (overlay-put ov 'after-string string)
