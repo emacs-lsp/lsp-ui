@@ -378,6 +378,13 @@ to the language server."
       (bound-and-true-p company-pseudo-tooltip-overlay)
       (bound-and-true-p lsp-ui-peek--overlay)))
 
+(defun lsp-ui-sideline--hide-before-company (command)
+  "Disable the sideline before company's overlay appears.
+COMMAND is `company-pseudo-tooltip-frontend' parameter."
+  (when (memq command '(post-command update))
+    (lsp-ui-sideline--delete-ov)
+    (setq lsp-ui-sideline--line nil)))
+
 (defun lsp-ui-sideline ()
   "Show informations of the current line."
   (if (lsp-ui-sideline--stop-p)
@@ -408,9 +415,11 @@ This does not toggle display of flycheck diagnostics or code actions."
   (cond
    (lsp-ui-sideline-mode
     (add-hook 'post-command-hook 'lsp-ui-sideline nil t)
+    (advice-add 'company-pseudo-tooltip-frontend :before 'lsp-ui-sideline--hide-before-company)
     (setq-local flycheck-display-errors-function nil))
    (t
     (setq lsp-ui-sideline--line nil)
+    (advice-remove 'company-pseudo-tooltip-frontend 'lsp-ui-sideline--hide-before-company)
     (lsp-ui-sideline--delete-ov)
     (remove-hook 'post-command-hook 'lsp-ui-sideline t))
    ))
