@@ -5,8 +5,6 @@
 ;; Author: Sebastien Chapuis <sebastien@chapu.is>
 ;; URL: https://github.com/emacs-lsp/lsp-ui
 ;; Keywords: lsp, ui
-;; Package-Requires: ((emacs "26.0") (dash "2.13") (lsp-mode "3.4") (lsp-ui "0.0.1") (markdown-mode "2.3"))
-;; Version: 0.0.1
 
 ;;; License
 ;;
@@ -146,9 +144,15 @@ The functions receive 2 parameters: the frame and its window.")
 
 (declare-function lsp-ui-sideline--get-renderer 'lsp-ui-sideline)
 
+;; Avoid warning with emacs < 26
+(declare-function display-buffer-in-child-frame "window.el")
+
 (defvar-local lsp-ui-doc--parent-vars nil
   "Variables from the parents frame that we want to access in the child.
 Because some variables are buffer local.")
+
+(defvar-local lsp-ui-doc--inline-ov nil
+  "Overlay used to display the documentation in the buffer.")
 
 (defmacro lsp-ui-doc--with-buffer (&rest body)
   "Execute BODY in the lsp-ui-doc buffer."
@@ -261,8 +265,7 @@ We don't extract the string that `lps-line' is already displaying."
 
 (defun lsp-ui-doc--make-request ()
   "Request the documentation to the LS."
-  (when (and (display-graphic-p)
-             (bound-and-true-p lsp--cur-workspace)
+  (when (and (bound-and-true-p lsp--cur-workspace)
              (not (bound-and-true-p lsp-ui-peek-mode)))
     (if (symbol-at-point)
         (let ((bounds (bounds-of-thing-at-point 'symbol)))
@@ -292,6 +295,8 @@ BUFFER is the buffer where the request has been made."
 (defun lsp-ui-doc--hide-frame ()
   "Hide the frame."
   (setq lsp-ui-doc--bounds nil)
+  (when (overlayp lsp-ui-doc--inline-ov)
+    (delete-overlay lsp-ui-doc--inline-ov))
   (when (lsp-ui-doc--get-frame)
     (lsp-ui-doc--with-buffer
      (erase-buffer))
@@ -414,9 +419,10 @@ FN is the function to call on click."
   "Set the buffer with STRING."
   (lsp-ui-doc--with-buffer
    (erase-buffer)
-   (insert (concat (propertize "\n" 'face '(:height 0.2))
-                   string
-                   (propertize "\n\n" 'face '(:height 0.3))))
+   (let ((inline-p (lsp-ui-doc--inline-p)))
+     (insert (concat (unless inline-p (propertize "\n" 'face '(:height 0.2)))
+                     string
+                     (unless inline-p (propertize "\n\n" 'face '(:height 0.3))))))
    (lsp-ui-doc--make-clickable-link)
    (setq-local face-remapping-alist `((header-line lsp-ui-doc-header)))
    (setq-local window-min-height 1)
@@ -424,17 +430,78 @@ FN is the function to call on click."
          mode-line-format nil
          cursor-type nil)))
 
+(defun lsp-ui-doc--inline-height ()
+  (lsp-ui-doc--with-buffer
+   (length (split-string (buffer-string) "\n"))))
+
+(defun lsp-ui-doc--truncate (len s)
+  (if (> (string-width s) len)
+      (format "%s.." (substring s 0 (- len 2)))
+    s))
+
+(defun lsp-ui-doc--inline-zip (s1 s2)
+  (let* ((width (- (window-body-width) 1))
+         (spaces (- width (length s1) (length s2))))
+    (lsp-ui-doc--truncate
+     width
+     (concat s1 (make-string (max spaces 0) ?\s) s2))))
+
+(defun lsp-ui-doc--inline-merge (strings)
+  (let* ((buffer-strings (split-string strings "\n"))
+         (merged (--> (split-string (lsp-ui-doc--with-buffer (buffer-string)) "\n")
+                      (-zip-with 'lsp-ui-doc--inline-zip buffer-strings it)
+                      (concat (string-join it "\n") "\n"))))
+    (add-face-text-property 0 (length merged) 'default t merged)
+    merged))
+
+(defun lsp-ui-doc--inline-pos-at (start lines)
+  "Calcul the position at START + forward n LINES."
+  (save-excursion (goto-char start)
+                  (forward-line lines)
+                  (point)))
+
+(defun lsp-ui-doc--inline-pos (height)
+  "Return a cons of positions where to place the doc.
+HEIGHT is the documentation number of lines."
+  (let* ((w-start (window-start))
+         (w-end (lsp-ui-doc--inline-pos-at w-start (window-body-height)))
+         (ov-end (lsp-ui-doc--inline-pos-at w-start height)))
+    (if (< (lsp-ui-doc--inline-pos-at ov-end 1)
+           (point))
+        (cons w-start ov-end)
+      ;; TODO: Handle when the documentation is too long
+      (cons (lsp-ui-doc--inline-pos-at w-end (- height))
+            w-end))))
+
+(defun lsp-ui-doc--inline ()
+  "Display the doc in the buffer."
+  (-let* ((height (lsp-ui-doc--inline-height))
+          ((start . end) (lsp-ui-doc--inline-pos height))
+          (buffer-string (buffer-substring start end))
+          (ov (if (overlayp lsp-ui-doc--inline-ov) lsp-ui-doc--inline-ov
+                (setq lsp-ui-doc--inline-ov (make-overlay start end)))))
+    (move-overlay ov start end)
+    (overlay-put ov 'display (lsp-ui-doc--inline-merge buffer-string))
+    (overlay-put ov 'lsp-ui-doc-inline t)
+    (overlay-put ov 'window (selected-window))))
+
+(defun lsp-ui-doc--inline-p ()
+  "Return non-nil when the documentation should be display without a child frame."
+  (or (not (display-graphic-p))
+      (not (fboundp 'display-buffer-in-child-frame))))
+
 (defun lsp-ui-doc--display (symbol string)
-  "Display the documentation on screen."
-  (if (or (null string)
-          (string-empty-p string))
+  "Display the documentation."
+  (if (or (null string) (string-empty-p string))
       (lsp-ui-doc--hide-frame)
     (lsp-ui-doc--render-buffer string symbol)
-    (unless (frame-live-p (lsp-ui-doc--get-frame))
-      (lsp-ui-doc--set-frame (lsp-ui-doc--make-frame)))
-    (lsp-ui-doc--move-frame (lsp-ui-doc--get-frame))
-    (unless (frame-visible-p (lsp-ui-doc--get-frame))
-      (make-frame-visible (lsp-ui-doc--get-frame)))))
+    (if (lsp-ui-doc--inline-p)
+        (lsp-ui-doc--inline)
+      (unless (frame-live-p (lsp-ui-doc--get-frame))
+        (lsp-ui-doc--set-frame (lsp-ui-doc--make-frame)))
+      (lsp-ui-doc--move-frame (lsp-ui-doc--get-frame))
+      (unless (frame-visible-p (lsp-ui-doc--get-frame))
+        (make-frame-visible (lsp-ui-doc--get-frame))))))
 
 (defun lsp-ui-doc--make-frame ()
   "Create the child frame and return it."

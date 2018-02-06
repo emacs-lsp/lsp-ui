@@ -44,11 +44,7 @@
 (require 'lsp-ui-peek)
 (require 'lsp-ui-flycheck)
 (require 'lsp-ui-imenu)
-
-;; Child frames are only available since Emacs 26, so don’t require
-;; ‘lsp-ui-doc’ unconditionally.
-(when (fboundp 'display-buffer-in-child-frame)
-  (require 'lsp-ui-doc))
+(require 'lsp-ui-doc)
 
 (defun lsp-ui--workspace-path (path)
   "Return the PATH relative to the workspace.
@@ -62,13 +58,12 @@ If the PATH is not in the workspace, it returns the original PATH."
 
 (defun lsp-ui--toggle (enable)
   (dolist (feature '(lsp-ui-flycheck lsp-ui-peek lsp-ui-sideline lsp-ui-doc lsp-ui-imenu))
-    (when (featurep feature)
-      (let* ((sym (intern-soft (concat (symbol-name feature) "-enable")))
-             (value (symbol-value sym))
-             (fn (symbol-function sym)))
-        (when (and (or value (not enable))
-                   (functionp fn))
-          (funcall fn enable))))))
+    (let* ((sym (intern-soft (concat (symbol-name feature) "-enable")))
+           (value (symbol-value sym))
+           (fn (symbol-function sym)))
+      (when (and (or value (not enable))
+                 (functionp fn))
+        (funcall fn enable)))))
 
 (defvar lsp-ui-mode-map (make-sparse-keymap))
 
