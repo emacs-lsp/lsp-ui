@@ -360,8 +360,9 @@ to the language server."
           (while (and (<= (point) eol) (< (point) eob))
             (let ((symbol (thing-at-point 'symbol t))
                   (bounds (bounds-of-thing-at-point 'symbol))
-                  (column (lsp--cur-column)))
-              (when symbol
+                  (column (lsp--cur-column))
+                  (in-string (nth 3 (syntax-ppss))))
+              (when (and symbol (not in-string))
                 (lsp--send-request-async
                  (lsp--make-request
                   "textDocument/hover"
