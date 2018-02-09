@@ -210,6 +210,9 @@ See https://github.com/emacs-lsp/lsp-mode."
                                           (when flycheck-mode
                                             (flycheck-buffer)))))
 
+;; lsp-ui.el loads lsp-ui-flycheck.el, so we can’t ‘require’ lsp-ui.
+;; FIXME: Remove this cyclic dependency.
+(declare-function lsp-ui--workspace-path "lsp-ui" (path))
 
 (provide 'lsp-ui-flycheck)
 ;;; lsp-ui-flycheck.el ends here
