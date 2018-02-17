@@ -450,7 +450,8 @@ FN is the function to call on click."
   (let* ((buffer-strings (split-string strings "\n"))
          (merged (--> (split-string (lsp-ui-doc--with-buffer (buffer-string)) "\n")
                       (-zip-with 'lsp-ui-doc--inline-zip buffer-strings it)
-                      (concat (string-join it "\n") "\n"))))
+                      (string-join it "\n")
+                      (concat it "\n"))))
     (add-face-text-property 0 (length merged) 'default t merged)
     merged))
 
