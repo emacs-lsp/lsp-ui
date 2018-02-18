@@ -363,7 +363,8 @@ to the language server."
                   (bounds (bounds-of-thing-at-point 'symbol))
                   (column (lsp--cur-column))
                   (in-string (nth 3 (syntax-ppss))))
-              (when (and symbol (not in-string))
+              ;; Skip string and C++ scope resolution operator ::
+              (when (and symbol (not in-string) (not (looking-at-p "::")))
                 (lsp--send-request-async
                  (lsp--make-request
                   "textDocument/hover"
