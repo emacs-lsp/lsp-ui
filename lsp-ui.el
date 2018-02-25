@@ -76,6 +76,7 @@ otherwise.  If called from Lisp, enable the mode if ARG is
 omitted or nil, and toggle it if ARG is ‘toggle’."
   :init-value nil
   :group lsp-ui
+  :keymap lsp-ui-mode-map
   (lsp-ui--toggle lsp-ui-mode))
 
 ;; The request is delegated to xref-backend-apropos defined in lsp-mode.
@@ -98,7 +99,7 @@ Both should have the form (FILENAME LINE COLUMN)."
         (< (cadr x) (cadr y))
       (< (caddr x) (caddr y)))))
 
-(defun lsp-ui--reference-triples ()
+(defun lsp-ui--reference-triples (filter-fn)
   "Return references as a list of (FILENAME LINE COLUMN) triples."
   (let ((refs (lsp--send-request (lsp--make-request
                                   "textDocument/references"
@@ -108,36 +109,43 @@ Both should have the form (FILENAME LINE COLUMN)."
       (lambda (ref)
         (-let* (((&hash "uri" uri "range" range) ref)
                 ((&hash "line" line "character" col) (gethash "start" range)))
-          (list (lsp--uri-to-path uri) line col))) refs)
+          (list (lsp--uri-to-path uri) line col)))
+      (if filter-fn (--filter (funcall filter-fn it) refs) refs))
      #'lsp-ui--location<)))
 
 ;; TODO Make it efficient
-(defun lsp-ui-find-next-reference ()
+(defun lsp-ui-find-next-reference (&optional filter-fn)
   "Find next reference of the symbol at point."
   (interactive)
   (let* ((cur (list buffer-file-name (lsp--cur-line) (lsp--cur-column)))
-         (refs (lsp-ui--reference-triples))
-         (res (-first (lambda (ref) (lsp-ui--location< cur ref)) refs)))
-    (when res
-      (find-file (car res))
-      (goto-char 1)
-      (forward-line (cadr res))
-      (forward-char (caddr res))
-      nil)))
+         (refs (lsp-ui--reference-triples filter-fn))
+         (idx -1)
+         (res (-first (lambda (ref) (cl-incf idx) (lsp-ui--location< cur ref)) refs)))
+    (if res
+        (progn
+         (find-file (car res))
+         (goto-char 1)
+         (forward-line (cadr res))
+         (forward-char (caddr res))
+         (cons idx (length refs)))
+      (cons 0 0))))
 
 ;; TODO Make it efficient
-(defun lsp-ui-find-previous-reference ()
+(defun lsp-ui-find-prev-reference (&optional filter-fn)
   "Find previous reference of the symbol at point."
   (interactive)
   (let* ((cur (list buffer-file-name (lsp--cur-line) (lsp--cur-column)))
-         (refs (lsp-ui--reference-triples))
-         (res (-last (lambda (ref) (lsp-ui--location< ref cur)) refs)))
-    (when res
-      (find-file (car res))
-      (goto-char 1)
-      (forward-line (cadr res))
-      (forward-char (caddr res))
-      nil)))
+         (refs (lsp-ui--reference-triples filter-fn))
+         (idx -1)
+         (res (-last (lambda (ref) (and (lsp-ui--location< ref cur) (cl-incf idx))) refs)))
+    (if res
+        (progn
+          (find-file (car res))
+          (goto-char 1)
+          (forward-line (cadr res))
+          (forward-char (caddr res))
+          (cons idx (length refs)))
+      (cons 0 0))))
 
 
 (provide 'lsp-ui)
