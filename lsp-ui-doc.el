@@ -300,7 +300,7 @@ BUFFER is the buffer where the request has been made."
   (when (lsp-ui-doc--get-frame)
     (lsp-ui-doc--with-buffer
      (erase-buffer))
-    (make-frame-invisible (lsp-ui-doc--get-frame))))
+    (lsp-ui-doc--delete-frame)))
 
 (defun lsp-ui-doc--buffer-width ()
   "Calcul the max width of the buffer."
