@@ -67,6 +67,7 @@ If the PATH is not in the workspace, it returns the original PATH."
 
 (defvar lsp-ui-mode-map (make-sparse-keymap))
 
+;;;###autoload
 (define-minor-mode lsp-ui-mode
   "Toggle language server UI mode on or off.
 ‘lsp-ui-mode’ is a minor mode that contains a series of useful UI
