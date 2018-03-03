@@ -192,7 +192,7 @@ See https://github.com/emacs-lsp/lsp-mode."
   :start #'lsp-ui-flycheck--start
   :modes '(python-mode) ; Need a default mode
   :predicate (lambda () lsp-mode)
-  :error-explainer #'lsp-error-explainer)
+  :error-explainer (lambda (e) (flycheck-error-message e)))
 
 (defun lsp-ui-flycheck-add-mode (mode)
   "Add MODE as a valid major mode for the lsp checker."
