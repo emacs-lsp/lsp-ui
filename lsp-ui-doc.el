@@ -85,6 +85,11 @@ To more customize the frame, see the variable
   :type 'integer
   :group 'lsp-ui-doc)
 
+(defcustom lsp-ui-doc-use-childframe t
+  "Whether to display documentation in a child-frame or the current frame. (Requires GNU/Emacs version >= 26.)"
+  :type 'boolean
+  :group 'lsp-ui-doc)
+
 (defface lsp-ui-doc-header
   '((t :foreground "black"
        :background "deep sky blue"))
@@ -488,7 +493,8 @@ HEIGHT is the documentation number of lines."
 
 (defun lsp-ui-doc--inline-p ()
   "Return non-nil when the documentation should be display without a child frame."
-  (or (not (display-graphic-p))
+  (or (not lsp-ui-doc-use-childframe)
+      (not (display-graphic-p))
       (not (fboundp 'display-buffer-in-child-frame))))
 
 (defun lsp-ui-doc--display (symbol string)
