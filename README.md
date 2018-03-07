@@ -13,6 +13,15 @@ To enable the package and its features:
 (add-hook 'lsp-mode-hook 'lsp-ui-mode)
 ```
 
+To enable `flycheck-mode` for a particular LSP client, add the following
+
+```el
+(add-hook 'XXXXX-mode-hook 'flycheck-mode)
+```
+
+Otherwise the flycheck diagnostics will not be rendered.
+
+
 To customize:  
 `M-x customize-group [RET] lsp-ui [RET]`   
 
