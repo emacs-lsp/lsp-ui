@@ -156,7 +156,8 @@ if UP is non-nil, it loops on the previous lines.."
       (setq index (if up (1- index) (1+ index)))
       (setq pos (lsp-ui-sideline--calc-space win-width str-len index)))
     (when pos (push pos lsp-ui-sideline--occupied-lines))
-    (if (equal pos (point-min))
+    (if (or (equal pos (point-min))
+            (and up (null pos)))
         (lsp-ui-sideline--find-line str-len)
       pos)))
 
