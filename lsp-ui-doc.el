@@ -439,21 +439,44 @@ FN is the function to call on click."
   (lsp-ui-doc--with-buffer
    (length (split-string (buffer-string) "\n"))))
 
-(defun lsp-ui-doc--truncate (len s)
-  (if (> (string-width s) len)
-      (format "%s.." (substring s 0 (- len 2)))
-    s))
+(defun lsp-ui-doc--truncate (len s &optional suffix)
+  (let ((suffix (or suffix "")))
+    (if (> (lsp-ui-doc--inline-width-string s) len)
+        (format (concat "%s" suffix) (substring s 0 (max (- len (length suffix)) 0)))
+      s)))
+
+(defvar-local lsp-ui-doc--inline-width nil)
+
+(defun lsp-ui-doc--inline-width-string (string)
+  "Returns numbers of characters that are display in STRING.
+Use because `string-width' counts invisible characters."
+  (with-temp-buffer
+    (insert string)
+    (goto-char (point-max))
+    (current-column)))
 
 (defun lsp-ui-doc--inline-zip (s1 s2)
   (let* ((width (- (window-body-width) 1))
-         (spaces (- width (length s1) (length s2))))
+         (max-s1 (- width lsp-ui-doc--inline-width 2))
+         (spaces (- width (length s1) (lsp-ui-doc--inline-width-string s2))))
     (lsp-ui-doc--truncate
      width
-     (concat s1 (make-string (max spaces 0) ?\s) s2))))
+     (concat (lsp-ui-doc--truncate max-s1 s1) (make-string (max spaces 0) ?\s) s2))))
+
+(defun lsp-ui-doc--inline-padding (string len)
+  (let ((string (concat " " string (make-string (- len (lsp-ui-doc--inline-width-string string)) ?\s) " ")))
+    (add-face-text-property 0 (length string) (list :background lsp-ui-doc-background) t string)
+    string))
+
+(defun lsp-ui-doc--inline-faking-frame (doc-strings)
+  (let* ((len-max (length (-max-by (-on '> 'string-width) doc-strings))))
+    (setq lsp-ui-doc--inline-width len-max)
+    (--map (lsp-ui-doc--inline-padding it len-max) doc-strings)))
 
 (defun lsp-ui-doc--inline-merge (strings)
   (let* ((buffer-strings (split-string strings "\n"))
-         (merged (--> (split-string (lsp-ui-doc--with-buffer (buffer-string)) "\n")
+         (doc-string (split-string (lsp-ui-doc--with-buffer (buffer-string)) "\n"))
+         (merged (--> (lsp-ui-doc--inline-faking-frame doc-string)
                       (-zip-with 'lsp-ui-doc--inline-zip buffer-strings it)
                       (string-join it "\n")
                       (concat it "\n"))))
