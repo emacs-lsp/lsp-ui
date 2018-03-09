@@ -472,12 +472,20 @@ HEIGHT is the documentation number of lines."
   (let* ((w-start (window-start))
          (w-end (lsp-ui-doc--inline-pos-at w-start (window-body-height)))
          (ov-end (lsp-ui-doc--inline-pos-at w-start height)))
-    (if (< (lsp-ui-doc--inline-pos-at ov-end 1)
-           (point))
-        (cons w-start ov-end)
-      ;; TODO: Handle when the documentation is too long
+    (cond
+     ;; Display on top ?
+     ((< (lsp-ui-doc--inline-pos-at ov-end 1) (point))
+      (cons w-start ov-end))
+     ;; Display at the bottom ?
+     ((>= (lsp-ui-doc--inline-pos-at w-end (- height))
+          (lsp-ui-doc--inline-pos-at (point) 2))
       (cons (lsp-ui-doc--inline-pos-at w-end (- height))
-            w-end))))
+            w-end))
+     ;; The doc is too long to display it fixed to the bottom ?
+     ;; Then display 2 lines after `point'
+     ;; The end of the documentation won't be visible in the window
+     (t (cons (lsp-ui-doc--inline-pos-at (point) 2)
+              (lsp-ui-doc--inline-pos-at (point) (+ height 2)))))))
 
 (defun lsp-ui-doc--inline ()
   "Display the doc in the buffer."
