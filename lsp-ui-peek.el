@@ -475,7 +475,7 @@ XREFS is a list of references/definitions."
                               (point-marker)))))
                 (current-workspace lsp--cur-workspace))
             (if other-window
-                (pop-to-buffer (marker-buffer marker))
+                (pop-to-buffer (marker-buffer marker) t)
               (switch-to-buffer (marker-buffer marker)))
             (with-current-buffer buffer
               (lsp-ui-peek-mode -1))
