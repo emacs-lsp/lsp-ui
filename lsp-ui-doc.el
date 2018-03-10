@@ -31,6 +31,7 @@
 
 (require 'lsp-mode)
 (require 'dash)
+(require 'dash-functional)
 (require 'markdown-mode)
 
 (defgroup lsp-ui-doc nil
