@@ -64,13 +64,6 @@
                  (const :tag "At point" at-point))
   :group 'lsp-ui-doc)
 
-(defcustom lsp-ui-doc-background "#272A36"
-  "Background color of the frame.
-To more customize the frame, see the variable
-`lsp-ui-doc-frame-parameters'."
-  :type 'color
-  :group 'lsp-ui-doc)
-
 (defcustom lsp-ui-doc-border "white"
   "Border color of the frame."
   :type 'color
@@ -87,8 +80,16 @@ To more customize the frame, see the variable
   :group 'lsp-ui-doc)
 
 (defcustom lsp-ui-doc-use-childframe t
-  "Whether to display documentation in a child-frame or the current frame. (Requires GNU/Emacs version >= 26.)"
+  "Whether to display documentation in a child-frame or the current frame.
+Child frames requires GNU/Emacs version >= 26 and graphical frames."
   :type 'boolean
+  :group 'lsp-ui-doc)
+
+(defface lsp-ui-doc-background
+  '((((background light)) :background "#b3b3b3")
+    (t :background "#272A36"))
+  "Background color of the documentation.
+Only the `background' is used in this face."
   :group 'lsp-ui-doc)
 
 (defface lsp-ui-doc-header
@@ -466,7 +467,7 @@ Use because `string-width' counts invisible characters."
 
 (defun lsp-ui-doc--inline-padding (string len)
   (let ((string (concat " " string (make-string (- len (lsp-ui-doc--inline-width-string string)) ?\s) " ")))
-    (add-face-text-property 0 (length string) (list :background lsp-ui-doc-background) t string)
+    (add-face-text-property 0 (length string) (list :background (face-background 'lsp-ui-doc-background nil t)) t string)
     string))
 
 (defun lsp-ui-doc--inline-faking-frame (doc-strings)
@@ -558,7 +559,7 @@ HEIGHT is the documentation number of lines."
          (params (append lsp-ui-doc-frame-parameters
                          `((default-minibuffer-frame . ,(selected-frame))
                            (minibuffer . ,(minibuffer-window))
-                           (background-color . ,lsp-ui-doc-background))))
+                           (background-color . ,(face-background 'lsp-ui-doc-background nil t)))))
          (window (display-buffer-in-child-frame
                   buffer
                   `((child-frame-parameters . ,params))))
