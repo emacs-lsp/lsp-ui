@@ -582,7 +582,7 @@ HEIGHT is the documentation number of lines."
   (unless (equal (ad-get-arg 0) (selected-window))
     (lsp-ui-doc--hide-frame)))
 
-(advice-add 'load-theme :before #'lsp-ui-doc--delete-frame)
+(advice-add 'load-theme :before (lambda (&rest _) (lsp-ui-doc--delete-frame)))
 (add-hook 'window-configuration-change-hook #'lsp-ui-doc--delete-frame)
 
 (defun lsp-ui-doc-enable-eldoc ()
