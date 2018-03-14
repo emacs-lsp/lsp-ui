@@ -644,7 +644,8 @@ references.  The function returns a list of `ls-xref-item'."
          (fn (lambda (loc) (lsp-ui-peek--xref-make-item filename loc))))
     (cond
      (visiting
-      (with-current-buffer visiting
+      (with-temp-buffer
+        (insert-buffer-substring-no-properties visiting)
         (lsp-ui-peek--fontify-buffer filename)
         (mapcar fn (cdr file))))
      ((file-readable-p filename)
