@@ -317,24 +317,22 @@ XREFS is a list of references/definitions."
 
 (defun lsp-ui-peek--peek ()
   "Show reference's chunk of code."
-  (-if-let* ((xref (lsp-ui-peek--get-selection))
-             ((&plist :file file :chunk chunk) (or xref lsp-ui-peek--last-xref)))
-    (-let* ((header (concat " " (lsp-ui--workspace-path file) "\n"))
-            (header2 (format " %s %s" lsp-ui-peek--size-list (symbol-name lsp-ui-peek--kind)))
-            (ref-view (--> chunk
-                           (subst-char-in-string ?\t ?\s it)
-                           (concat header it)
-                           (split-string it "\n")))
-            (list-refs (->> lsp-ui-peek--list
-                            (--remove (lsp-ui-peek--prop 'lsp-ui-peek-hidden it))
-                            (-drop lsp-ui-peek--offset)
-                            (-take (1- lsp-ui-peek-peek-height))
-                            (lsp-ui-peek--fill (1- lsp-ui-peek-peek-height))
-                            (-concat (list header2)))))
-      (setq lsp-ui-peek--last-xref (or xref lsp-ui-peek--last-xref))
-      (lsp-ui-peek--peek-new ref-view list-refs))
-    ;; Inactivate the keymap if file is nil.
-    (lsp-ui-peek--abort)))
+  (-let* ((xref (lsp-ui-peek--get-selection))
+          ((&plist :file file :chunk chunk) (or xref lsp-ui-peek--last-xref))
+          (header (concat " " (lsp-ui--workspace-path file) "\n"))
+          (header2 (format " %s %s" lsp-ui-peek--size-list (symbol-name lsp-ui-peek--kind)))
+          (ref-view (--> chunk
+                         (subst-char-in-string ?\t ?\s it)
+                         (concat header it)
+                         (split-string it "\n")))
+          (list-refs (->> lsp-ui-peek--list
+                          (--remove (lsp-ui-peek--prop 'lsp-ui-peek-hidden it))
+                          (-drop lsp-ui-peek--offset)
+                          (-take (1- lsp-ui-peek-peek-height))
+                          (lsp-ui-peek--fill (1- lsp-ui-peek-peek-height))
+                          (-concat (list header2)))))
+    (setq lsp-ui-peek--last-xref (or xref lsp-ui-peek--last-xref))
+    (lsp-ui-peek--peek-new ref-view list-refs)))
 
 (defun lsp-ui-peek--toggle-text-prop (s)
   (let ((state (lsp-ui-peek--prop 'lsp-ui-peek-hidden s)))
