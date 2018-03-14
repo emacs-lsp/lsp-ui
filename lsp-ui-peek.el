@@ -224,7 +224,7 @@ It should returns a list of filenames to expand.")
 (defun lsp-ui-peek--adjust (width strings)
   (-let* (((s1 . s2) strings))
     (cons (lsp-ui-peek--truncate (- width (1+ lsp-ui-peek-list-width)) s1)
-          (lsp-ui-peek--truncate (1- lsp-ui-peek-list-width) s2))))
+          (lsp-ui-peek--truncate (- lsp-ui-peek-list-width 2) s2))))
 
 (defun lsp-ui-peek--make-footer ()
   ;; Character-only terminals don't support characters of different height
