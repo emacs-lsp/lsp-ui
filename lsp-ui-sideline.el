@@ -239,7 +239,12 @@ CURRENT is non-nil when the point is on the symbol."
                 lsp-ui-sideline--ovs))))
 
 (defun lsp-ui-sideline--margin-width ()
-  (if fringes-outside-margins right-margin-width 0))
+  (+ (if fringes-outside-margins right-margin-width 0)
+     (or (and (consp fringe-mode)
+              (or (equal (car fringe-mode) 0)
+                  (equal (cdr fringe-mode) 0))
+              1)
+         0)))
 
 (defun lsp-ui-sideline--window-width ()
   (- (window-text-width)
