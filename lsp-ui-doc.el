@@ -114,7 +114,6 @@ Only the `background' is used in this face."
     (internal-border-width . 1)
     (vertical-scroll-bars . nil)
     (horizontal-scroll-bars . nil)
-    (left-fringe . 0)
     (right-fringe . 0)
     (menu-bar-lines . 0)
     (tool-bar-lines . 0)
@@ -364,15 +363,14 @@ START-Y is the position y of the current window."
   (-let* (((left top right _bottom) (window-edges nil nil nil t))
           (window (frame-root-window frame))
           ((width . height) (window-text-pixel-size window nil nil 10000 10000))
-          (width (+ width (* (frame-char-width frame) 2))) ;; margins
+          (width (+ width (* (frame-char-width frame) 1))) ;; margins
           (char-h (frame-char-height))
           (height (min (- (* lsp-ui-doc-max-height char-h) (/ char-h 2)) height))
           (frame-resize-pixelwise t))
-    (set-window-margins window 1 1)
     (set-frame-size frame width height t)
     (if (eq lsp-ui-doc-position 'at-point)
         (lsp-ui-doc--mv-at-point frame height left top)
-      (set-frame-position frame (- right width 10)
+      (set-frame-position frame (- right width 10 (frame-char-width))
                           (pcase lsp-ui-doc-position
                             ('top (+ top 10))
                             ('bottom (- (lsp-ui-doc--line-height 'mode-line)
@@ -559,6 +557,7 @@ HEIGHT is the documentation number of lines."
          (params (append lsp-ui-doc-frame-parameters
                          `((default-minibuffer-frame . ,(selected-frame))
                            (minibuffer . ,(minibuffer-window))
+                           (left-fringe . ,(frame-char-width))
                            (background-color . ,(face-background 'lsp-ui-doc-background nil t)))))
          (window (display-buffer-in-child-frame
                   buffer
