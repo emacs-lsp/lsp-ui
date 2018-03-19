@@ -167,20 +167,21 @@ CALLBACK is the status callback passed by Flycheck."
   ;; them immediately to the callback
   (let ((errors))
     (maphash (lambda (file diagnostics)
-               (dolist (diag diagnostics)
-                 (push (flycheck-error-new
-                        :buffer (current-buffer)
-                        :checker checker
-                        :filename file
-                        :line (1+ (lsp-diagnostic-line diag))
-                        :column (1+ (lsp-diagnostic-column diag))
-                        :message (lsp-diagnostic-message diag)
-                        :level (pcase (lsp-diagnostic-severity diag)
-                                 (1 'error)
-                                 (2 'warning)
-                                 (_ 'info))
-                        :id (lsp-diagnostic-code diag))
-                       errors)))
+               (when (equal file buffer-file-name)
+                 (dolist (diag diagnostics)
+                   (push (flycheck-error-new
+                          :buffer (current-buffer)
+                          :checker checker
+                          :filename file
+                          :line (1+ (lsp-diagnostic-line diag))
+                          :column (1+ (lsp-diagnostic-column diag))
+                          :message (lsp-diagnostic-message diag)
+                          :level (pcase (lsp-diagnostic-severity diag)
+                                   (1 'error)
+                                   (2 'warning)
+                                   (_ 'info))
+                          :id (lsp-diagnostic-code diag))
+                         errors))))
              lsp--diagnostics)
     (funcall callback 'finished errors)))
 
