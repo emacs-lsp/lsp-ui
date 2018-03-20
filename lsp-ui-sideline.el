@@ -240,7 +240,8 @@ CURRENT is non-nil when the point is on the symbol."
 
 (defun lsp-ui-sideline--margin-width ()
   (+ (if fringes-outside-margins right-margin-width 0)
-     (or (and (consp fringe-mode)
+     (or (and (boundp 'fringe-mode)
+              (consp fringe-mode) 
               (or (equal (car fringe-mode) 0)
                   (equal (cdr fringe-mode) 0))
               1)
