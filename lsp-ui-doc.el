@@ -481,7 +481,7 @@ Use because `string-width' counts invisible characters."
     string))
 
 (defun lsp-ui-doc--inline-faking-frame (doc-strings)
-  (let* ((len-max (length (-max-by (-on '> 'string-width) doc-strings))))
+  (let* ((len-max (-max-by '> (-map 'string-width doc-strings))))
     (setq lsp-ui-doc--inline-width len-max)
     (--map (lsp-ui-doc--inline-padding it len-max) doc-strings)))
 
