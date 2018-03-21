@@ -459,16 +459,10 @@ Use because `string-width' counts invisible characters."
   "Return the line number width."
   (+ (if (bound-and-true-p display-line-numbers-mode)
          (+ 2 (line-number-display-width))
-       0)
-     (if (bound-and-true-p linum-mode)
-         (cond ((stringp linum-format) (string-width linum-format))
-               ((eq linum-format 'dynamic)
-                (+ 2 (string-width (number-to-string
-                                    (count-lines (point-min) (point-max)))))))
        0)))
 
 (defun lsp-ui-doc--inline-zip (s1 s2)
-  (let* ((width (- (window-body-width) (lsp-ui-doc--inline-line-number-width) 1))
+  (let* ((width (- (window-text-width) (lsp-ui-doc--inline-line-number-width) 1))
          (max-s1 (- width lsp-ui-doc--inline-width 2))
          (spaces (- width (string-width s1) (lsp-ui-doc--inline-width-string s2))))
     (lsp-ui-doc--truncate
