@@ -439,21 +439,16 @@ FN is the function to call on click."
   (lsp-ui-doc--with-buffer
    (length (split-string (buffer-string) "\n"))))
 
-(defun lsp-ui-doc--truncate (len s &optional suffix)
-  (let ((suffix (or suffix "")))
-    (if (> (lsp-ui-doc--inline-width-string s) len)
-        (format (concat "%s" suffix) (substring s 0 (max (- len (length suffix)) 0)))
-      s)))
+;; TODO Optimize this function
+(defun lsp-ui-doc--remove-invisibles (string)
+  "Remove invisible characters in STRING."
+  (let ((res ""))
+    (dotimes (i (length string))
+      (unless (get-text-property i 'invisible string)
+        (setq res (concat res (substring string i (1+ i))))))
+    res))
 
 (defvar-local lsp-ui-doc--inline-width nil)
-
-(defun lsp-ui-doc--inline-width-string (string)
-  "Returns numbers of characters that are display in STRING.
-Use because `string-width' counts invisible characters."
-  (with-temp-buffer
-    (insert string)
-    (goto-char (point-max))
-    (current-column)))
 
 (defun lsp-ui-doc--inline-line-number-width ()
   "Return the line number width."
@@ -463,14 +458,13 @@ Use because `string-width' counts invisible characters."
 
 (defun lsp-ui-doc--inline-zip (s1 s2)
   (let* ((width (- (window-text-width) (lsp-ui-doc--inline-line-number-width) 1))
-         (max-s1 (- width lsp-ui-doc--inline-width 2))
-         (spaces (- width (string-width s1) (lsp-ui-doc--inline-width-string s2))))
-    (lsp-ui-doc--truncate
-     width
-     (concat (lsp-ui-doc--truncate max-s1 s1) (make-string (max spaces 0) ?\s) s2))))
+         (max-s1 (- width lsp-ui-doc--inline-width 2)))
+    (truncate-string-to-width
+     (concat (truncate-string-to-width s1 max-s1 nil ?\s) s2)
+     width nil ?\s)))
 
 (defun lsp-ui-doc--inline-padding (string len)
-  (let ((string (concat " " string (make-string (- len (lsp-ui-doc--inline-width-string string)) ?\s) " ")))
+  (let ((string (concat " " string (make-string (- len (string-width string)) ?\s) " ")))
     (add-face-text-property 0 (length string) (list :background (face-background 'lsp-ui-doc-background nil t)) t string)
     string))
 
@@ -484,9 +478,11 @@ Use because `string-width' counts invisible characters."
 
 (defun lsp-ui-doc--inline-merge (strings)
   (let* ((buffer-strings (-> (lsp-ui-doc--inline-untab strings)
+                             (lsp-ui-doc--remove-invisibles)
                              (split-string "\n")))
          (doc-strings (-> (lsp-ui-doc--with-buffer (buffer-string))
                           (lsp-ui-doc--inline-untab)
+                          (lsp-ui-doc--remove-invisibles)
                           (split-string "\n")))
          (merged (--> (lsp-ui-doc--inline-faking-frame doc-strings)
                       (-zip-with 'lsp-ui-doc--inline-zip buffer-strings it)
