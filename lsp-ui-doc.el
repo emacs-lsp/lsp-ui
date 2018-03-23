@@ -334,10 +334,10 @@ BUFFER is the buffer where the request has been made."
       (lsp-ui-doc--line-height)))
 
 (defun lsp-ui-doc--resize-buffer ()
-  "If the buffer's width is larger than the current window, resize it."
-  (let* ((window-width (window-width))
-         (fill-column (min lsp-ui-doc-max-width (- window-width 5))))
-    (when (> (lsp-ui-doc--buffer-width) (min lsp-ui-doc-max-width window-width))
+  "If the buffer's width is larger than the current frame, resize it."
+  (let* ((frame-width (frame-width))
+         (fill-column (min lsp-ui-doc-max-width (- frame-width 5))))
+    (when (> (lsp-ui-doc--buffer-width) (min lsp-ui-doc-max-width frame-width))
       (lsp-ui-doc--with-buffer
        (fill-region (point-min) (point-max))))))
 
@@ -360,7 +360,7 @@ START-Y is the position y of the current window."
 (defun lsp-ui-doc--move-frame (frame)
   "Place our FRAME on screen."
   (lsp-ui-doc--resize-buffer)
-  (-let* (((left top right _bottom) (window-edges nil nil nil t))
+  (-let* (((left top _right _bottom) (window-edges nil nil nil t))
           (window (frame-root-window frame))
           ((width . height) (window-text-pixel-size window nil nil 10000 10000))
           (width (+ width (* (frame-char-width frame) 1))) ;; margins
@@ -370,7 +370,10 @@ START-Y is the position y of the current window."
     (set-frame-size frame width height t)
     (if (eq lsp-ui-doc-position 'at-point)
         (lsp-ui-doc--mv-at-point frame height left top)
-      (set-frame-position frame (- right width 10 (frame-char-width))
+      (set-frame-position frame
+                          (if (>= left (+ width 10 (frame-char-width)))
+                              10
+                            (- (frame-pixel-width) width 10 (frame-char-width)))
                           (pcase lsp-ui-doc-position
                             ('top (+ top 10))
                             ('bottom (- (lsp-ui-doc--line-height 'mode-line)
