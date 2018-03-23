@@ -216,6 +216,10 @@ MARKED-STRING is the string returned by `lsp-ui-sideline--extract-info'."
     (add-face-text-property 0 (length marked-string) 'default t marked-string)
     (replace-regexp-in-string "[\n\t]+" " " marked-string)))
 
+(defun lsp-ui-sideline--align (&rest lengths)
+  (+ (apply '+ lengths)
+     (if (display-graphic-p) 1 2)))
+
 (defun lsp-ui-sideline--make-display-string (info symbol current)
   "Make final string to display on buffer.
 INFO is the information to display.
@@ -229,7 +233,7 @@ CURRENT is non-nil when the point is on the symbol."
          (margin (lsp-ui-sideline--margin-width)))
     (add-face-text-property 0 len 'lsp-ui-sideline-global nil str)
     (concat
-     (propertize " " 'display `(space :align-to (- right-fringe ,(+ 1 len margin))))
+     (propertize " " 'display `(space :align-to (- right-fringe ,(lsp-ui-sideline--align len margin))))
      str)))
 
 (defun lsp-ui-sideline--check-duplicate (symbol info)
@@ -304,13 +308,13 @@ CURRENT is non-nil when the point is on the symbol."
                            (car (split-string it "\n"))
                            (replace-regexp-in-string "[\n\t]+" " " it)))
              (len (length message))
-	          (level (flycheck-error-level e))
+	         (level (flycheck-error-level e))
              (face (if (eq level 'info) 'success level))
              (margin (lsp-ui-sideline--margin-width))
              (message (progn (add-face-text-property 0 len 'lsp-ui-sideline-global nil message)
                              (add-face-text-property 0 len face nil message)
                              message))
-             (string (concat (propertize " " 'display `(space :align-to (- right-fringe ,(+ 1 len margin))))
+             (string (concat (propertize " " 'display `(space :align-to (- right-fringe ,(lsp-ui-sideline--align len margin))))
                              message))
              (pos-ov (lsp-ui-sideline--find-line len t))
              (ov (and pos-ov (make-overlay pos-ov pos-ov))))
@@ -335,7 +339,7 @@ CURRENT is non-nil when the point is on the symbol."
                           (add-face-text-property 0 len 'lsp-ui-sideline-code-action nil title)
                           (add-text-properties 0 len `(keymap ,keymap mouse-face highlight) title)
                           title))
-            (string (concat (propertize " " 'display `(space :align-to (- right-fringe ,(+ 1 (length title) margin))))
+            (string (concat (propertize " " 'display `(space :align-to (- right-fringe ,(lsp-ui-sideline--align len margin))))
                             title))
             (pos-ov (lsp-ui-sideline--find-line (1+ (length title)) t))
             (ov (and pos-ov (make-overlay pos-ov pos-ov))))
