@@ -450,14 +450,16 @@ FN is the function to call on click."
 
 (defvar-local lsp-ui-doc--inline-width nil)
 
-(defun lsp-ui-doc--inline-line-number-width ()
-  "Return the line number width."
-  (+ (if (bound-and-true-p display-line-numbers-mode)
+(defun lsp-ui-doc--inline-window-width nil
+  (- (min (window-text-width)
+          (window-body-width))
+     (if (bound-and-true-p display-line-numbers-mode)
          (+ 2 (line-number-display-width))
-       0)))
+       0)
+     1))
 
 (defun lsp-ui-doc--inline-zip (s1 s2)
-  (let* ((width (- (window-text-width) (lsp-ui-doc--inline-line-number-width) 1))
+  (let* ((width (lsp-ui-doc--inline-window-width))
          (max-s1 (- width lsp-ui-doc--inline-width 2)))
     (truncate-string-to-width
      (concat (truncate-string-to-width s1 max-s1 nil ?\s) s2)
