@@ -442,15 +442,6 @@ FN is the function to call on click."
   (lsp-ui-doc--with-buffer
    (length (split-string (buffer-string) "\n"))))
 
-;; TODO Optimize this function
-(defun lsp-ui-doc--remove-invisibles (string)
-  "Remove invisible characters in STRING."
-  (let ((res ""))
-    (dotimes (i (length string))
-      (unless (get-text-property i 'invisible string)
-        (setq res (concat res (substring string i (1+ i))))))
-    res))
-
 (defvar-local lsp-ui-doc--inline-width nil)
 
 (defun lsp-ui-doc--inline-window-width nil
@@ -483,11 +474,10 @@ FN is the function to call on click."
 
 (defun lsp-ui-doc--inline-merge (strings)
   (let* ((buffer-strings (-> (lsp-ui-doc--inline-untab strings)
-                             (lsp-ui-doc--remove-invisibles)
                              (split-string "\n")))
          (doc-strings (-> (lsp-ui-doc--with-buffer (buffer-string))
                           (lsp-ui-doc--inline-untab)
-                          (lsp-ui-doc--remove-invisibles)
+                          (substring-no-properties)
                           (split-string "\n")))
          (merged (--> (lsp-ui-doc--inline-faking-frame doc-strings)
                       (-zip-with 'lsp-ui-doc--inline-zip buffer-strings it)
