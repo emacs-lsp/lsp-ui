@@ -233,9 +233,10 @@ MODE is the mode used in the parent frame."
        (with-temp-buffer
          (insert string)
          (delay-mode-hooks
-           (funcall (cond ((and with-lang (string= "text" language)) 'text-mode)
-                          ((fboundp 'gfm-view-mode) 'gfm-view-mode)
-                          (t 'markdown-mode)))
+           (let ((inhibit-message t))
+             (funcall (cond ((and with-lang (string= "text" language)) 'text-mode)
+                            ((fboundp 'gfm-view-mode) 'gfm-view-mode)
+                            (t 'markdown-mode))))
            (when (derived-mode-p 'markdown-mode)
              (lsp-ui-doc--setup-markdown mode))
            (ignore-errors
