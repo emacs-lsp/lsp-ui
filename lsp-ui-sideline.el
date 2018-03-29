@@ -51,8 +51,10 @@
   :type 'boolean
   :group 'lsp-ui-sideline)
 
-(defcustom lsp-ui-sideline-show-symbol t
-  "Whether to show the symbol on the right of the information."
+(defcustom lsp-ui-sideline-show-symbol '(not c-mode c++-mode objc-mode)
+  "When t, show the symbol name on the right of the information.
+Otherwise, it's a list of major modes which will show the symbol.
+If the list starts with `not', the meaning is negated."
   :type 'boolean
   :group 'lsp-ui-sideline)
 
@@ -220,13 +222,19 @@ MARKED-STRING is the string returned by `lsp-ui-sideline--extract-info'."
   (+ (apply '+ lengths)
      (if (display-graphic-p) 1 2)))
 
+(defun lsp-ui-sideline--show-symbol-p ()
+  (or (eq lsp-ui-sideline-show-symbol t)
+      (if (eq (car lsp-ui-sideline-show-symbol) 'not)
+          (not (memq major-mode (cdr lsp-ui-sideline-show-symbol)))
+        (memq major-mode lsp-ui-sideline-show-symbol))))
+
 (defun lsp-ui-sideline--make-display-string (info symbol current)
   "Make final string to display on buffer.
 INFO is the information to display.
 SYMBOL is the symbol associated to the info.
 CURRENT is non-nil when the point is on the symbol."
   (let* ((face (if current 'lsp-ui-sideline-current-symbol 'lsp-ui-sideline-symbol))
-         (str (if lsp-ui-sideline-show-symbol
+         (str (if (lsp-ui-sideline--show-symbol-p)
                   (concat info " " (propertize (concat " " symbol " ") 'face face))
                 info))
          (len (length str))
@@ -389,7 +397,7 @@ to the language server."
               (forward-symbol 1))))))))
 
 (defun lsp-ui-sideline--stop-p ()
-  "Return non-nil if the sideline should not be display"
+  "Return non-nil if the sideline should not be display."
   (or (region-active-p)
       (bound-and-true-p company-pseudo-tooltip-overlay)
       (bound-and-true-p lsp-ui-peek--overlay)))
@@ -441,7 +449,7 @@ This does not toggle display of flycheck diagnostics or code actions."
    ))
 
 (defun lsp-ui-sideline-enable (enable)
-  "Enable/disable ‘lsp-ui-sideline-mode’."
+  "Enable/disable `lsp-ui-sideline-mode'."
   (lsp-ui-sideline-mode (if enable 1 -1)))
 
 (provide 'lsp-ui-sideline)
