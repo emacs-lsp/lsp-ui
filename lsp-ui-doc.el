@@ -430,7 +430,7 @@ FN is the function to call on click."
    (erase-buffer)
    (let ((inline-p (lsp-ui-doc--inline-p)))
      (insert (concat (unless inline-p (propertize "\n" 'face '(:height 0.2)))
-                     string
+                     (string-trim-right string)
                      (unless inline-p (propertize "\n\n" 'face '(:height 0.3))))))
    (lsp-ui-doc--make-clickable-link)
    (setq-local face-remapping-alist `((header-line lsp-ui-doc-header)))
