@@ -365,6 +365,7 @@ to the language server."
           (eob (buffer-end 1))
           (bol (line-beginning-position))
           (line (line-number-at-pos))
+          (line-widen (save-restriction (widen) (line-number-at-pos)))
           (doc-id (lsp--text-document-identifier)))
       (save-excursion
         (goto-char bol)
@@ -392,7 +393,7 @@ to the language server."
                  (lsp--make-request
                   "textDocument/hover"
                   (list :textDocument doc-id
-                        :position (lsp--position (1- line) (if (= column 0) 0 (1- column)))))
+                        :position (lsp--position (1- line-widen) (if (= column 0) 0 (1- column)))))
                  (lambda (info) (if info (lsp-ui-sideline--push-info symbol line bounds info)))))
               (forward-symbol 1))))))))
 
