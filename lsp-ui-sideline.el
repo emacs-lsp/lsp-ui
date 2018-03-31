@@ -51,10 +51,8 @@
   :type 'boolean
   :group 'lsp-ui-sideline)
 
-(defcustom lsp-ui-sideline-show-symbol '(not c-mode c++-mode objc-mode)
-  "When t, show the symbol name on the right of the information.
-Otherwise, it's a list of major modes which will show the symbol.
-If the list starts with `not', the meaning is negated."
+(defcustom lsp-ui-sideline-show-symbol t
+  "When t, show the symbol name on the right of the information."
   :type 'boolean
   :group 'lsp-ui-sideline)
 
@@ -222,19 +220,13 @@ MARKED-STRING is the string returned by `lsp-ui-sideline--extract-info'."
   (+ (apply '+ lengths)
      (if (display-graphic-p) 1 2)))
 
-(defun lsp-ui-sideline--show-symbol-p ()
-  (or (eq lsp-ui-sideline-show-symbol t)
-      (if (eq (car lsp-ui-sideline-show-symbol) 'not)
-          (not (memq major-mode (cdr lsp-ui-sideline-show-symbol)))
-        (memq major-mode lsp-ui-sideline-show-symbol))))
-
 (defun lsp-ui-sideline--make-display-string (info symbol current)
   "Make final string to display on buffer.
 INFO is the information to display.
 SYMBOL is the symbol associated to the info.
 CURRENT is non-nil when the point is on the symbol."
   (let* ((face (if current 'lsp-ui-sideline-current-symbol 'lsp-ui-sideline-symbol))
-         (str (if (lsp-ui-sideline--show-symbol-p)
+         (str (if lsp-ui-sideline--show-symbol
                   (concat info " " (propertize (concat " " symbol " ") 'face face))
                 info))
          (len (length str))
