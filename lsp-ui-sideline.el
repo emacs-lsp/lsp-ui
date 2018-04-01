@@ -226,7 +226,7 @@ INFO is the information to display.
 SYMBOL is the symbol associated to the info.
 CURRENT is non-nil when the point is on the symbol."
   (let* ((face (if current 'lsp-ui-sideline-current-symbol 'lsp-ui-sideline-symbol))
-         (str (if lsp-ui-sideline--show-symbol
+         (str (if lsp-ui-sideline-show-symbol
                   (concat info " " (propertize (concat " " symbol " ") 'face face))
                 info))
          (len (length str))
