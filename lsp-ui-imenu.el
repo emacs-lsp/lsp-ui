@@ -56,8 +56,10 @@
                  (const :tag "Left" left))
   :group 'lsp-ui-imenu)
 
-(defvar lsp-ui-imenu-colors
-  '("deep sky blue" "green3"))
+(defcustom lsp-ui-menu-colors '("deep sky blue" "green3")
+  "Color list to cycle through for entry groups."
+  :type '(repeat color)
+  :group 'lsp-ui-menu)
 
 (declare-function imenu--make-index-alist 'imenu)
 (declare-function imenu--subalist-p 'imenu)
