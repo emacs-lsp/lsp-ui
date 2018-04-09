@@ -342,6 +342,14 @@ BUFFER is the buffer where the request has been made."
       (lsp-ui-doc--with-buffer
        (fill-region (point-min) (point-max))))))
 
+(defun lsp-ui-doc--next-to-side-window-p nil
+  "Return non-nil if the window on the left is a side window."
+  (let* ((win (window-at 0 0))
+         (left (window-left (selected-window))))
+    (and (not (eq win (selected-window)))
+         (or (not left) (eq win left))
+         (eq (window-parameter win 'window-side) 'left))))
+
 (defun lsp-ui-doc--mv-at-point (frame height start-x start-y)
   "Move the FRAME at point.
 HEIGHT is the child frame height.
@@ -372,7 +380,8 @@ START-Y is the position y of the current window."
     (if (eq lsp-ui-doc-position 'at-point)
         (lsp-ui-doc--mv-at-point frame height left top)
       (set-frame-position frame
-                          (if (>= left (+ width 10 (frame-char-width)))
+                          (if (and (>= left (+ width 10 (frame-char-width)))
+                                   (not (lsp-ui-doc--next-to-side-window-p)))
                               10
                             (- (frame-pixel-width) width 10 (frame-char-width)))
                           (pcase lsp-ui-doc-position
