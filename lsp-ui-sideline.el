@@ -324,7 +324,7 @@ CURRENT is non-nil when the point is on the symbol."
 
 (defvar-local lsp-ui-sideline--code-actions nil)
 
-(defun lsp-ui-sideline--apply-code-actions nil
+(defun lsp-ui-sideline-apply-code-actions nil
   "Choose and apply code action(s) on the current line."
   (interactive)
   (unless lsp-ui-sideline--code-actions
