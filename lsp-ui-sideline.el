@@ -322,8 +322,24 @@ CURRENT is non-nil when the point is on the symbol."
           (overlay-put ov 'after-string string)
           (push ov lsp-ui-sideline--ovs))))))
 
+(defvar-local lsp-ui-sideline--code-actions nil)
+
+(defun lsp-ui-sideline--apply-code-actions nil
+  "Choose and apply code action(s) on the current line."
+  (interactive)
+  (unless lsp-ui-sideline--code-actions
+    (user-error "No code actions on the current line"))
+  (let* ((actions lsp-ui-sideline--code-actions)
+         (title (completing-read "Apply: " (--map (gethash "title" it) actions)
+                                 nil t))
+         (action (--first (equal (gethash "title" it) title) actions)))
+    (unless action
+      (error "Fail to apply action"))
+    (lsp-execute-code-action action)))
+
 (defun lsp-ui-sideline--code-actions (actions)
   "Show code ACTIONS."
+  (setq lsp-ui-sideline--code-actions actions)
   (dolist (action actions)
     (-let* ((title (->> (gethash "title" action)
                         (replace-regexp-in-string "[\n\t]+" " ")
