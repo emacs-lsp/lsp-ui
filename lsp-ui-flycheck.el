@@ -45,6 +45,13 @@
   :type 'boolean
   :group 'lsp-ui)
 
+(defcustom lsp-ui-flycheck-live-reporting t
+  "If non-nil, diagnostics in buffer will be reported as soon as possible.
+Typically, on every keystroke.
+If nil, diagnostics will be reported according to `flycheck-check-syntax-automatically'."
+  :type 'boolean
+  :group 'lsp-ui-flycheck)
+
 (defvar-local lsp-ui-flycheck-list--buffer nil)
 
 (defun lsp-ui-flycheck-list--post-command ()
@@ -198,16 +205,20 @@ See https://github.com/emacs-lsp/lsp-mode."
   (unless (flycheck-checker-supports-major-mode-p 'lsp-ui mode)
     (flycheck-add-mode 'lsp-ui mode)))
 
+(defun lsp-ui-flycheck--report nil
+  (and flycheck-mode
+       lsp-ui-flycheck-live-reporting
+       (flycheck-buffer)))
+
 ;; FIXME: Provide a way to disable lsp-ui-flycheck
 (defun lsp-ui-flycheck-enable (_)
   "Enable flycheck integration for the current buffer."
-  (setq-local flycheck-check-syntax-automatically nil)
+  (when lsp-ui-flycheck-live-reporting
+    (setq-local flycheck-check-syntax-automatically nil))
   (setq-local flycheck-checker 'lsp-ui)
   (lsp-ui-flycheck-add-mode major-mode)
   (add-to-list 'flycheck-checkers 'lsp-ui)
-  (add-hook 'lsp-after-diagnostics-hook (lambda ()
-                                          (when flycheck-mode
-                                            (flycheck-buffer)))))
+  (add-hook 'lsp-after-diagnostics-hook 'lsp-ui-flycheck--report nil t))
 
 ;; lsp-ui.el loads lsp-ui-flycheck.el, so we can’t ‘require’ lsp-ui.
 ;; FIXME: Remove this cyclic dependency.
