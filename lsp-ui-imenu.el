@@ -125,9 +125,9 @@
       (overlay-put
        ov 'after-string
        (concat (lsp-ui-imenu--pad " " padding color t)
-               title
                "\n"
-               (propertize "\n" 'face '(:height 0.3)))))))
+               title
+               (propertize "\n" 'face '(:height 1)))))))
 
 (defun lsp-ui-imenu nil
   (interactive)
@@ -159,7 +159,6 @@
             (lsp-ui-imenu--put-separator)
             (setq color-index (1+ color-index))))
         (lsp-ui-imenu-mode)
-        (setq header-line-format " ")
         (setq mode-line-format '(:eval (lsp-ui-imenu--win-separator)))
         (goto-char 1)
         (add-hook 'post-command-hook 'lsp-ui-imenu--post-command nil t)
