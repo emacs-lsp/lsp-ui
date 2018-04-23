@@ -52,6 +52,12 @@ If nil, diagnostics will be reported according to `flycheck-check-syntax-automat
   :type 'boolean
   :group 'lsp-ui-flycheck)
 
+(defcustom lsp-ui-flycheck-list-position 'bottom
+  "Position where `lsp-ui-flycheck-list' will show diagnostics for the whole workspace."
+  :type '(choice (const :tag "Bottom" bottom)
+                 (const :tag "Right" right))
+  :group 'lsp-ui-flycheck)
+
 (defvar-local lsp-ui-flycheck-list--buffer nil)
 
 (defun lsp-ui-flycheck-list--post-command ()
@@ -101,7 +107,8 @@ If nil, diagnostics will be reported according to `flycheck-check-syntax-automat
       (lsp-ui-flycheck-list--update window workspace))
     (add-hook 'lsp-after-diagnostics-hook 'lsp-ui-flycheck-list--refresh nil t)
     (setq lsp-ui-flycheck-list--buffer buffer)
-    (let ((win (display-buffer-in-side-window buffer '((side . right) (slot . 5) (window-width . 0.20)))))
+    (let ((win (display-buffer-in-side-window
+                buffer `((side . ,lsp-ui-flycheck-list-position) (slot . 5) (window-width . 0.20)))))
       (set-window-dedicated-p win t)
       (select-window win)
       (fit-window-to-buffer nil nil 10))))
