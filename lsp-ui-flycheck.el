@@ -139,7 +139,7 @@ If nil, diagnostics will be reported according to `flycheck-check-syntax-automat
                              (forward-line line)
                              (forward-char column)
                              (point-marker))))))
-    (set-window-buffer window (marker-buffer marker))
+    (set-window-buffer window (marker-buffer marker) t)
     (with-selected-window window
       (goto-char marker)
       (recenter)
