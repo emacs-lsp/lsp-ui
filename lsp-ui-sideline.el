@@ -368,7 +368,8 @@ CURRENT is non-nil when the point is on the symbol."
 It loops on the symbols of the current line and request information
 to the language server."
   (lsp-ui-sideline--delete-ov)
-  (when lsp--cur-workspace
+  (when (and lsp--cur-workspace
+             buffer-file-name)
     (let ((eol (line-end-position))
           (eob (buffer-end 1))
           (bol (line-beginning-position))
