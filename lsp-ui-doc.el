@@ -57,6 +57,11 @@
   :type 'boolean
   :group 'lsp-ui-doc)
 
+(defcustom lsp-ui-doc-delay 0.2
+  "Number of seconds to wait before showing the doc."
+  :type 'number
+  :group 'lsp-ui-doc)
+
 (defcustom lsp-ui-doc-position 'top
   "Where to display the doc."
   :type '(choice (const :tag "Top" top)
@@ -159,6 +164,8 @@ Because some variables are buffer local.")
 
 (defvar-local lsp-ui-doc--inline-ov nil
   "Overlay used to display the documentation in the buffer.")
+
+(defvar-local lsp-ui-doc--timer nil)
 
 (defmacro lsp-ui-doc--with-buffer (&rest body)
   "Execute BODY in the lsp-ui-doc buffer."
@@ -269,6 +276,12 @@ We don't extract the string that `lps-line' is already displaying."
      ((gethash "kind" contents) (gethash "value" contents)) ;; MarkupContent
      ((gethash "language" contents) ;; MarkedString
       (lsp-ui-doc--extract-marked-string contents)))))
+
+(defun lsp-ui-doc--make-delayed-request ()
+  (when lsp-ui-doc--timer
+    (cancel-timer lsp-ui-doc--timer))
+  (setq lsp-ui-doc--timer
+        (run-with-idle-timer lsp-ui-doc-delay nil 'lsp-ui-doc--make-request)))
 
 (defun lsp-ui-doc--make-request ()
   "Request the documentation to the LS."
@@ -630,11 +643,11 @@ HEIGHT is the documentation number of lines."
           (cl-callf copy-tree frameset-filter-alist)
           (push '(lsp-ui-doc-frame . :never) frameset-filter-alist)))
       (add-hook 'lsp-after-open-hook 'lsp-ui-doc-enable-eldoc nil t)
-      (add-hook 'post-command-hook 'lsp-ui-doc--make-request nil t)
+      (add-hook 'post-command-hook 'lsp-ui-doc--make-delayed-request nil t)
       (add-hook 'delete-frame-functions 'lsp-ui-doc--on-delete nil t)))
    (t
     (remove-hook 'delete-frame-functions 'lsp-ui-doc--on-delete t)
-    (remove-hook 'post-command-hook 'lsp-ui-doc--make-request t)
+    (remove-hook 'post-command-hook 'lsp-ui-doc--make-delayed-request t)
     (remove-hook 'lsp-after-open-hook 'lsp-ui-doc-enable-eldoc t)
     (setq-local eldoc-documentation-function 'lsp--on-hover))))
 
