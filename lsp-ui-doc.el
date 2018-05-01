@@ -33,6 +33,7 @@
 (require 'dash)
 (require 'dash-functional)
 (require 'markdown-mode)
+(require 'lsp-ui-string-trim)
 
 (defgroup lsp-ui-doc nil
   "Display informations of the current line."
@@ -439,7 +440,7 @@ FN is the function to call on click."
    (erase-buffer)
    (let ((inline-p (lsp-ui-doc--inline-p)))
      (insert (concat (unless inline-p (propertize "\n" 'face '(:height 0.2)))
-                     (string-trim string "[\n]+")
+                     (lsp-ui--string-trim string "[\n]+")
                      (unless inline-p (propertize "\n\n" 'face '(:height 0.3))))))
    (lsp-ui-doc--make-clickable-link)
    (setq-local face-remapping-alist `((header-line lsp-ui-doc-header)))
