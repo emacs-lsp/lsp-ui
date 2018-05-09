@@ -386,45 +386,52 @@ to the language server."
   (lsp-ui-sideline--delete-ov)
   (when (and lsp--cur-workspace
              buffer-file-name)
-    (let* ((eol (line-end-position))
-           (eob (buffer-end 1))
-           (bol (line-beginning-position))
-           (doc-id (lsp--text-document-identifier))
-           (action-params
-            (if (equal lsp-ui-sideline-update-mode 'line)
-                (list :textDocument doc-id
-                      :range (lsp--region-to-range bol eol)
-                      :context (list :diagnostics (lsp--cur-line-diagnotics)))
-              (lsp--text-document-code-action-params)))
-           (line (point))
-           (line-widen (save-restriction (widen) (line-number-at-pos))))
+    (let ((eol (line-end-position))
+          (bol (line-beginning-position))
+          (line (line-number-at-pos))
+          (line-widen (save-excursion (widen) (line-number-at-pos)))
+          (doc-id (lsp--text-document-identifier)))
       (save-excursion
         (setq lsp-ui-sideline--occupied-lines nil
               lsp-ui-sideline--tag (lsp-ui-sideline--calculate-tag)
               lsp-ui-sideline--last-width (window-text-width))
-        (goto-char bol)
         (when lsp-ui-sideline-show-flycheck
           (lsp-ui-sideline--flycheck))
         (when (and lsp-ui-sideline-show-code-actions (lsp--capability "codeActionProvider"))
           (lsp--send-request-async (lsp--make-request
                                     "textDocument/codeAction"
-                                    action-params)
+                                    (if (equal lsp-ui-sideline-update-mode 'line)
+                                        (list :textDocument doc-id
+                                              :range (lsp--region-to-range bol eol)
+                                              :context (list :diagnostics (lsp--cur-line-diagnotics)))
+                                      (lsp--text-document-code-action-params)))
                                    #'lsp-ui-sideline--code-actions))
+        ;; Go through all symbols and request hover information.  Note that the symbols are
+        ;; traversed backwards as `forward-symbol' with a positive argument will jump just past the
+        ;; current symbol.  By going from the end of the line towards the front, point will be placed
+        ;; at the beginning of each symbol.  As the requests are first collected in a list before
+        ;; being processed they are still sent in order from left to right.
         (when (and lsp-ui-sideline-show-hover (lsp--capability "hoverProvider"))
-          (while (and (<= (point) eol) (< (point) eob))
-            (let ((symbol (thing-at-point 'symbol t))
-                  (bounds (bounds-of-thing-at-point 'symbol))
-                  (column (lsp--cur-column))
-                  (in-string (nth 3 (syntax-ppss))))
-              ;; Skip string and C++ scope resolution operator ::
-              (when (and symbol (not in-string) (not (looking-at-p "::")))
-                (lsp--send-request-async
-                 (lsp--make-request
-                  "textDocument/hover"
-                  (list :textDocument doc-id
-                        :position (lsp--position (1- line-widen) (if (= column 0) 0 (1- column)))))
-                 (lambda (info) (if info (lsp-ui-sideline--push-info symbol line bounds info)))))
-              (forward-symbol 1))))))))
+          (let ((symbols))
+            (goto-char eol)
+            (while (and (> (point) bol)
+                        (progn (forward-symbol -1)
+                               (>= (point) bol)))
+              (let* ((symbol (thing-at-point 'symbol t))
+                     (bounds (bounds-of-thing-at-point 'symbol))
+                     (parsing-state (syntax-ppss))
+                     (in-string (nth 3 parsing-state))
+                     (outside-comment (eq (nth 4 parsing-state) nil)))
+                ;; Skip strings and comments
+                (when (and symbol (not in-string) outside-comment)
+                  (push (list symbol line bounds (lsp--position (1- line-widen) (lsp--cur-column))) symbols))))
+            (dolist (entry symbols)
+              (-let [(symbol line bounds position) entry]
+               (lsp--send-request-async
+                (lsp--make-request
+                 "textDocument/hover"
+                 (list :textDocument doc-id :position position))
+                (lambda (info) (if info (lsp-ui-sideline--push-info symbol line bounds info))))))))))))
 
 (defun lsp-ui-sideline--stop-p ()
   "Return non-nil if the sideline should not be display."
