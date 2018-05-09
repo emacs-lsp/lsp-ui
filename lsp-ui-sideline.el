@@ -410,7 +410,7 @@ to the language server."
                                     "textDocument/codeAction"
                                     action-params)
                                    #'lsp-ui-sideline--code-actions))
-        (when lsp-ui-sideline-show-hover
+        (when (and lsp-ui-sideline-show-hover (lsp--capability "hoverProvider"))
           (while (and (<= (point) eol) (< (point) eob))
             (let ((symbol (thing-at-point 'symbol t))
                   (bounds (bounds-of-thing-at-point 'symbol))
