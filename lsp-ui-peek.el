@@ -570,6 +570,13 @@ KIND is ‘references’, ‘definitions’ or a custom kind."
                            'definitions
                            "textDocument/definition"))
 
+(defun lsp-ui-peek-find-implementation ()
+  "Find implementation locations of the symbol at point."
+  (interactive)
+  (lsp-ui-peek--find-xrefs (symbol-at-point)
+                           'implementation
+                           "textDocument/implementation"))
+
 (defun lsp-ui-peek-find-workspace-symbol (pattern)
   "Find symbols in the worskpace.
 The symbols are found matching PATTERN."
