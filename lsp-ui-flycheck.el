@@ -52,6 +52,11 @@ If nil, diagnostics will be reported according to `flycheck-check-syntax-automat
   :type 'boolean
   :group 'lsp-ui-flycheck)
 
+(defcustom lsp-ui-flycheck-report-all-buffers t
+  "If non-nil, diagnostics in buffer from all buffers will be reported."
+  :type 'boolean
+  :group 'lsp-ui)
+
 (defcustom lsp-ui-flycheck-list-position 'bottom
   "Position where `lsp-ui-flycheck-list' will show diagnostics for the whole workspace."
   :type '(choice (const :tag "Bottom" bottom)
@@ -173,6 +178,23 @@ If nil, diagnostics will be reported according to `flycheck-check-syntax-automat
   (setq mode-line-format nil)
   (add-hook 'post-command-hook 'lsp-ui-flycheck-list--post-command nil t))
 
+(defun lsp-ui--create-flycheck-error (diag file-name checker)
+  "Create flycheck error from LSP diagnostic.
+DIAG LSP diagnostic, FILE-NAME the name of the file containing
+the error. CHECKER is a reference to the lsp-ui checker."
+ (flycheck-error-new
+  :buffer (find-buffer-visiting file-name)
+  :checker checker
+  :filename file-name
+  :line (1+ (lsp-diagnostic-line diag))
+  :column (1+ (lsp-diagnostic-column diag))
+  :message (lsp-diagnostic-message diag)
+  :level (pcase (lsp-diagnostic-severity diag)
+           (1 'error)
+           (2 'warning)
+           (_ 'info))
+  :id (lsp-diagnostic-code diag)))
+
 (defun lsp-ui-flycheck--start (checker callback)
   "Start an LSP syntax check with CHECKER.
 
@@ -180,23 +202,15 @@ CALLBACK is the status callback passed by Flycheck."
   ;; Turn all errors from lsp--diagnostics into flycheck-error objects and pass
   ;; them immediately to the callback
   (let ((errors))
-    (maphash
-     (lambda (file-name diagnostics)
-       (dolist (diag diagnostics)
-         (push (flycheck-error-new
-                :buffer (find-buffer-visiting file-name)
-                :checker checker
-                :filename file-name
-                :line (1+ (lsp-diagnostic-line diag))
-                :column (1+ (lsp-diagnostic-column diag))
-                :message (lsp-diagnostic-message diag)
-                :level (pcase (lsp-diagnostic-severity diag)
-                         (1 'error)
-                         (2 'warning)
-                         (_ 'info))
-                :id (lsp-diagnostic-code diag))
-               errors)))
-     lsp--diagnostics)
+    (if lsp-ui-flycheck-report-all-buffers
+        (maphash
+         (lambda (file-name diagnostics)
+           (dolist (diag diagnostics)
+             (push (lsp-ui--create-flycheck-error diag file-name checker) errors)))
+         lsp--diagnostics)
+      (dolist (diag (or (gethash buffer-file-name lsp--diagnostics)
+                        (gethash (file-truename buffer-file-name) lsp--diagnostics)))
+        (push (lsp-ui--create-flycheck-error diag (buffer-file-name) checker) errors)))
     (funcall callback 'finished errors)))
 
 (flycheck-define-generic-checker 'lsp-ui
