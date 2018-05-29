@@ -268,8 +268,8 @@ CURRENT is non-nil when the point is on the symbol."
   (- (min (window-text-width) (window-body-width))
      (lsp-ui-sideline--margin-width)))
 
-(defun lsp-ui-sideline--push-info (symbol line bounds info)
-  (when (and (= line (line-number-at-pos))
+(defun lsp-ui-sideline--push-info (symbol tag bounds info)
+  (when (and (= tag (lsp-ui-sideline--calculate-tag))
              (not (lsp-ui-sideline--stop-p)))
     (let* ((info (concat (thread-first (gethash "contents" info)
                            lsp-ui-sideline--extract-info
@@ -390,17 +390,17 @@ to the language server."
            (eob (buffer-end 1))
            (bol (line-beginning-position))
            (doc-id (lsp--text-document-identifier))
+           (tag (lsp-ui-sideline--calculate-tag))
            (action-params
             (if (equal lsp-ui-sideline-update-mode 'line)
                 (list :textDocument doc-id
                       :range (lsp--region-to-range bol eol)
                       :context (list :diagnostics (lsp--cur-line-diagnotics)))
               (lsp--text-document-code-action-params)))
-           (line (point))
            (line-widen (save-restriction (widen) (line-number-at-pos))))
       (save-excursion
         (setq lsp-ui-sideline--occupied-lines nil
-              lsp-ui-sideline--tag (lsp-ui-sideline--calculate-tag)
+              lsp-ui-sideline--tag tag
               lsp-ui-sideline--last-width (window-text-width))
         (goto-char bol)
         (when lsp-ui-sideline-show-flycheck
@@ -423,7 +423,7 @@ to the language server."
                   "textDocument/hover"
                   (list :textDocument doc-id
                         :position (lsp--position (1- line-widen) (if (= column 0) 0 (1- column)))))
-                 (lambda (info) (if info (lsp-ui-sideline--push-info symbol line bounds info)))))
+                 (lambda (info) (if info (lsp-ui-sideline--push-info symbol tag bounds info)))))
               (forward-symbol 1))))))))
 
 (defun lsp-ui-sideline--stop-p ()
