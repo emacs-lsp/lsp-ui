@@ -457,8 +457,14 @@ COMMAND is `company-pseudo-tooltip-frontend' parameter."
       (lsp-ui-sideline--delete-ov)
       (when lsp-ui-sideline--timer
         (cancel-timer lsp-ui-sideline--timer))
-      (setq lsp-ui-sideline--timer
-            (run-with-idle-timer lsp-ui-sideline-delay nil 'lsp-ui-sideline--run)))))
+      (let ((buf (current-buffer)))
+        (setq lsp-ui-sideline--timer
+              (run-with-idle-timer lsp-ui-sideline-delay
+                                   nil
+                                   (lambda ()
+                                     ;; run lsp-ui only if current-buffer is the same.
+                                     (when (equal buf (current-buffer))
+                                       (lsp-ui-sideline--run)))))))))
 
 (defun lsp-ui-sideline-toggle-symbols-info ()
   "Toggle display of symbols informations.
