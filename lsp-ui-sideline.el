@@ -388,7 +388,7 @@ to the language server."
              buffer-file-name)
     (let ((eol (line-end-position))
           (bol (line-beginning-position))
-          (line (line-number-at-pos))
+          (tag (lsp-ui-sideline--calculate-tag))
           (line-widen (save-excursion (widen) (line-number-at-pos)))
           (doc-id (lsp--text-document-identifier)))
       (save-excursion
@@ -424,14 +424,14 @@ to the language server."
                      (outside-comment (eq (nth 4 parsing-state) nil)))
                 ;; Skip strings and comments
                 (when (and symbol (not in-string) outside-comment)
-                  (push (list symbol line bounds (lsp--position (1- line-widen) (lsp--cur-column))) symbols))))
+                  (push (list symbol tag bounds (lsp--position (1- line-widen) (lsp--cur-column))) symbols))))
             (dolist (entry symbols)
-              (-let [(symbol line bounds position) entry]
+              (-let [(symbol tag bounds position) entry]
                 (lsp--send-request-async
                  (lsp--make-request
                   "textDocument/hover"
                   (list :textDocument doc-id :position position))
-                 (lambda (info) (if info (lsp-ui-sideline--push-info symbol line bounds info))))))))))))
+                 (lambda (info) (if info (lsp-ui-sideline--push-info symbol tag bounds info))))))))))))
 
 (defun lsp-ui-sideline--stop-p ()
   "Return non-nil if the sideline should not be display."
