@@ -424,7 +424,7 @@ to the language server."
                      (outside-comment (eq (nth 4 parsing-state) nil)))
                 ;; Skip strings and comments
                 (when (and symbol (not in-string) outside-comment)
-                  (push (list symbol tag bounds (lsp--position (1- line-widen) (lsp--cur-column))) symbols))))
+                  (push (list symbol tag bounds (lsp--position (1- line-widen) (- (point) bol))) symbols))))
             (dolist (entry symbols)
               (-let [(symbol tag bounds position) entry]
                 (lsp--send-request-async
