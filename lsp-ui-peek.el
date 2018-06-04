@@ -61,9 +61,11 @@
   :type 'integer
   :group 'lsp-ui-peek)
 
-(defcustom lsp-ui-peek-force-fontify nil
+(defcustom lsp-ui-peek-force-fontify t
   "Force to fontify chunks of code (use semantics colors).
-WARNING: This can heavily slow the processing."
+WARNING: This can heavily slow the processing when `lsp-ui-peek-expand-function'
+expands more than 1 file.  It is recommended to keeps the default value of
+`lsp-ui-peek-expand-function' when this variable is non-nil."
   :type 'boolean
   :group 'lsp-ui-peek)
 
@@ -134,7 +136,10 @@ deform the whole overlay."
   "A function used to determinate which file(s) to expand in the list of xrefs.
 The function takes one parameter: a list of cons where the car is the
 filename and the cdr is the number of references in that file.
-It should returns a list of filenames to expand.")
+It should returns a list of filenames to expand.
+WARNING: If you change this variable and expand more than 1 file, it is
+recommended to set `lsp-ui-peek-force-fontify' to nil, otherwise it will cause
+performances issues.")
 
 (defvar-local lsp-ui-peek--overlay nil)
 (defvar-local lsp-ui-peek--list nil)
