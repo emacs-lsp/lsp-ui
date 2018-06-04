@@ -422,14 +422,16 @@ FN is the function to call on click."
                                                filename)))
                              (and (file-readable-p full)
                                   full)))))
-        (lsp-ui-doc--put-click (bounds-of-thing-at-point 'filename)
+        (lsp-ui-doc--put-click (or (bounds-of-thing-at-point 'filename)
+                                   (bounds-of-thing-at-point 'url))
                                (lambda () (interactive)
                                  (lsp-ui-doc--visit-file path))))
       (forward-line 1))
     (goto-char (point-min))
     (condition-case nil
         (while (search-forward-regexp "http[s]?://")
-          (lsp-ui-doc--put-click (thing-at-point-bounds-of-url-at-point)
+          (lsp-ui-doc--put-click (or (thing-at-point-bounds-of-url-at-point)
+                                     (bounds-of-thing-at-point 'filename))
                                  'browse-url-at-mouse))
       (search-failed nil))))
 
