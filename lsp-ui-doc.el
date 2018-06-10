@@ -127,7 +127,8 @@ Only the `background' is used in this face."
     (cursor-type . nil)
     (inhibit-double-buffering . t)
     (drag-internal-border . t)
-    (no-special-glyphs . t))
+    (no-special-glyphs . t)
+    (desktop-dont-save . t))
   "Frame parameters used to create the frame.")
 
 (defvar lsp-ui-doc-render-function nil
