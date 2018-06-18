@@ -46,6 +46,16 @@
 (require 'lsp-ui-imenu)
 (require 'lsp-ui-doc)
 
+;;;###autoload
+(defcustom lsp-ui-features '(lsp-ui-flycheck
+                             lsp-ui-peek
+                             lsp-ui-sideline
+                             lsp-ui-doc
+                             lsp-ui-imenu)
+  "List of features to be loaded."
+  :group 'lsp-ui
+  :type 'list)
+
 (defun lsp-ui--workspace-path (path)
   "Return the PATH relative to the workspace.
 If the PATH is not in the workspace, it returns the original PATH."
@@ -57,7 +67,7 @@ If the PATH is not in the workspace, it returns the original PATH."
       path)))
 
 (defun lsp-ui--toggle (enable)
-  (dolist (feature '(lsp-ui-flycheck lsp-ui-peek lsp-ui-sideline lsp-ui-doc lsp-ui-imenu))
+  (dolist (feature lsp-ui-features)
     (let* ((sym (intern-soft (concat (symbol-name feature) "-enable")))
            (value (symbol-value sym))
            (fn (symbol-function sym)))
