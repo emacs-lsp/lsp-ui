@@ -389,7 +389,7 @@ to the language server."
     (let ((eol (line-end-position))
           (bol (line-beginning-position))
           (tag (lsp-ui-sideline--calculate-tag))
-          (line-widen (save-excursion (widen) (line-number-at-pos)))
+          (line-widen (line-number-at-pos nil 'absolute))
           (doc-id (lsp--text-document-identifier)))
       (save-excursion
         (setq lsp-ui-sideline--occupied-lines nil
