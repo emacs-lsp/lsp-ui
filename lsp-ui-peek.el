@@ -61,12 +61,14 @@
   :type 'integer
   :group 'lsp-ui-peek)
 
-(defcustom lsp-ui-peek-force-fontify t
-  "Force to fontify chunks of code (use semantics colors).
-WARNING: This can heavily slow the processing when `lsp-ui-peek-expand-function'
+(defcustom lsp-ui-peek-fontify 'on-demand
+  "Whether to fontify chunks of code (use semantics colors).
+WARNING: 'always can heavily slow the processing when `lsp-ui-peek-expand-function'
 expands more than 1 file.  It is recommended to keeps the default value of
-`lsp-ui-peek-expand-function' when this variable is non-nil."
-  :type 'boolean
+`lsp-ui-peek-expand-function' when this variable is 'always."
+  :type '(choice (const :tag "Never" never)
+                 (const :tag "On demand" on-demand)
+                 (const :tag "Always" always))
   :group 'lsp-ui-peek)
 
 (defcustom lsp-ui-peek-always-show nil
@@ -138,8 +140,8 @@ The function takes one parameter: a list of cons where the car is the
 filename and the cdr is the number of references in that file.
 It should returns a list of filenames to expand.
 WARNING: If you change this variable and expand more than 1 file, it is
-recommended to set `lsp-ui-peek-force-fontify' to nil, otherwise it will cause
-performances issues.")
+recommended to set `lsp-ui-peek-fontify' to 'never or 'on-demand, otherwise it
+will cause performances issues.")
 
 (defvar-local lsp-ui-peek--overlay nil)
 (defvar-local lsp-ui-peek--list nil)
@@ -320,6 +322,16 @@ XREFS is a list of references/definitions."
         (append list (-repeat (- min-len len) ""))
       list)))
 
+(defun lsp-ui-peek--render (major string)
+  (with-temp-buffer
+    (insert string)
+    (delay-mode-hooks
+      (let ((inhibit-message t))
+        (funcall major))
+      (ignore-errors
+        (font-lock-ensure)))
+    (buffer-string)))
+
 (defun lsp-ui-peek--peek ()
   "Show reference's chunk of code."
   (-let* ((xref (lsp-ui-peek--get-selection))
@@ -327,6 +339,9 @@ XREFS is a list of references/definitions."
           (header (concat " " (lsp-ui--workspace-path file) "\n"))
           (header2 (format " %s %s" lsp-ui-peek--size-list (symbol-name lsp-ui-peek--kind)))
           (ref-view (--> chunk
+                         (if (eq lsp-ui-peek-fontify 'on-demand)
+                             (lsp-ui-peek--render major-mode it)
+                           chunk)
                          (subst-char-in-string ?\t ?\s it)
                          (concat header it)
                          (split-string it "\n")))
@@ -636,7 +651,7 @@ LOCATION can be either a LSP Location or SymbolInformation."
           :len (- end start))))
 
 (defun lsp-ui-peek--fontify-buffer (filename)
-  (when lsp-ui-peek-force-fontify
+  (when (eq lsp-ui-peek-fontify 'always)
     (unless buffer-file-name
       (make-local-variable 'delay-mode-hooks)
       (let ((buffer-file-name filename)

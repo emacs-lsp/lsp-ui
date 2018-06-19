@@ -46,6 +46,18 @@
 (require 'lsp-ui-imenu)
 (require 'lsp-ui-doc)
 
+(defun lsp-ui-peek--render (major string)
+  (with-temp-buffer
+    (insert string)
+    (delay-mode-hooks
+      (let ((inhibit-message t))
+        (funcall major))
+      (ignore-errors
+        (font-lock-ensure)))
+    (buffer-string))
+  )
+
+
 (defun lsp-ui--workspace-path (path)
   "Return the PATH relative to the workspace.
 If the PATH is not in the workspace, it returns the original PATH."
