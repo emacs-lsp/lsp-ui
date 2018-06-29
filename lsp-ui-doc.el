@@ -146,6 +146,9 @@ They are added to `markdown-code-lang-modes'")
   "Hooks run on child-frame creation.
 The functions receive 2 parameters: the frame and its window.")
 
+(defvar merge-eldoc-to-lsp-ui-frame nil
+  "Merge eldoc showing in the mini-window to the lsp-ui frame")
+
 (defvar-local lsp-ui-doc--bounds nil)
 (defvar-local lsp-ui-doc--string-eldoc nil)
 
@@ -296,7 +299,10 @@ BUFFER is the buffer where the request has been made."
            (equal buffer (current-buffer)))
       (let ((doc (lsp-ui-doc--extract (gethash "contents" hover))))
         (setq lsp-ui-doc--bounds bounds)
-        (lsp-ui-doc--display (thing-at-point 'symbol t) doc))
+        (lsp-ui-doc--display (thing-at-point 'symbol t)
+                             (if merge-eldoc-to-lsp-ui-frame
+                                 (concat (concat lsp-ui-doc--string-eldoc "\n\n") doc)
+                               doc)))
     (setq lsp-ui-doc--string-eldoc nil)
     (lsp-ui-doc--hide-frame)))
 
@@ -607,7 +613,9 @@ HEIGHT is the documentation number of lines."
 (add-hook 'window-configuration-change-hook #'lsp-ui-doc--hide-frame)
 
 (defun lsp-ui-doc-enable-eldoc ()
-  (setq-local eldoc-documentation-function 'lsp-ui-doc--eldoc))
+  (if merge-eldoc-to-lsp-ui-frame
+      (setq-local eldoc-documentation-function 'ignore)
+    (setq-local eldoc-documentation-function 'lsp-ui-doc--eldoc)))
 
 (defun lsp-ui-doc--on-delete (frame)
   "Function called when a FRAME is deleted."
