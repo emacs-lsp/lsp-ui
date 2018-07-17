@@ -579,7 +579,7 @@ HEIGHT is the documentation number of lines."
          (params (append lsp-ui-doc-frame-parameters
                          `((default-minibuffer-frame . ,(selected-frame))
                            (minibuffer . ,(minibuffer-window))
-                           (left-fringe . ,(frame-char-width))
+                           (left-fringe . 0)
                            (background-color . ,(face-background 'lsp-ui-doc-background nil t)))))
          (window (display-buffer-in-child-frame
                   buffer
