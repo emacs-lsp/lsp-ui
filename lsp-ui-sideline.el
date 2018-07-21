@@ -332,6 +332,9 @@ CURRENT is non-nil when the point is on the symbol."
           (overlay-put ov 'after-string string)
           (push ov lsp-ui-sideline--ovs))))))
 
+(defun lsp-ui-sideline--code-action-title (action)
+  (replace-regexp-in-string "[\n\t ]+" " " (gethash "title" action)))
+
 (defvar-local lsp-ui-sideline--code-actions nil)
 
 (defun lsp-ui-sideline-apply-code-actions nil
@@ -340,9 +343,9 @@ CURRENT is non-nil when the point is on the symbol."
   (unless lsp-ui-sideline--code-actions
     (user-error "No code actions on the current line"))
   (let* ((actions lsp-ui-sideline--code-actions)
-         (title (completing-read "Apply: " (--map (gethash "title" it) actions)
+         (title (completing-read "Apply: " (-map #'lsp-ui-sideline--code-action-title actions)
                                  nil t))
-         (action (--first (equal (gethash "title" it) title) actions)))
+         (action (--first (equal (lsp-ui-sideline--code-action-title it) title) actions)))
     (unless action
       (error "Fail to apply action"))
     (lsp-execute-code-action action)))
@@ -351,8 +354,7 @@ CURRENT is non-nil when the point is on the symbol."
   "Show code ACTIONS."
   (setq lsp-ui-sideline--code-actions actions)
   (dolist (action actions)
-    (-let* ((title (->> (gethash "title" action)
-                        (replace-regexp-in-string "[\n\t ]+" " ")
+    (-let* ((title (->> (lsp-ui-sideline--code-action-title action)
                         (concat lsp-ui-sideline-code-actions-prefix)))
             (margin (lsp-ui-sideline--margin-width))
             (keymap (let ((map (make-sparse-keymap)))
