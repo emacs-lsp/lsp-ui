@@ -181,9 +181,10 @@ Because some variables are buffer local.")
   "Set the frame parameter ‘lsp-ui-doc-frame’ to FRAME."
   `(set-frame-parameter nil 'lsp-ui-doc-frame ,frame))
 
-(defmacro lsp-ui-doc--get-frame ()
+(defun lsp-ui-doc--get-frame (&optional include-deleted-frame)
   "Return the child frame."
-  `(frame-parameter nil 'lsp-ui-doc-frame))
+  (let ((frame (frame-parameter nil 'lsp-ui-doc-frame)))
+    (and (frame-live-p frame) frame)))
 
 (defun lsp-ui-doc--make-buffer-name ()
   "Construct the buffer name, it should be unique for each frame."
@@ -563,7 +564,7 @@ HEIGHT is the documentation number of lines."
     (lsp-ui-doc--render-buffer string symbol)
     (if (lsp-ui-doc--inline-p)
         (lsp-ui-doc--inline)
-      (unless (frame-live-p (lsp-ui-doc--get-frame))
+      (unless (lsp-ui-doc--get-frame)
         (lsp-ui-doc--set-frame (lsp-ui-doc--make-frame)))
       (lsp-ui-doc--move-frame (lsp-ui-doc--get-frame))
       (unless (frame-visible-p (lsp-ui-doc--get-frame))
