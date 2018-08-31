@@ -275,7 +275,8 @@ We don't extract the string that `lps-line' is already displaying."
 (defun lsp-ui-doc--make-request ()
   "Request the documentation to the LS."
   (when (and (bound-and-true-p lsp--cur-workspace)
-             (not (bound-and-true-p lsp-ui-peek-mode)))
+             (not (bound-and-true-p lsp-ui-peek-mode))
+             (lsp--capability "hoverProvider"))
     (if (symbol-at-point)
         (let ((bounds (bounds-of-thing-at-point 'symbol)))
           (unless (equal lsp-ui-doc--bounds bounds)
