@@ -5,7 +5,7 @@
 ;; Author:  Tobias Pisani <topisani@hamsterpoison.com>
 ;; Keywords: lsp
 ;; URL: https://github.com/emacs-lsp/lsp-ui
-;; Package-Requires: ((emacs "25.1") (dash "2.13") (dash-functional "1.2.0") (flycheck "31") (lsp-mode "4.0") (markdown-mode "2.3"))
+;; Package-Requires: ((emacs "25.1") (dash "2.14") (dash-functional "1.2.0") (flycheck "31") (lsp-mode "4.2") (markdown-mode "2.3"))
 ;; Version: 0.0.1
 
 ;; Permission is hereby granted, free of charge, to any person obtaining a copy
