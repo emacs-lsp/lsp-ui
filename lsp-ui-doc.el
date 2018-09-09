@@ -262,7 +262,7 @@ We don't extract the string that `lps-line' is already displaying."
   (when contents
     (cond
      ((stringp contents) contents)
-     ((listp contents) ;; MarkedString[]
+     ((sequencep contents) ;; MarkedString[]
       (mapconcat 'lsp-ui-doc--extract-marked-string
                  (lsp-ui-doc--filter-marked-string contents)
                  "\n\n"

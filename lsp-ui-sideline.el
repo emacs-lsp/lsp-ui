@@ -200,10 +200,10 @@ function signature)."
   (when contents
     (cond
      ((stringp contents) contents)
-     ((listp contents) ;; MarkedString[]
-      (--first (and (hash-table-p it)
-                    (lsp-ui-sideline--get-renderer (gethash "language" it)))
-               contents))
+     ((sequencep contents) ;; MarkedString[]
+      (seq-find (lambda (it) (and (hash-table-p it)
+                                  (lsp-ui-sideline--get-renderer (gethash "language" it))))
+                contents))
      ((gethash "kind" contents) (gethash "value" contents)) ;; MarkupContent
      ((gethash "language" contents) ;; MarkedString
       (and (lsp-ui-sideline--get-renderer (gethash "language" contents))
@@ -350,7 +350,7 @@ CURRENT is non-nil when the point is on the symbol."
 (defun lsp-ui-sideline--code-actions (actions)
   "Show code ACTIONS."
   (setq lsp-ui-sideline--code-actions actions)
-  (dolist (action actions)
+  (seq-doseq (action actions)
     (-let* ((title (->> (gethash "title" action)
                         (replace-regexp-in-string "[\n\t ]+" " ")
                         (concat lsp-ui-sideline-code-actions-prefix)))
