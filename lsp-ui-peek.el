@@ -607,12 +607,13 @@ The symbols are found matching PATTERN."
                            "workspace/symbol"
                            (list :query pattern)))
 
-(defun lsp-ui-peek-find-custom (kind request &optional param)
+(defun lsp-ui-peek-find-custom (kind request &optional extra)
   "Find custom references.
 KIND is a symbol to name the references (definition, reference, ..).
 REQUEST is the method string to send the the language server.
-PARAM is the method parameter.  If nil, it default to TextDocumentPositionParams."
-  (lsp-ui-peek--find-xrefs (symbol-at-point) kind request param))
+EXTRA is a plist of extra parameters."
+  (lsp-ui-peek--find-xrefs (symbol-at-point) kind request
+                           (append extra (lsp--text-document-position-params))))
 
 (defun lsp-ui-peek--extract-chunk-from-buffer (pos start end)
   "Return the chunk of code pointed to by POS (a Position object) in the current buffer.
