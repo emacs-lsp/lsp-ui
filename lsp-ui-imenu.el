@@ -61,26 +61,64 @@
   :type '(repeat color)
   :group 'lsp-ui-menu)
 
+(defconst lsp-ui-imenu--max-bars 8)
+
 (declare-function imenu--make-index-alist 'imenu)
 (declare-function imenu--subalist-p 'imenu)
 (defvar imenu--index-alist)
 
-(defun lsp-ui-imenu--pad (s len color &optional no-bar)
+(defun lsp-ui-imenu--pad (s len bars depth color-index for-title is-last)
   (let ((n (- len (length s))))
-    (propertize (concat (make-string n ?\s) s (unless no-bar " ┃ "))
-                'face `(:foreground ,color))))
+    (apply #'concat
+           (make-string n ?\s)
+           (propertize s 'face `(:foreground ,(lsp-ui-imenu--get-color color-index)))
+           (let (bar-strings)
+             (dotimes (i depth)
+               (push
+                (propertize (lsp-ui-imenu--get-bar bars i depth for-title is-last)
+                            'face `(:foreground
+                                    ,(lsp-ui-imenu--get-color (+ color-index i))))
+                bar-strings))
+             (reverse bar-strings)))))
+
+(defun lsp-ui-imenu--get-bar (bars index depth for-title is-last)
+  (cond
+   ((>= index lsp-ui-imenu--max-bars)
+    ;; Exceeding maximum bars
+    "   ")
+   ((not (aref bars index))
+    ;; No bar for this level
+    "   ")
+   ((and (= depth 1) (not for-title))
+    ;; For the first level, the title is rendered differently, so leaf items are
+    ;; decorated with the full height bar regardless if it's the last item or
+    ;; not.
+    " ┃ ")
+   ((< (1+ index) depth)
+    ;; Full height bar for levels other than the rightmost one.
+    " ┃ ")
+   (is-last
+    ;; The rightmost bar for the last item.
+    " ┗ " )
+   (for-title
+    ;; The rightmost bar for the title items other than the last one.
+    " ┣ ")
+   (t
+    ;; The rightmost bar for the leaf items other than the last one.
+    " ┃ ")))
 
 (defun lsp-ui-imenu--get-color (index)
   (nth (mod index (length lsp-ui-imenu-colors)) lsp-ui-imenu-colors))
 
-(defun lsp-ui-imenu--make-line (title index padding entry color-index)
-  (let* ((color (lsp-ui-imenu--get-color color-index))
-         (prefix (if (and (= index 0) (eq lsp-ui-imenu-kind-position 'left)) title " "))
-         (text (concat (lsp-ui-imenu--pad prefix padding color)
+(defun lsp-ui-imenu--make-line (title index entry padding bars depth color-index is-last)
+  (let* ((prefix (if (and (= index 0) (eq lsp-ui-imenu-kind-position 'left)) title " "))
+         (text (concat (lsp-ui-imenu--pad prefix padding bars depth color-index nil is-last)
                        (propertize (car entry) 'face 'default)
                        "\n"))
          (len (length text)))
-    (add-text-properties 0 len `(index ,index title ,title marker ,(cdr entry) padding ,padding) text)
+    (add-text-properties 0 len `(index ,index title ,title marker ,(cdr entry)
+                                       padding ,padding depth, depth)
+                         text)
     text))
 
 (defvar-local lsp-ui-imenu-ov nil)
@@ -92,8 +130,7 @@
 (defun lsp-ui-imenu--post-command nil
   (when (eobp)
     (forward-line -1))
-  (-when-let (padding (get-char-property (point) 'padding))
-    (goto-char (+ 3 (line-beginning-position) padding)))
+  (lsp-ui-imenu--move-to-name-beginning)
   (when (eq lsp-ui-imenu-kind-position 'left)
     (save-excursion
       (when (overlayp lsp-ui-imenu-ov)
@@ -112,22 +149,90 @@
         (when (overlayp lsp-ui-imenu-ov)
           (delete-overlay lsp-ui-imenu-ov))))))
 
+(defun lsp-ui-imenu--move-to-name-beginning ()
+  (-when-let* ((padding (get-char-property (point) 'padding))
+               (depth (get-char-property (point) 'depth)))
+    (goto-char (+ (* depth 3) (line-beginning-position) padding))))
+
 (defvar lsp-ui-imenu--origin nil)
 
 (defun lsp-ui-imenu--put-separator nil
   (let ((ov (make-overlay (point) (point))))
     (overlay-put ov 'after-string (propertize "\n" 'face '(:height 0.6)))))
 
-(defun lsp-ui-imenu--put-kind (title padding color-index)
-  (when (eq lsp-ui-imenu-kind-position 'top)
-    (let ((ov (make-overlay (point) (point)))
-          (color (lsp-ui-imenu--get-color color-index)))
-      (overlay-put
-       ov 'after-string
-       (concat (lsp-ui-imenu--pad " " padding color t)
-               "\n"
-               title
-               (propertize "\n" 'face '(:height 1)))))))
+(defun lsp-ui-imenu--put-toplevel-title (title color-index)
+  (if (eq lsp-ui-imenu-kind-position 'top)
+      (let ((ov (make-overlay (point) (point)))
+            (color (lsp-ui-imenu--get-color color-index)))
+        (overlay-put
+         ov 'after-string
+         (concat (propertize "\n" 'face '(:height 0.6))
+                 (propertize title 'face `(:foreground ,color))
+                 "\n"
+                 (propertize "\n" 'face '(:height 0.6)))))
+    ;; Left placement, title is put with the first sub item. Only put a separator here.
+    (lsp-ui-imenu--put-separator)))
+
+(defun lsp-ui-imenu--put-subtitle (title padding bars depth color-index is-last)
+  (let ((ov (make-overlay (point) (point)))
+        (title-color (lsp-ui-imenu--get-color (+ color-index depth))))
+    (overlay-put
+     ov 'after-string
+     (concat (lsp-ui-imenu--pad " " padding bars depth color-index t is-last)
+             (propertize title 'face `(:foreground ,title-color))
+             (propertize "\n" 'face '(:height 1))))))
+
+(defun lsp-ui-imenu--insert-items (title items padding bars depth color-index)
+  "Insert ITEMS for TITLE.
+
+PADDING is the length of whitespaces to the left of the first bar.
+
+BARS is a bool vector of length `lsp-ui-imenu--max-bars'. The ith
+value indicates whether the ith bar from the left is visible.
+
+DEPTH is the depth of the items in the index tree, starting from 0.
+
+COLOR-INDEX is the index of the color of the leftmost bar.
+
+Return the updated COLOR-INDEX."
+  (let ((len (length items)))
+    (--each-indexed items
+      (let ((is-last (= (1+ it-index) len)))
+        (if (imenu--subalist-p it)
+            (-let* (((sub-title . entries) it))
+              (if (= depth 0)
+                  (lsp-ui-imenu--put-toplevel-title sub-title color-index)
+                (lsp-ui-imenu--put-subtitle sub-title padding bars depth color-index is-last))
+              (when (and is-last (> depth 0))
+                (aset bars (1- depth) nil))
+              (let ((lsp-ui-imenu-kind-position (if (> depth 0) 'top
+                                                  lsp-ui-imenu-kind-position)))
+                (lsp-ui-imenu--insert-items sub-title
+                                            entries
+                                            padding
+                                            bars
+                                            (1+ depth)
+                                            color-index))
+              (when (and is-last (> depth 0))
+                (aset bars (1- depth) t))
+              (when (= depth 0)
+                (setq color-index (1+ color-index))))
+          (insert (lsp-ui-imenu--make-line title it-index it
+                                           padding bars depth color-index
+                                           is-last))))))
+  color-index)
+
+(defun lsp-ui-imenu--get-padding (items)
+  (if (eq lsp-ui-imenu-kind-position 'top) 1
+    (--> (-filter 'imenu--subalist-p items)
+         (--map (length (car it)) it)
+         (-max (or it '(1))))))
+
+(defun lsp-ui-imenu--put-bit (bits offset)
+  (logior bits (lsh 1 offset)))
+
+(defun lsp-ui-imenu--clear-bit (bits offset)
+  (logand bits (lognot (lsh 1 offset))))
 
 (defun lsp-ui-imenu nil
   (interactive)
@@ -135,39 +240,29 @@
   (imenu--make-index-alist)
   (let ((list imenu--index-alist))
     (with-current-buffer (get-buffer-create "*lsp-ui-imenu*")
-      (let* ((padding (or (and (eq lsp-ui-imenu-kind-position 'top) 1)
-                          (--> (-filter 'imenu--subalist-p list)
-                               (--map (length (car it)) it)
-                               (-max (or it '(1))))))
+      (let* ((padding (lsp-ui-imenu--get-padding list))
              (grouped-by-subs (-partition-by 'imenu--subalist-p list))
              (color-index 0)
+             (bars (make-bool-vector lsp-ui-imenu--max-bars t))
              buffer-read-only)
         (remove-overlays)
         (erase-buffer)
-        (lsp-ui-imenu--put-separator)
         (dolist (group grouped-by-subs)
           (if (imenu--subalist-p (car group))
-              (dolist (kind group)
-                (-let* (((title . entries) kind))
-                  (lsp-ui-imenu--put-kind title padding color-index)
-                  (--each-indexed entries
-                    (insert (lsp-ui-imenu--make-line title it-index padding it color-index)))
-                  (lsp-ui-imenu--put-separator)
-                  (setq color-index (1+ color-index))))
-            (--each-indexed group
-              (insert (lsp-ui-imenu--make-line " " it-index padding it color-index)))
+              (setq color-index (lsp-ui-imenu--insert-items "" group padding bars 0 color-index))
             (lsp-ui-imenu--put-separator)
+            (lsp-ui-imenu--insert-items "" group padding bars 1 color-index)
             (setq color-index (1+ color-index))))
         (lsp-ui-imenu-mode)
         (setq mode-line-format '(:eval (lsp-ui-imenu--win-separator)))
         (goto-char 1)
-        (add-hook 'post-command-hook 'lsp-ui-imenu--post-command nil t)
-        ))
+        (add-hook 'post-command-hook 'lsp-ui-imenu--post-command nil t)))
     (let ((win (display-buffer-in-side-window (get-buffer "*lsp-ui-imenu*") '((side . right))))
           (fit-window-to-buffer-horizontally t))
       (set-window-margins win 1)
       (select-window win)
       (set-window-start win 1)
+      (lsp-ui-imenu--move-to-name-beginning)
       (set-window-dedicated-p win t)
       (let ((fit-window-to-buffer-horizontally 'only))
         (fit-window-to-buffer win))
