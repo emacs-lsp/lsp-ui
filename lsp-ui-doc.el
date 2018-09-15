@@ -248,7 +248,7 @@ MODE is the mode used in the parent frame."
 (defun lsp-ui-doc--filter-marked-string (list-marked-string)
   (let ((groups (--separate (and (hash-table-p it)
                                  (lsp-ui-sideline--get-renderer (gethash "language" it)))
-                            list-marked-string)))
+                            (append list-marked-string nil))))
     (lsp-ui-doc--set-eldoc (caar groups))
     (if lsp-ui-doc-include-signature
         list-marked-string
