@@ -234,6 +234,12 @@ MODE is the mode used in the parent frame."
          (funcall render-fn string)
        (with-temp-buffer
          (insert string)
+
+         (if (lsp-ui-doc--inline-p)
+             (progn (let ((fill-column lsp-ui-doc-max-width))
+                      (fill-region (point-min) (point-max)))
+                    (buffer-substring (point-min) (point-max))))
+
          (delay-mode-hooks
            (let ((inhibit-message t))
              (funcall (cond ((and with-lang (string= "text" language)) 'text-mode)
