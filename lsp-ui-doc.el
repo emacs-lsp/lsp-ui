@@ -32,6 +32,7 @@
 (require 'lsp-mode)
 (require 'dash)
 (require 'dash-functional)
+(require 'goto-addr)
 (require 'markdown-mode)
 
 (defgroup lsp-ui-doc nil
@@ -431,12 +432,12 @@ FN is the function to call on click."
                                  (lsp-ui-doc--visit-file path))))
       (forward-line 1))
     (goto-char (point-min))
-    (condition-case nil
-        (while (search-forward-regexp "http[s]?://")
-          (lsp-ui-doc--put-click (or (thing-at-point-bounds-of-url-at-point)
-                                     (bounds-of-thing-at-point 'filename))
-                                 'browse-url-at-mouse))
-      (search-failed nil))))
+    (let (case-fold-search)
+      (while (re-search-forward goto-address-url-regexp nil t)
+        (lsp-ui-doc--put-click (or (thing-at-point-bounds-of-url-at-point)
+                                   (bounds-of-thing-at-point 'filename))
+                               'browse-url-at-mouse)
+        (ignore-errors (forward-char))))))
 
 (defun lsp-ui-doc--render-buffer (string symbol)
   "Set the buffer with STRING."
