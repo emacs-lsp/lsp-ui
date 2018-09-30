@@ -490,13 +490,16 @@ This does not toggle display of flycheck diagnostics or code actions."
     (add-hook 'post-command-hook 'lsp-ui-sideline nil t)
     (advice-add 'company-pseudo-tooltip-frontend :before 'lsp-ui-sideline--hide-before-company)
     (add-hook 'lsp-after-diagnostics-hook 'lsp-ui-sideline--diagnostics-changed nil t)
-    (setq-local flycheck-display-errors-function nil))
+    (when lsp-ui-sideline-show-flycheck
+      (setq-local flycheck-display-errors-function nil)))
    (t
     (setq lsp-ui-sideline--tag nil)
     (advice-remove 'company-pseudo-tooltip-frontend 'lsp-ui-sideline--hide-before-company)
     (lsp-ui-sideline--delete-ov)
     (remove-hook 'lsp-after-diagnostics-hook 'lsp-ui-sideline--diagnostics-changed)
-    (remove-hook 'post-command-hook 'lsp-ui-sideline t))))
+    (remove-hook 'post-command-hook 'lsp-ui-sideline t)
+    (when lsp-ui-sideline-show-flycheck
+      (kill-local-variable 'flycheck-display-errors-function)))))
 
 (defun lsp-ui-sideline-enable (enable)
   "Enable/disable `lsp-ui-sideline-mode'."
