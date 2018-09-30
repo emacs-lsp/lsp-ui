@@ -235,10 +235,9 @@ MODE is the mode used in the parent frame."
        (with-temp-buffer
          (insert string)
 
-         (if (lsp-ui-doc--inline-p)
-             (progn (let ((fill-column lsp-ui-doc-max-width))
-                      (fill-region (point-min) (point-max)))
-                    (buffer-substring (point-min) (point-max))))
+         (when (lsp-ui-doc--inline-p)
+           (let ((fill-column lsp-ui-doc-max-width))
+             (fill-region (point-min) (point-max))))
 
          (delay-mode-hooks
            (let ((inhibit-message t))
