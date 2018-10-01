@@ -404,45 +404,29 @@ START-Y is the position y of the current window."
   (-some->> (find-file-noselect filename)
             (set-window-buffer (lsp-ui-doc--get-parent :window))))
 
-(defun lsp-ui-doc--put-click (bounds fn)
+(defun lsp-ui-doc--put-click (start end fn)
   "Add text properties on text to make it clickable.
 The text delimiters are BOUNDS.
 FN is the function to call on click."
   (let ((map (make-sparse-keymap)))
     (define-key map [down-mouse-1] fn)
-    (put-text-property (car bounds) (cdr bounds) 'keymap map)
-    (put-text-property (car bounds) (cdr bounds) 'mouse-face
+    (put-text-property start end 'keymap map)
+    (put-text-property start end 'mouse-face
                        (list :inherit 'lsp-ui-doc-url
                              :box (list :line-width -1
                                         :color (face-foreground 'lsp-ui-doc-url))))
-    (add-face-text-property (car bounds) (cdr bounds) 'lsp-ui-doc-url)))
+    (add-face-text-property start end 'lsp-ui-doc-url)))
 
 (defun lsp-ui-doc--make-clickable-link ()
   "Find paths and urls in the buffer and make them clickable."
   (goto-char (point-min))
   (save-excursion
-    (while (not (eobp))
-      ;;; TODO:
-      ;;;  Search path in the whole buffer.
-      ;;;  For now, it searches only on beginning of lines.
-      (-when-let* ((filename (thing-at-point 'filename))
-                   (path (if (file-readable-p filename) filename
-                           (let ((full (concat (lsp-ui-doc--get-parent :workspace-root)
-                                               filename)))
-                             (and (file-readable-p full)
-                                  full)))))
-        (lsp-ui-doc--put-click (or (bounds-of-thing-at-point 'filename)
-                                   (bounds-of-thing-at-point 'url))
-                               (lambda () (interactive)
-                                 (lsp-ui-doc--visit-file path))))
-      (forward-line 1))
     (goto-char (point-min))
     (let (case-fold-search)
       (while (re-search-forward goto-address-url-regexp nil t)
-        (lsp-ui-doc--put-click (or (thing-at-point-bounds-of-url-at-point)
-                                   (bounds-of-thing-at-point 'filename))
-                               'browse-url-at-mouse)
-        (ignore-errors (forward-char))))))
+        (goto-char (1+ (match-end 0)))
+        (lsp-ui-doc--put-click (match-beginning 0) (match-end 0)
+                               'browse-url-at-mouse)))))
 
 (defun lsp-ui-doc--render-buffer (string symbol)
   "Set the buffer with STRING."
