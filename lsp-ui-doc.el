@@ -219,6 +219,21 @@ MODE is the mode used in the parent frame."
   (setq-local markdown-fontify-code-block-default-mode mode)
   (setq-local markdown-hide-markup t))
 
+(defun lsp-ui-doc--inline-wrapped-line (string)
+  "Wraps a line of text for inline display."
+  (cond ((string-empty-p string) "")
+        ((< (length string) lsp-ui-doc-max-width) string)
+        (t (concat (substring string 0 (- lsp-ui-doc-max-width 1))
+                   "\\\n"
+                   (lsp-ui-doc--inline-wrapped-line (substring string (- lsp-ui-doc-max-width 1)))))))
+
+(defun lsp-ui-doc--inline-formatted-string (string)
+  "Formats STRING for inline rendering."
+  (mapconcat (lambda (line)
+               (lsp-ui-doc--inline-wrapped-line (string-trim-right line)))
+             (split-string string "\n")
+             "\n"))
+
 (defun lsp-ui-doc--extract-marked-string (marked-string)
   "Render the MARKED-STRING."
   (string-trim-right
@@ -234,11 +249,9 @@ MODE is the mode used in the parent frame."
      (if render-fn
          (funcall render-fn string)
        (with-temp-buffer
-         (insert string)
-
-         (when (lsp-ui-doc--inline-p)
-           (let ((fill-column lsp-ui-doc-max-width))
-             (fill-region (point-min) (point-max))))
+         (if (lsp-ui-doc--inline-p)
+             (insert (lsp-ui-doc--inline-formatted-string string))
+           (insert string))
 
          (delay-mode-hooks
            (let ((inhibit-message t))
