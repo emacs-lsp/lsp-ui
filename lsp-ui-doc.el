@@ -296,16 +296,22 @@ We don't extract the string that `lps-line' is already displaying."
   (when (and (bound-and-true-p lsp--cur-workspace)
              (not (bound-and-true-p lsp-ui-peek-mode))
              (lsp--capability "hoverProvider"))
-    (if (symbol-at-point)
-        (let ((bounds (bounds-of-thing-at-point 'symbol)))
-          (unless (equal lsp-ui-doc--bounds bounds)
-            (lsp--send-request-async (lsp--make-request "textDocument/hover"
-                                                        (lsp--text-document-position-params))
-                                     (lambda (hover)
-                                       (lsp-ui-doc--callback hover bounds (current-buffer))
-                                       ))))
+    (cond
+     ((symbol-at-point)
+      (let ((bounds (bounds-of-thing-at-point 'symbol)))
+        (unless (equal lsp-ui-doc--bounds bounds)
+          (lsp--send-request-async (lsp--make-request "textDocument/hover"
+                                                      (lsp--text-document-position-params))
+                                   (lambda (hover)
+                                     (lsp-ui-doc--callback hover bounds (current-buffer)))))))
+     ((looking-at "[[:graph:]]")
+      (lsp--send-request-async (lsp--make-request "textDocument/hover"
+                                                  (lsp--text-document-position-params))
+                               (lambda (hover)
+                                 (lsp-ui-doc--callback hover (cons (point) (1+ (point))) (current-buffer)))))
+     (t
       (setq lsp-ui-doc--string-eldoc nil)
-      (lsp-ui-doc--hide-frame))))
+      (lsp-ui-doc--hide-frame)))))
 
 (defun lsp-ui-doc--callback (hover bounds buffer)
   "Process the received documentation.
