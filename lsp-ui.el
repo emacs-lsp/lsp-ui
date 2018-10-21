@@ -112,26 +112,26 @@ Both should have the form (FILENAME LINE COLUMN)."
         (< (cadr x) (cadr y))
       (< (caddr x) (caddr y)))))
 
-(defun lsp-ui--reference-triples (filter-fn)
+(defun lsp-ui--reference-triples (extra)
   "Return references as a list of (FILENAME LINE COLUMN) triples."
   (let ((refs (lsp--send-request (lsp--make-request
                                   "textDocument/references"
-                                  (lsp--make-reference-params)))))
+                                  (append (lsp--text-document-position-params) extra)))))
     (sort
      (mapcar
       (lambda (ref)
         (-let* (((&hash "uri" uri "range" range) ref)
                 ((&hash "line" line "character" col) (gethash "start" range)))
           (list (lsp--uri-to-path uri) line col)))
-      (if filter-fn (--filter (funcall filter-fn it) refs) refs))
+      refs)
      #'lsp-ui--location<)))
 
 ;; TODO Make it efficient
-(defun lsp-ui-find-next-reference (&optional filter-fn)
+(defun lsp-ui-find-next-reference (&optional extra)
   "Find next reference of the symbol at point."
   (interactive)
   (let* ((cur (list buffer-file-name (lsp--cur-line) (lsp--cur-column)))
-         (refs (lsp-ui--reference-triples filter-fn))
+         (refs (lsp-ui--reference-triples extra))
          (idx -1)
          (res (-first (lambda (ref) (cl-incf idx) (lsp-ui--location< cur ref)) refs)))
     (if res
@@ -144,11 +144,11 @@ Both should have the form (FILENAME LINE COLUMN)."
       (cons 0 0))))
 
 ;; TODO Make it efficient
-(defun lsp-ui-find-prev-reference (&optional filter-fn)
+(defun lsp-ui-find-prev-reference (&optional extra)
   "Find previous reference of the symbol at point."
   (interactive)
   (let* ((cur (list buffer-file-name (lsp--cur-line) (lsp--cur-column)))
-         (refs (lsp-ui--reference-triples filter-fn))
+         (refs (lsp-ui--reference-triples extra))
          (idx -1)
          (res (-last (lambda (ref) (and (lsp-ui--location< ref cur) (cl-incf idx))) refs)))
     (if res
