@@ -148,7 +148,6 @@ They are added to `markdown-code-lang-modes'")
 The functions receive 2 parameters: the frame and its window.")
 
 (defvar-local lsp-ui-doc--bounds nil)
-(defvar-local lsp-ui-doc--string-eldoc nil)
 
 (declare-function lsp-ui-sideline--get-renderer 'lsp-ui-sideline)
 
@@ -193,17 +192,6 @@ Because some variables are buffer local.")
           (or (frame-parameter nil 'window-id)
               (frame-parameter nil 'name))
           "*"))
-
-(defun lsp-ui-doc--set-eldoc (marked-string)
-  (when marked-string
-    (let ((string (lsp-ui-doc--extract-marked-string marked-string)))
-      (setq lsp-ui-doc--string-eldoc string))))
-
-(defun lsp-ui-doc--eldoc (&rest _)
-  (when (and (lsp--capability "documentHighlightProvider")
-             lsp-highlight-symbol-at-point)
-    (lsp-symbol-highlight))
-  lsp-ui-doc--string-eldoc)
 
 ;; ‘markdown-fontify-code-block-default-mode’ isn’t yet available in
 ;; Markdown 2.3.
@@ -268,7 +256,9 @@ MODE is the mode used in the parent frame."
   (let ((groups (--separate (and (hash-table-p it)
                                  (lsp-ui-sideline--get-renderer (gethash "language" it)))
                             (append list-marked-string nil))))
-    (lsp-ui-doc--set-eldoc (caar groups))
+    (when-let ((marked-string (caar groups)))
+      ;; Without run-with-idle-timer, echo area will be cleared after displaying the message instantly.
+      (run-with-idle-timer 0 nil (lambda () (eldoc-message (lsp-ui-doc--extract-marked-string marked-string)))))
     (if lsp-ui-doc-include-signature
         list-marked-string
       (cadr groups))))
@@ -291,27 +281,30 @@ We don't extract the string that `lps-line' is already displaying."
      ((gethash "language" contents) ;; MarkedString
       (lsp-ui-doc--extract-marked-string contents)))))
 
-(defun lsp-ui-doc--make-request ()
+(defun lsp-ui-doc--hover (orig-fn)
   "Request the documentation to the LS."
-  (when (and (bound-and-true-p lsp--cur-workspace)
-             (not (bound-and-true-p lsp-ui-peek-mode))
-             (lsp--capability "hoverProvider"))
-    (cond
-     ((symbol-at-point)
-      (let ((bounds (bounds-of-thing-at-point 'symbol)))
-        (unless (equal lsp-ui-doc--bounds bounds)
+  (if lsp-ui-doc-mode
+      (when (and (bound-and-true-p lsp--cur-workspace)
+                 (not (bound-and-true-p lsp-ui-peek-mode))
+                 (lsp--capability "hoverProvider"))
+        (cond
+         ((symbol-at-point)
+          (let ((bounds (bounds-of-thing-at-point 'symbol)))
+            (unless (equal lsp-ui-doc--bounds bounds)
+              (lsp--send-request-async (lsp--make-request "textDocument/hover"
+                                                          (lsp--text-document-position-params))
+                                       (lambda (hover)
+                                         (lsp-ui-doc--callback hover bounds))))))
+         ((looking-at "[[:graph:]]")
           (lsp--send-request-async (lsp--make-request "textDocument/hover"
                                                       (lsp--text-document-position-params))
                                    (lambda (hover)
-                                     (lsp-ui-doc--callback hover bounds))))))
-     ((looking-at "[[:graph:]]")
-      (lsp--send-request-async (lsp--make-request "textDocument/hover"
-                                                  (lsp--text-document-position-params))
-                               (lambda (hover)
-                                 (lsp-ui-doc--callback hover (cons (point) (1+ (point)))))))
-     (t
-      (setq lsp-ui-doc--string-eldoc nil)
-      (lsp-ui-doc--hide-frame)))))
+                                     (lsp-ui-doc--callback hover (cons (point) (1+ (point)))))))
+         (t
+          (eldoc-message nil)
+          (lsp-ui-doc--hide-frame))))
+    (funcall orig-fn))
+  nil)
 
 (defun lsp-ui-doc--callback (hover bounds)
   "Process the received documentation.
@@ -323,7 +316,7 @@ BUFFER is the buffer where the request has been made."
       (let ((doc (lsp-ui-doc--extract (gethash "contents" hover))))
         (setq lsp-ui-doc--bounds bounds)
         (lsp-ui-doc--display (thing-at-point 'symbol t) doc))
-    (setq lsp-ui-doc--string-eldoc nil)
+    (eldoc-message nil)
     (lsp-ui-doc--hide-frame)))
 
 (defun lsp-ui-doc--hide-frame ()
@@ -643,14 +636,11 @@ HEIGHT is the documentation number of lines."
           ;; ‘frameset-filter-alist’ for explanation.
           (cl-callf copy-tree frameset-filter-alist)
           (push '(lsp-ui-doc-frame . :never) frameset-filter-alist)))
-      (add-hook 'lsp-after-open-hook 'lsp-ui-doc-enable-eldoc nil t)
-      (add-hook 'post-command-hook 'lsp-ui-doc--make-request nil t)
+
+      (advice-add 'lsp-hover :around #'lsp-ui-doc--hover)
       (add-hook 'delete-frame-functions 'lsp-ui-doc--on-delete nil t)))
    (t
-    (remove-hook 'delete-frame-functions 'lsp-ui-doc--on-delete t)
-    (remove-hook 'post-command-hook 'lsp-ui-doc--make-request t)
-    (remove-hook 'lsp-after-open-hook 'lsp-ui-doc-enable-eldoc t)
-    (setq-local eldoc-documentation-function 'lsp--on-hover))))
+    (remove-hook 'delete-frame-functions 'lsp-ui-doc--on-delete t))))
 
 (defun lsp-ui-doc-enable (enable)
   "Enable/disable ‘lsp-ui-doc-mode’.
