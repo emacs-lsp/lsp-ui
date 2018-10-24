@@ -406,7 +406,8 @@ to the language server."
                                               :range (lsp--region-to-range bol eol)
                                               :context (list :diagnostics (lsp--cur-line-diagnotics)))
                                       (lsp--text-document-code-action-params)))
-                                   #'lsp-ui-sideline--code-actions))
+                                   #'lsp-ui-sideline--code-actions
+                                   'alive))
         ;; Go through all symbols and request hover information.  Note that the symbols are
         ;; traversed backwards as `forward-symbol' with a positive argument will jump just past the
         ;; current symbol.  By going from the end of the line towards the front, point will be placed

@@ -303,24 +303,23 @@ We don't extract the string that `lps-line' is already displaying."
           (lsp--send-request-async (lsp--make-request "textDocument/hover"
                                                       (lsp--text-document-position-params))
                                    (lambda (hover)
-                                     (lsp-ui-doc--callback hover bounds (current-buffer)))))))
+                                     (lsp-ui-doc--callback hover bounds))))))
      ((looking-at "[[:graph:]]")
       (lsp--send-request-async (lsp--make-request "textDocument/hover"
                                                   (lsp--text-document-position-params))
                                (lambda (hover)
-                                 (lsp-ui-doc--callback hover (cons (point) (1+ (point))) (current-buffer)))))
+                                 (lsp-ui-doc--callback hover (cons (point) (1+ (point)))))))
      (t
       (setq lsp-ui-doc--string-eldoc nil)
       (lsp-ui-doc--hide-frame)))))
 
-(defun lsp-ui-doc--callback (hover bounds buffer)
+(defun lsp-ui-doc--callback (hover bounds)
   "Process the received documentation.
 HOVER is the doc returned by the LS.
 BOUNDS are points of the symbol that have been requested.
 BUFFER is the buffer where the request has been made."
   (if (and hover
-           (lsp--point-is-within-bounds-p (car bounds) (cdr bounds))
-           (equal buffer (current-buffer)))
+           (lsp--point-is-within-bounds-p (car bounds) (cdr bounds)))
       (let ((doc (lsp-ui-doc--extract (gethash "contents" hover))))
         (setq lsp-ui-doc--bounds bounds)
         (lsp-ui-doc--display (thing-at-point 'symbol t) doc))
