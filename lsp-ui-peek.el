@@ -150,7 +150,7 @@ will cause performances issues.")
 (defvar-local lsp-ui-peek--offset 0)
 (defvar-local lsp-ui-peek--size-list 0)
 (defvar-local lsp-ui-peek--win-start nil)
-(defvar-local lsp-ui-peek--kind nil)
+(defvar-local lsp-ui-peek--method nil)
 (defvar-local lsp-ui-peek--deactivate-keymap-fn nil)
 
 (defvar lsp-ui-peek--jumps (make-hash-table)
@@ -337,7 +337,8 @@ XREFS is a list of references/definitions."
   (-let* ((xref (lsp-ui-peek--get-selection))
           ((&plist :file file :chunk chunk) (or xref lsp-ui-peek--last-xref))
           (header (concat " " (lsp-ui--workspace-path file) "\n"))
-          (header2 (format " %s %s" lsp-ui-peek--size-list (symbol-name lsp-ui-peek--kind)))
+          (header2 (format " %s %s" lsp-ui-peek--size-list 
+                           (string-remove-prefix "workspace/" (string-remove-prefix "textDocument/" lsp-ui-peek--method))))
           (ref-view (--> chunk
                          (if (eq lsp-ui-peek-fontify 'on-demand)
                              (lsp-ui-peek--render major-mode it)
@@ -554,13 +555,13 @@ XREFS is a list of references/definitions."
     (lsp-ui-peek--deactivate-keymap)
     (lsp-ui-peek--peek-hide)))
 
-(defun lsp-ui-peek--find-xrefs (input kind &optional request param)
+(defun lsp-ui-peek--find-xrefs (input method param)
   "Find INPUT references.
 KIND is ‘references’, ‘definitions’ or a custom kind."
-  (setq lsp-ui-peek--kind kind)
-  (let ((xrefs (lsp-ui-peek--get-references kind request param)))
+  (setq lsp-ui-peek--method method)
+  (let ((xrefs (lsp-ui-peek--get-references method param)))
     (unless xrefs
-      (user-error "No %s found for: %s" (symbol-name kind) input))
+      (user-error "Not found for: %s"  input))
     (xref-push-marker-stack)
     (when (featurep 'evil-jumps)
       (lsp-ui-peek--with-evil-jumps (evil-set-jump)))
@@ -575,44 +576,38 @@ KIND is ‘references’, ‘definitions’ or a custom kind."
       (lsp-ui-peek-mode)
       (lsp-ui-peek--show xrefs))))
 
-(defun lsp-ui-peek-find-references ()
+(defun lsp-ui-peek-find-references (&optional include-declaration extra)
   "Find references to the IDENTIFIER at point."
   (interactive)
-  (lsp-ui-peek--find-xrefs (symbol-at-point)
-                           'references
-                           "textDocument/references"
-                           (lsp--make-reference-params)))
+  (lsp-ui-peek--find-xrefs (symbol-at-point) "textDocument/references"
+                           (append extra (lsp--make-reference-params nil include-declaration))))
 
-(defun lsp-ui-peek-find-definitions ()
+(defun lsp-ui-peek-find-definitions (&optional extra)
   "Find definitions to the IDENTIFIER at point."
   (interactive)
-  (lsp-ui-peek--find-xrefs (symbol-at-point)
-                           'definitions
-                           "textDocument/definition"))
+  (lsp-ui-peek--find-xrefs (symbol-at-point) "textDocument/definition"
+                           (append extra (lsp--text-document-position-params))))
 
-(defun lsp-ui-peek-find-implementation ()
+(defun lsp-ui-peek-find-implementation (&optional extra)
   "Find implementation locations of the symbol at point."
   (interactive)
-  (lsp-ui-peek--find-xrefs (symbol-at-point)
-                           'implementation
-                           "textDocument/implementation"))
+  (lsp-ui-peek--find-xrefs (symbol-at-point) "textDocument/implementation"
+                           (append extra (lsp--text-document-position-params))))
 
-(defun lsp-ui-peek-find-workspace-symbol (pattern)
+(defun lsp-ui-peek-find-workspace-symbol (pattern &optional extra)
   "Find symbols in the worskpace.
 The symbols are found matching PATTERN."
   (interactive (list (read-string "workspace/symbol: "
                                   nil 'xref--read-pattern-history)))
-  (lsp-ui-peek--find-xrefs pattern
-                           'symbols
-                           "workspace/symbol"
-                           (list :query pattern)))
+  (lsp-ui-peek--find-xrefs pattern "workspace/symbol"
+                           (append extra (list :query pattern))))
 
-(defun lsp-ui-peek-find-custom (kind request &optional extra)
+(defun lsp-ui-peek-find-custom (method &optional extra)
   "Find custom references.
 KIND is a symbol to name the references (definition, reference, ..).
 REQUEST is the method string to send the the language server.
 EXTRA is a plist of extra parameters."
-  (lsp-ui-peek--find-xrefs (symbol-at-point) kind request
+  (lsp-ui-peek--find-xrefs (symbol-at-point) method
                            (append extra (lsp--text-document-position-params))))
 
 (defun lsp-ui-peek--extract-chunk-from-buffer (pos start end)
@@ -704,12 +699,10 @@ interface Location {
   "If maybe-sequence is not a sequence, wraps it into a single-element sequence."
   (if (sequencep maybe-sequence) maybe-sequence (list maybe-sequence)))
 
-(defun lsp-ui-peek--get-references (_kind request &optional param)
+(defun lsp-ui-peek--get-references (method param)
   "Get all references/definitions for the symbol under point.
 Returns item(s)."
-  (-some->> (lsp--send-request (lsp--make-request
-                                request
-                                (or param (lsp--text-document-position-params))))
+  (-some->> (lsp--send-request (lsp--make-request method param))
             ;; Language servers may return a single LOCATION instead of a sequence of them.
             (lsp-ui-peek--to-sequence)
             (lsp-ui-peek--locations-to-xref-items)
