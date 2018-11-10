@@ -54,16 +54,14 @@
         (funcall major))
       (ignore-errors
         (font-lock-ensure)))
-    (buffer-string))
-  )
-
+    (buffer-string)))
 
 (defun lsp-ui--workspace-path (path)
   "Return the PATH relative to the workspace.
 If the PATH is not in the workspace, it returns the original PATH."
   (let* ((path (file-truename path))
-         (root (lsp--workspace-root lsp--cur-workspace))
-         (in-workspace (string-prefix-p root path)))
+         (root (lsp-workspace-root path))
+         (in-workspace (and root (string-prefix-p root path))))
     (if in-workspace
         (substring path (length root))
       path)))

@@ -176,21 +176,6 @@ if UP is non-nil, it loops on the previous lines.."
   (seq-do 'delete-overlay lsp-ui-sideline--ovs)
   (setq lsp-ui-sideline--ovs nil))
 
-(defun lsp-ui-sideline--get-renderer (language)
-  "Return a function to fontify a string in LANGUAGE."
-  (thread-last lsp--cur-workspace
-    lsp--workspace-client
-    lsp--client-string-renderers
-    (assoc-string language)
-    cdr))
-
-(defun lsp-ui-sideline--get-language ()
-  "Return the language of the buffer."
-  (thread-first lsp--cur-workspace
-    lsp--workspace-client
-    lsp--client-language-id
-    (funcall (current-buffer))))
-
 (defun lsp-ui-sideline--extract-info (contents)
   "Extract the line to print from CONTENTS.
 CONTENTS can be differents type of values:
@@ -202,11 +187,11 @@ function signature)."
      ((stringp contents) contents)
      ((sequencep contents) ;; MarkedString[]
       (seq-find (lambda (it) (and (hash-table-p it)
-                                  (lsp-ui-sideline--get-renderer (gethash "language" it))))
+                                  (lsp-get-renderer (gethash "language" it))))
                 contents))
      ((gethash "kind" contents) (gethash "value" contents)) ;; MarkupContent
      ((gethash "language" contents) ;; MarkedString
-      (and (lsp-ui-sideline--get-renderer (gethash "language" contents))
+      (and (lsp-get-renderer (gethash "language" contents))
            (gethash "value" contents))))))
 
 (defun lsp-ui-sideline--format-info (marked-string)
@@ -218,7 +203,7 @@ MARKED-STRING is the string returned by `lsp-ui-sideline--extract-info'."
     (when (hash-table-p marked-string)
       (let* ((language (gethash "language" marked-string))
              (value (gethash "value" marked-string))
-             (renderer (lsp-ui-sideline--get-renderer language)))
+             (renderer (lsp-get-renderer language)))
         (setq marked-string (if (and (functionp renderer) value)
                                 (funcall renderer value)
                               value))))
@@ -384,8 +369,7 @@ CURRENT is non-nil when the point is on the symbol."
 It loops on the symbols of the current line and request information
 to the language server."
   (lsp-ui-sideline--delete-ov)
-  (when (and lsp--cur-workspace
-             buffer-file-name)
+  (when buffer-file-name
     (let ((eol (line-end-position))
           (bol (line-beginning-position))
           (tag (lsp-ui-sideline--calculate-tag))
