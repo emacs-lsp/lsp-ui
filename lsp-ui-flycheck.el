@@ -90,7 +90,7 @@ If nil, diagnostics will be reported according to `flycheck-check-syntax-automat
                                       (car (split-string message "\n")))))
                    (add-text-properties 0 (length text) `(diag ,diag file ,file window ,window) text)
                    (insert (concat text "\n")))))
-             lsp--diagnostics))
+             (lsp-diagnostics)))
   (if (= (point) 1)
       (overlay-put (make-overlay 1 1)
                    'after-string "No diagnostic available\n")
@@ -177,11 +177,11 @@ If nil, diagnostics will be reported according to `flycheck-check-syntax-automat
   "Start an LSP syntax check with CHECKER.
 
 CALLBACK is the status callback passed by Flycheck."
-  ;; Turn all errors from lsp--diagnostics for the current buffer into
+  ;; Turn all errors from lsp-diagnostics for the current buffer into
   ;; flycheck-error objects and pass them immediately to the callback
   (let ((errors))
-    (dolist (diag (or (gethash buffer-file-name lsp--diagnostics)
-                      (gethash (file-truename buffer-file-name) lsp--diagnostics)))
+    (dolist (diag (or (gethash buffer-file-name (lsp-diagnostics))
+                      (gethash (file-truename buffer-file-name) (lsp-diagnostics))))
       (push (flycheck-error-new
              :buffer (current-buffer)
              :checker checker

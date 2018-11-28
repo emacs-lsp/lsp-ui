@@ -149,8 +149,6 @@ The functions receive 2 parameters: the frame and its window.")
 
 (defvar-local lsp-ui-doc--bounds nil)
 
-(declare-function lsp-ui-sideline--get-renderer 'lsp-ui-sideline)
-
 ;; Avoid warning with emacs < 26
 (declare-function display-buffer-in-child-frame "window.el")
 
@@ -165,8 +163,7 @@ Because some variables are buffer local.")
   "Execute BODY in the lsp-ui-doc buffer."
   `(let ((parent-vars (list :buffer (current-buffer)
                             :window (get-buffer-window)
-                            :workspace-root (when lsp--cur-workspace
-                                              (lsp--workspace-root lsp--cur-workspace)))))
+                            :workspace-root (lsp-workspace-root))))
      (with-current-buffer (get-buffer-create (lsp-ui-doc--make-buffer-name))
        (setq lsp-ui-doc--parent-vars parent-vars)
        (prog1 (let ((buffer-read-only nil))
@@ -230,7 +227,7 @@ MODE is the mode used in the parent frame."
                     (gethash "value" marked-string)))
           (with-lang (hash-table-p marked-string))
           (language (and with-lang (gethash "language" marked-string)))
-          (render-fn (if with-lang (lsp-ui-sideline--get-renderer language)
+          (render-fn (if with-lang (lsp-get-renderer language)
                        (and (functionp lsp-ui-doc-render-function)
                             lsp-ui-doc-render-function)))
           (mode major-mode))
@@ -254,7 +251,7 @@ MODE is the mode used in the parent frame."
 
 (defun lsp-ui-doc--filter-marked-string (list-marked-string)
   (let ((groups (--separate (and (hash-table-p it)
-                                 (lsp-ui-sideline--get-renderer (gethash "language" it)))
+                                 (lsp-get-renderer (gethash "language" it)))
                             (append list-marked-string nil))))
     (when-let ((marked-string (caar groups)))
       ;; Without run-with-idle-timer, echo area will be cleared after displaying the message instantly.
@@ -284,8 +281,7 @@ We don't extract the string that `lps-line' is already displaying."
 (defun lsp-ui-doc--hover (orig-fn)
   "Request the documentation to the LS."
   (if lsp-ui-doc-mode
-      (when (and (bound-and-true-p lsp--cur-workspace)
-                 (not (bound-and-true-p lsp-ui-peek-mode))
+      (when (and (not (bound-and-true-p lsp-ui-peek-mode))
                  (lsp--capability "hoverProvider"))
         (cond
          ((symbol-at-point)

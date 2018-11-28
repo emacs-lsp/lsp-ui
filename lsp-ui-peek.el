@@ -337,7 +337,7 @@ XREFS is a list of references/definitions."
   (-let* ((xref (lsp-ui-peek--get-selection))
           ((&plist :file file :chunk chunk) (or xref lsp-ui-peek--last-xref))
           (header (concat " " (lsp-ui--workspace-path file) "\n"))
-          (header2 (format " %s %s" lsp-ui-peek--size-list 
+          (header2 (format " %s %s" lsp-ui-peek--size-list
                            (string-remove-prefix "workspace/" (string-remove-prefix "textDocument/" lsp-ui-peek--method))))
           (ref-view (--> chunk
                          (if (eq lsp-ui-peek-fontify 'on-demand)
