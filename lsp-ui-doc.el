@@ -147,8 +147,6 @@ They are added to `markdown-code-lang-modes'")
   "Hooks run on child-frame creation.
 The functions receive 2 parameters: the frame and its window.")
 
-(defvar-local lsp-ui-doc--bounds nil)
-
 ;; Avoid warning with emacs < 26
 (declare-function display-buffer-in-child-frame "window.el")
 
@@ -265,59 +263,38 @@ MODE is the mode used in the parent frame."
 CONTENTS can be differents type of values:
 MarkedString | MarkedString[] | MarkupContent (as defined in the LSP).
 We don't extract the string that `lps-line' is already displaying."
-  (when contents
-    (cond
-     ((stringp contents) contents)
-     ((sequencep contents) ;; MarkedString[]
-      (mapconcat 'lsp-ui-doc--extract-marked-string
-                 (lsp-ui-doc--filter-marked-string contents)
-                 "\n\n"
-                 ;; (propertize "\n\n" 'face '(:height 0.4))
-                 ))
-     ((gethash "kind" contents) (gethash "value" contents)) ;; MarkupContent
-     ((gethash "language" contents) ;; MarkedString
-      (lsp-ui-doc--extract-marked-string contents)))))
+  (cond
+   ((stringp contents) contents)
+   ((sequencep contents) ;; MarkedString[]
+    (mapconcat 'lsp-ui-doc--extract-marked-string
+               (lsp-ui-doc--filter-marked-string contents)
+               "\n\n"
+               ;; (propertize "\n\n" 'face '(:height 0.4))
+               ))
+   ((gethash "kind" contents) (gethash "value" contents)) ;; MarkupContent
+   ((gethash "language" contents) ;; MarkedString
+    (lsp-ui-doc--extract-marked-string contents))))
 
-(defun lsp-ui-doc--hover (orig-fn)
-  "Request the documentation to the LS."
+(defun lsp-ui-doc--render-on-hover-content (orig-fn contents &rest args)
   (if lsp-ui-doc-mode
-      (when (and (not (bound-and-true-p lsp-ui-peek-mode))
-                 (lsp--capability "hoverProvider"))
-        (cond
-         ((symbol-at-point)
-          (let ((bounds (bounds-of-thing-at-point 'symbol)))
-            (unless (equal lsp-ui-doc--bounds bounds)
-              (lsp--send-request-async (lsp--make-request "textDocument/hover"
-                                                          (lsp--text-document-position-params))
-                                       (lambda (hover)
-                                         (lsp-ui-doc--callback hover bounds))))))
-         ((looking-at "[[:graph:]]")
-          (lsp--send-request-async (lsp--make-request "textDocument/hover"
-                                                      (lsp--text-document-position-params))
-                                   (lambda (hover)
-                                     (lsp-ui-doc--callback hover (cons (point) (1+ (point)))))))
-         (t
-          (eldoc-message nil)
-          (lsp-ui-doc--hide-frame))))
-    (funcall orig-fn))
-  nil)
+      contents
+    (apply orig-fn contents args)))
 
-(defun lsp-ui-doc--callback (hover bounds)
+(defun lsp-ui-doc--hover-callback (orig-fn from-cache)
   "Process the received documentation.
 HOVER is the doc returned by the LS.
 BOUNDS are points of the symbol that have been requested.
 BUFFER is the buffer where the request has been made."
-  (if (and hover
-           (lsp--point-is-within-bounds-p (car bounds) (cdr bounds)))
-      (let ((doc (lsp-ui-doc--extract (gethash "contents" hover))))
-        (setq lsp-ui-doc--bounds bounds)
-        (lsp-ui-doc--display (thing-at-point 'symbol t) doc))
-    (eldoc-message nil)
-    (lsp-ui-doc--hide-frame)))
+  (if lsp-ui-doc-mode
+      (if lsp--hover-saved-contents
+          (lsp-ui-doc--display (thing-at-point 'symbol t)
+                               (lsp-ui-doc--extract lsp--hover-saved-contents))
+        (eldoc-message nil)
+        (lsp-ui-doc--hide-frame))
+    (funcall orig-fn from-cache)))
 
 (defun lsp-ui-doc--hide-frame ()
   "Hide the frame."
-  (setq lsp-ui-doc--bounds nil)
   (when (overlayp lsp-ui-doc--inline-ov)
     (delete-overlay lsp-ui-doc--inline-ov))
   (when (lsp-ui-doc--get-frame)
@@ -633,7 +610,8 @@ HEIGHT is the documentation number of lines."
           (cl-callf copy-tree frameset-filter-alist)
           (push '(lsp-ui-doc-frame . :never) frameset-filter-alist)))
 
-      (advice-add 'lsp-hover :around #'lsp-ui-doc--hover)
+      (advice-add 'lsp--render-on-hover-content :around #'lsp-ui-doc--render-on-hover-content)
+      (advice-add 'lsp--hover-callback :around #'lsp-ui-doc--hover-callback)
       (add-hook 'delete-frame-functions 'lsp-ui-doc--on-delete nil t)))
    (t
     (remove-hook 'delete-frame-functions 'lsp-ui-doc--on-delete t))))
