@@ -271,6 +271,8 @@ We don't extract the string that `lps-line' is already displaying."
                "\n\n"
                ;; (propertize "\n\n" 'face '(:height 0.4))
                ))
+   ;; when we get markdown contents, render using emacs gfm-view-mode / markdown-mode
+   ((string= (gethash "kind" contents) "markdown") (lsp-ui-doc--extract-marked-string contents))
    ((gethash "kind" contents) (gethash "value" contents)) ;; MarkupContent
    ((gethash "language" contents) ;; MarkedString
     (lsp-ui-doc--extract-marked-string contents))))
