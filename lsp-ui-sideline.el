@@ -247,6 +247,9 @@ CURRENT is non-nil when the point is on the symbol."
          0)
      (if (bound-and-true-p display-line-numbers-mode)
          (+ 2 (line-number-display-width))
+       0)
+     (if (bound-and-true-p whitespace-mode)
+         1
        0)))
 
 (defun lsp-ui-sideline--window-width ()
