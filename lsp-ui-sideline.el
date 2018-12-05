@@ -248,7 +248,9 @@ CURRENT is non-nil when the point is on the symbol."
      (if (bound-and-true-p display-line-numbers-mode)
          (+ 2 (line-number-display-width))
        0)
-     1)) ;; AZ add one for the whitespace end-of-line marker
+     (if (bound-and-true-p whitespace-mode)
+         1
+       0)))
 
 (defun lsp-ui-sideline--window-width ()
   (- (min (window-text-width) (window-body-width))
