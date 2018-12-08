@@ -6,7 +6,7 @@
 ;; Author: Sebastien Chapuis <sebastien@chapu.is>, Fangrui Song <i@maskray.me>
 ;; Keywords: lsp
 ;; URL: https://github.com/emacs-lsp/lsp-ui
-;; Package-Requires: ((emacs "25.1") (dash "2.14") (dash-functional "1.2.0") (flycheck "31") (lsp-mode "5.0") (markdown-mode "2.3"))
+;; Package-Requires: ((emacs "25.1") (dash "2.14") (dash-functional "1.2.0") (lsp-mode "5.0") (markdown-mode "2.3"))
 ;; Version: 0.0.1
 
 ;;; License
@@ -42,7 +42,6 @@
 
 (require 'lsp-ui-sideline)
 (require 'lsp-ui-peek)
-(require 'lsp-ui-flycheck)
 (require 'lsp-ui-imenu)
 (require 'lsp-ui-doc)
 
@@ -67,7 +66,7 @@ If the PATH is not in the workspace, it returns the original PATH."
       path)))
 
 (defun lsp-ui--toggle (enable)
-  (dolist (feature '(lsp-ui-flycheck lsp-ui-peek lsp-ui-sideline lsp-ui-doc lsp-ui-imenu))
+  (dolist (feature '(lsp-ui-peek lsp-ui-sideline lsp-ui-doc lsp-ui-imenu))
     (let* ((sym (intern-soft (concat (symbol-name feature) "-enable")))
            (value (symbol-value sym))
            (fn (symbol-function sym)))
