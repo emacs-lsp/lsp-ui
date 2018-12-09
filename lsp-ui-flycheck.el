@@ -26,7 +26,6 @@
 
 ;;; Code:
 
-(require 'lsp-notifications)
 (require 'lsp-mode)
 (require 'flycheck)
 (require 'pcase)

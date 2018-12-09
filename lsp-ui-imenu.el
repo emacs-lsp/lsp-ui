@@ -34,7 +34,6 @@
 ;;; Code:
 
 (require 'lsp-mode)
-(require 'lsp-imenu)
 (require 'dash)
 
 (defgroup lsp-ui-imenu nil
