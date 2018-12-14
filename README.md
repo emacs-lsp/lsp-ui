@@ -13,7 +13,9 @@ To enable the package and its features:
 (add-hook 'lsp-mode-hook 'lsp-ui-mode)
 ```
 
-To enable `flycheck-mode` for a particular LSP client, add the following
+**Note:** Be sure to remove previous `flycheck-mode` hooks you have in your config. They will remove lsp-mode capabilities.
+
+To use FlyCheck **without** lsp for a particular mode, add a hook like this.
 
 ```el
 (add-hook 'XXXXX-mode-hook 'flycheck-mode)
