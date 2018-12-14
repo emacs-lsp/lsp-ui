@@ -30,7 +30,7 @@
 ;;; Code:
 
 (require 'lsp-mode)
-(require 'flycheck)
+(require 'flycheck nil 'noerror)
 (require 'dash)
 
 (defgroup lsp-ui-sideline nil
@@ -61,8 +61,8 @@
   :type 'boolean
   :group 'lsp-ui-sideline)
 
-(defcustom lsp-ui-sideline-show-flycheck t
-  "Whether to show flycheck messages in sideline."
+(defcustom lsp-ui-sideline-show-diagnostics t
+  "Whether to show diagnostics messages in sideline."
   :type 'boolean
   :group 'lsp-ui-sideline)
 
@@ -299,28 +299,29 @@ CURRENT is non-nil when the point is on the symbol."
         (when (overlay-get ov 'current)
           (lsp-ui-sideline--toggle-current ov nil))))))
 
-(defun lsp-ui-sideline--flycheck ()
-  "Show flycheck message(s)."
+(defun lsp-ui-sideline--diagnostics ()
+  "Show diagnostics on the current line."
   (let ((bol (line-beginning-position))
         (eol (line-end-position)))
-    (dolist (e (flycheck-overlay-errors-in bol (1+ eol)))
-      (let* ((message (--> (flycheck-error-format-message-and-id e)
-                           (car (split-string it "\n"))
-                           (replace-regexp-in-string "[\n\t ]+" " " it)))
-             (len (length message))
-             (level (flycheck-error-level e))
-             (face (if (eq level 'info) 'success level))
-             (margin (lsp-ui-sideline--margin-width))
-             (message (progn (add-face-text-property 0 len 'lsp-ui-sideline-global nil message)
-                             (add-face-text-property 0 len face nil message)
-                             message))
-             (string (concat (propertize " " 'display `(space :align-to (- right-fringe ,(lsp-ui-sideline--align len margin))))
-                             message))
-             (pos-ov (lsp-ui-sideline--find-line len t))
-             (ov (and pos-ov (make-overlay pos-ov pos-ov))))
-        (when pos-ov
-          (overlay-put ov 'after-string string)
-          (push ov lsp-ui-sideline--ovs))))))
+    (when (bound-and-true-p 'flycheck-mode)
+      (dolist (e (flycheck-overlay-errors-in bol (1+ eol)))
+        (let* ((message (--> (flycheck-error-format-message-and-id e)
+                             (car (split-string it "\n"))
+                             (replace-regexp-in-string "[\n\t ]+" " " it)))
+               (len (length message))
+               (level (flycheck-error-level e))
+               (face (if (eq level 'info) 'success level))
+               (margin (lsp-ui-sideline--margin-width))
+               (message (progn (add-face-text-property 0 len 'lsp-ui-sideline-global nil message)
+                               (add-face-text-property 0 len face nil message)
+                               message))
+               (string (concat (propertize " " 'display `(space :align-to (- right-fringe ,(lsp-ui-sideline--align len margin))))
+                               message))
+               (pos-ov (lsp-ui-sideline--find-line len t))
+               (ov (and pos-ov (make-overlay pos-ov pos-ov))))
+          (when pos-ov
+            (overlay-put ov 'after-string string)
+            (push ov lsp-ui-sideline--ovs)))))))
 
 (defvar-local lsp-ui-sideline--code-actions nil)
 
@@ -384,8 +385,8 @@ to the language server."
         (setq lsp-ui-sideline--occupied-lines nil
               lsp-ui-sideline--tag tag
               lsp-ui-sideline--last-width (window-text-width))
-        (when lsp-ui-sideline-show-flycheck
-          (lsp-ui-sideline--flycheck))
+        (when lsp-ui-sideline-show-diagnostics
+          (lsp-ui-sideline--diagnostics))
         (when (and lsp-ui-sideline-show-code-actions (or (lsp--capability "codeActionProvider")
                                                          (lsp--registered-capability "textDocument/codeAction")))
           (lsp--send-request-async (lsp--make-request
@@ -480,7 +481,7 @@ This does not toggle display of flycheck diagnostics or code actions."
     (add-hook 'post-command-hook 'lsp-ui-sideline nil t)
     (advice-add 'company-pseudo-tooltip-frontend :before 'lsp-ui-sideline--hide-before-company)
     (add-hook 'lsp-after-diagnostics-hook 'lsp-ui-sideline--diagnostics-changed nil t)
-    (when lsp-ui-sideline-show-flycheck
+    (when lsp-ui-sideline-show-diagnostics
       (setq-local flycheck-display-errors-function nil)))
    (t
     (setq lsp-ui-sideline--tag nil)
@@ -488,7 +489,7 @@ This does not toggle display of flycheck diagnostics or code actions."
     (lsp-ui-sideline--delete-ov)
     (remove-hook 'lsp-after-diagnostics-hook 'lsp-ui-sideline--diagnostics-changed)
     (remove-hook 'post-command-hook 'lsp-ui-sideline t)
-    (when lsp-ui-sideline-show-flycheck
+    (when lsp-ui-sideline-show-diagnostics
       (kill-local-variable 'flycheck-display-errors-function)))))
 
 (defun lsp-ui-sideline-enable (enable)
