@@ -303,7 +303,7 @@ CURRENT is non-nil when the point is on the symbol."
   "Show diagnostics on the current line."
   (let ((bol (line-beginning-position))
         (eol (line-end-position)))
-    (when (bound-and-true-p 'flycheck-mode)
+    (when (bound-and-true-p flycheck-mode)
       (dolist (e (flycheck-overlay-errors-in bol (1+ eol)))
         (let* ((message (--> (flycheck-error-format-message-and-id e)
                              (car (split-string it "\n"))
