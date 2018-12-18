@@ -568,11 +568,12 @@ KIND is ‘references’, ‘definitions’ or a custom kind."
     (if (and (not lsp-ui-peek-always-show)
              (not (cdr xrefs))
              (= (length (plist-get (car xrefs) :xrefs)) 1))
-        (-let* ((xref (car (plist-get (car xrefs) :xrefs)))
-                ((&hash "uri" file "range" range) xref)
-                ((&hash "line" line "character" col) (gethash "start" range))
-                (file (lsp--uri-to-path file)))
-          (lsp-ui-peek--goto-xref `(:file ,file :line ,line :column ,col)))
+        (let ((x (car (plist-get (car xrefs) :xrefs))))
+          (-if-let (uri (gethash "uri" x))
+              (-let (((&hash "start" (&hash "line" "character")) (gethash "range" x)))
+                (lsp-ui-peek--goto-xref `(:file ,(lsp--uri-to-path uri) :line ,line :column ,character)))
+            (-let (((&hash "start" (&hash "line" "character")) (or (gethash "targetSelectionRange" x) (gethash "targetRange" x))))
+              (lsp-ui-peek--goto-xref `(:file ,(lsp--uri-to-path (gethash "targetUri" x)) :line ,line :column ,character)))))
       (lsp-ui-peek-mode)
       (lsp-ui-peek--show xrefs))))
 
@@ -628,13 +629,13 @@ START and END are delimiters."
                                 'lsp-ui-peek-highlight t line)
         `(,line . ,(concat before line after))))))
 
-(defun lsp-ui-peek--xref-make-item (filename location)
+(defun lsp-ui-peek--xref-make-item (filename loc)
   "Return an item from a LOCATION in FILENAME.
 LOCATION can be either a LSP Location or SymbolInformation."
   ;; TODO: Read more informations from SymbolInformation.
   ;;       For now, only the location is used.
-  (-let* ((location (or (gethash "location" location) location))
-          (range (gethash "range" location))
+  (-let* ((loc (or (gethash "location" loc) loc))
+          (range (or (gethash "range" loc) (gethash "targetSelectionRange" loc) (gethash "targetRange" loc)))
           ((&hash "start" pos-start "end" pos-end) range)
           ((&hash "line" start-line "character" start-col) pos-start)
           ((&hash "line" end-line "character" end-col) pos-end)
@@ -683,30 +684,17 @@ references.  The function returns a list of `ls-xref-item'."
   (-let* (((filename . xrefs) file))
     `(:file ,filename :xrefs ,xrefs :count ,(length xrefs))))
 
-(defun lsp-ui-peek--locations-to-xref-items (locations)
-  "Return a list of list of item from LOCATIONS.
-LOCATIONS is an array of Location objects:
-
-interface Location {
-	uri: DocumentUri;
-	range: Range;
-}"
-  (-some--> (lambda (loc) (lsp--uri-to-path (gethash "uri" (or (gethash "location" loc) loc))))
-            (seq-group-by it locations)
-            (mapcar #'lsp-ui-peek--get-xrefs-list it)))
-
-(defun lsp-ui-peek--to-sequence (maybe-sequence)
-  "If maybe-sequence is not a sequence, wraps it into a single-element sequence."
-  (if (sequencep maybe-sequence) maybe-sequence (list maybe-sequence)))
-
-(defun lsp-ui-peek--get-references (method param)
+(defun lsp-ui-peek--get-references (method params)
   "Get all references/definitions for the symbol under point.
 Returns item(s)."
-  (-some->> (lsp--send-request (lsp--make-request method param))
-            ;; Language servers may return a single LOCATION instead of a sequence of them.
-            (lsp-ui-peek--to-sequence)
-            (lsp-ui-peek--locations-to-xref-items)
-            (-filter 'identity)))
+  (-when-let* ((locs (lsp-request method params))
+               (locs (if (sequencep locs) locs (list locs))))
+    (mapcar #'lsp-ui-peek--get-xrefs-list
+            (if (gethash "uri" (car locs))
+                ;; Location[]
+                (--group-by (lsp--uri-to-path (gethash "uri" it)) locs)
+              ;; LocationLink[]
+              (--group-by (lsp--uri-to-path (gethash "targetUri" it)) locs)))))
 
 (defvar lsp-ui-mode-map)
 
