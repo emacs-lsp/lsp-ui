@@ -251,9 +251,6 @@ MODE is the mode used in the parent frame."
   (let ((groups (--separate (and (hash-table-p it)
                                  (lsp-get-renderer (gethash "language" it)))
                             (append list-marked-string nil))))
-    (when-let ((marked-string (caar groups)))
-      ;; Without run-with-idle-timer, echo area will be cleared after displaying the message instantly.
-      (run-with-idle-timer 0 nil (lambda () (eldoc-message (lsp-ui-doc--extract-marked-string marked-string)))))
     (if lsp-ui-doc-include-signature
         list-marked-string
       (cadr groups))))
@@ -276,24 +273,6 @@ We don't extract the string that `lps-line' is already displaying."
    ((gethash "kind" contents) (gethash "value" contents)) ;; MarkupContent
    ((gethash "language" contents) ;; MarkedString
     (lsp-ui-doc--extract-marked-string contents))))
-
-(defun lsp-ui-doc--render-on-hover-content (orig-fn contents &rest args)
-  (if lsp-ui-doc-mode
-      contents
-    (apply orig-fn contents args)))
-
-(defun lsp-ui-doc--hover-callback (orig-fn from-cache)
-  "Process the received documentation.
-HOVER is the doc returned by the LS.
-BOUNDS are points of the symbol that have been requested.
-BUFFER is the buffer where the request has been made."
-  (if lsp-ui-doc-mode
-      (if lsp--hover-saved-contents
-          (lsp-ui-doc--display (thing-at-point 'symbol t)
-                               (lsp-ui-doc--extract lsp--hover-saved-contents))
-        (eldoc-message nil)
-        (lsp-ui-doc--hide-frame))
-    (funcall orig-fn from-cache)))
 
 (defun lsp-ui-doc--hide-frame ()
   "Hide the frame."
@@ -594,28 +573,37 @@ HEIGHT is the documentation number of lines."
             (and (buffer-live-p it) it)
             (kill-buffer it)))
 
+(defun lsp-ui-doc--on-hover (_signature-response hover-response)
+  "Handler for `lsp-on-hover-hook'.
+_SIGNATURE-RESPONSE and HOVER-RESPONSE and signature and hover
+data that has been loaded for the current position."
+  (--if-let (-some->> hover-response (gethash "contents"))
+      (lsp-ui-doc--display (thing-at-point 'symbol t)
+                           (lsp-ui-doc--extract it))
+    (eldoc-message nil)
+    (lsp-ui-doc--hide-frame)))
+
 (define-minor-mode lsp-ui-doc-mode
   "Minor mode for showing hover information in child frame."
   :init-value nil
   :group lsp-ui-doc
   (cond
    (lsp-ui-doc-mode
-    (progn
-      (with-eval-after-load 'frameset
-        ;; The documentation frame can’t be properly restored.  Especially
-        ;; ‘desktop-save’ will misbehave and save a bogus string "Unprintable
-        ;; entity" in the desktop file.  Therefore we have to prevent
-        ;; ‘frameset-save’ from saving the parameter.
-        (unless (assq 'lsp-ui-doc-frame frameset-filter-alist)
-          ;; Copy the variable first.  See the documentation of
-          ;; ‘frameset-filter-alist’ for explanation.
-          (cl-callf copy-tree frameset-filter-alist)
-          (push '(lsp-ui-doc-frame . :never) frameset-filter-alist)))
+    (with-eval-after-load 'frameset
+      ;; The documentation frame can’t be properly restored.  Especially
+      ;; ‘desktop-save’ will misbehave and save a bogus string "Unprintable
+      ;; entity" in the desktop file.  Therefore we have to prevent
+      ;; ‘frameset-save’ from saving the parameter.
+      (unless (assq 'lsp-ui-doc-frame frameset-filter-alist)
+        ;; Copy the variable first.  See the documentation of
+        ;; ‘frameset-filter-alist’ for explanation.
+        (cl-callf copy-tree frameset-filter-alist)
+        (push '(lsp-ui-doc-frame . :never) frameset-filter-alist)))
 
-      (advice-add 'lsp--render-on-hover-content :around #'lsp-ui-doc--render-on-hover-content)
-      (advice-add 'lsp--hover-callback :around #'lsp-ui-doc--hover-callback)
-      (add-hook 'delete-frame-functions 'lsp-ui-doc--on-delete nil t)))
+    (add-hook 'lsp-on-hover-hook 'lsp-ui-doc--on-hover nil t)
+    (add-hook 'delete-frame-functions 'lsp-ui-doc--on-delete nil t))
    (t
+    (remove-hook 'lsp-on-hover-hook 'lsp-ui-doc--on-hover)
     (remove-hook 'delete-frame-functions 'lsp-ui-doc--on-delete t))))
 
 (defun lsp-ui-doc-enable (enable)
