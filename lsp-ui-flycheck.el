@@ -211,10 +211,10 @@ See https://github.com/emacs-lsp/lsp-mode."
   (unless (flycheck-checker-supports-major-mode-p 'lsp-ui mode)
     (flycheck-add-mode 'lsp-ui mode)))
 
-(defun lsp-ui-flycheck--report nil
-  (and flycheck-mode
-       lsp-ui-flycheck-live-reporting
-       (flycheck-buffer)))
+(defun lsp-ui-flycheck--report ()
+  (when (and flycheck-mode lsp-ui-flycheck-live-reporting)
+    (flycheck-clear t)
+    (flycheck-buffer)))
 
 ;; FIXME: Provide a way to disable lsp-ui-flycheck
 (defun lsp-ui-flycheck-enable (_)
