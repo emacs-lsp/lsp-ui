@@ -570,11 +570,10 @@ HEIGHT is the documentation number of lines."
             (and (buffer-live-p it) it)
             (kill-buffer it)))
 
-(defun lsp-ui-doc--on-hover (_signature-response hover-response)
+(defun lsp-ui-doc--on-hover (hover)
   "Handler for `lsp-on-hover-hook'.
-_SIGNATURE-RESPONSE and HOVER-RESPONSE and signature and hover
-data that has been loaded for the current position."
-  (--if-let (-some->> hover-response (gethash "contents"))
+HOVER is the returned signature information."
+  (--if-let (-some->> hover (gethash "contents"))
       (lsp-ui-doc--display (thing-at-point 'symbol t)
                            (lsp-ui-doc--extract it))
     (eldoc-message nil)
