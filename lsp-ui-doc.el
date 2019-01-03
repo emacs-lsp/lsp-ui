@@ -599,7 +599,7 @@ HOVER is the returned signature information."
     (add-hook 'lsp-on-hover-hook 'lsp-ui-doc--on-hover nil t)
     (add-hook 'delete-frame-functions 'lsp-ui-doc--on-delete nil t))
    (t
-    (remove-hook 'lsp-on-hover-hook 'lsp-ui-doc--on-hover)
+    (remove-hook 'lsp-on-hover-hook 'lsp-ui-doc--on-hover t)
     (remove-hook 'delete-frame-functions 'lsp-ui-doc--on-delete t))))
 
 (defun lsp-ui-doc-enable (enable)
