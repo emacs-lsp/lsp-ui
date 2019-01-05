@@ -86,6 +86,16 @@ Child frames requires GNU/Emacs version >= 26 and graphical frames."
   :type 'boolean
   :group 'lsp-ui-doc)
 
+(defcustom lsp-ui-doc-use-webkit nil
+  "Whether to display documentation in a WebKit widget in a child-frame.
+This requires GNU/Emacs version >= 26 and built with the `--with-xwidgets`
+option."
+  :type 'boolean
+  :group 'lsp-ui-doc)
+
+(when lsp-ui-doc-use-webkit
+  (require 'xwidget))
+
 (defface lsp-ui-doc-background
   '((((background light)) :background "#b3b3b3")
     (t :background "#272A36"))
@@ -146,6 +156,12 @@ They are added to `markdown-code-lang-modes'")
 (defvar lsp-ui-doc-frame-hook nil
   "Hooks run on child-frame creation.
 The functions receive 2 parameters: the frame and its window.")
+
+(defvar lsp-ui-doc-webkit-client-path
+  (concat "file://"
+          (file-name-directory (or load-file-name buffer-file-name))
+          "lsp-ui-doc.html")
+  "Path to the page loaded when a WebKit widget is created.")
 
 ;; Avoid warning with emacs < 26
 (declare-function display-buffer-in-child-frame "window.el")
@@ -274,13 +290,66 @@ We don't extract the string that `lps-line' is already displaying."
    ((gethash "language" contents) ;; MarkedString
     (lsp-ui-doc--extract-marked-string contents))))
 
+(defun lsp-ui-doc--webkit-run-xwidget ()
+  "Launch embedded WebKit instance."
+  (lsp-ui-doc--with-buffer
+   (let ((inhibit-read-only t))
+     (insert " ")
+     (goto-char 1)
+     (let ((id (make-xwidget
+                'webkit
+                nil
+                1
+                1
+                nil
+                (buffer-name))))
+       (xwidget-resize id 1 1)
+       (set-xwidget-query-on-exit-flag id nil)
+       (put-text-property (point) (+ 1 (point))
+                          'display (list 'xwidget ':xwidget id))
+       (xwidget-webkit-mode)
+       (xwidget-webkit-goto-uri (xwidget-at 1)
+                                lsp-ui-doc-webkit-client-path)
+       (lsp-ui-doc--webkit-set-background)
+       (lsp-ui-doc--webkit-set-foreground)))))
+
+(defun lsp-ui-doc--webkit-set-background ()
+  "Set background color of the WebKit widget."
+  (lsp-ui-doc--webkit-execute-script
+   (format "document.body.style.background = '%s';"
+           "#fdfdfd"
+           ;; (face-attribute 'lsp-ui-doc-background :background)
+           )))
+
+(defun lsp-ui-doc--webkit-set-foreground ()
+  "Set foreground color of the WebKit widget."
+  (lsp-ui-doc--webkit-execute-script
+   (format "document.body.style.color = '%s';"
+           (face-attribute 'default :foreground))))
+
+(defun lsp-ui-doc--webkit-get-xwidget ()
+  "Return Xwidget instance."
+  (lsp-ui-doc--with-buffer
+    (xwidget-at 1)))
+
+(defun lsp-ui-doc--webkit-execute-script (script &optional fn)
+  "Execute SCRIPT in embedded Xwidget and run optional callback FN."
+  (when-let* ((xw (lsp-ui-doc--webkit-get-xwidget)))
+    (xwidget-webkit-execute-script xw script fn)))
+
+(defun lsp-ui-doc--webkit-execute-script-rv (script)
+  "Execute SCRIPT in embedded Xwidget synchronously."
+  (when-let* ((xw (lsp-ui-doc--webkit-get-xwidget)))
+    (xwidget-webkit-execute-script xw script)))
+
 (defun lsp-ui-doc--hide-frame ()
   "Hide the frame."
   (when (overlayp lsp-ui-doc--inline-ov)
     (delete-overlay lsp-ui-doc--inline-ov))
   (when (lsp-ui-doc--get-frame)
-    (lsp-ui-doc--with-buffer
-     (erase-buffer))
+    (unless lsp-ui-doc-use-webkit
+      (lsp-ui-doc--with-buffer
+       (erase-buffer)))
     (make-frame-invisible (lsp-ui-doc--get-frame))))
 
 (defun lsp-ui-doc--buffer-width ()
@@ -308,13 +377,22 @@ We don't extract the string that `lps-line' is already displaying."
       (line-number-at-pos)
       (lsp-ui-doc--line-height)))
 
+(defun lsp-ui-doc--webkit-resize-callback (size)
+  (xwidget-resize (lsp-ui-doc--webkit-get-xwidget) (aref size 0) (aref size 1))
+  (lsp-ui-doc--move-frame (lsp-ui-doc--get-frame)))
+
 (defun lsp-ui-doc--resize-buffer ()
   "If the buffer's width is larger than the current frame, resize it."
-  (let* ((frame-width (frame-width))
-         (fill-column (min lsp-ui-doc-max-width (- frame-width 5))))
-    (when (> (lsp-ui-doc--buffer-width) (min lsp-ui-doc-max-width frame-width))
-      (lsp-ui-doc--with-buffer
-       (fill-region (point-min) (point-max))))))
+  (if lsp-ui-doc-use-webkit
+       (lsp-ui-doc--webkit-execute-script
+        "[document.querySelector('#lsp-ui-webkit').offsetWidth, document.querySelector('#lsp-ui-webkit').offsetHeight];"
+       'lsp-ui-doc--webkit-resize-callback)
+
+    (let* ((frame-width (frame-width))
+           (fill-column (min lsp-ui-doc-max-width (- frame-width 5))))
+      (when (> (lsp-ui-doc--buffer-width) (min lsp-ui-doc-max-width frame-width))
+        (lsp-ui-doc--with-buffer
+         (fill-region (point-min) (point-max)))))))
 
 (defun lsp-ui-doc--next-to-side-window-p nil
   "Return non-nil if the window on the left is a side window."
@@ -331,7 +409,7 @@ START-X is the position x of the current window.
 START-Y is the position y of the current window."
   (-let* (((x . y) (--> (bounds-of-thing-at-point 'symbol)
                         (nth 2 (posn-at-point (car it)))))
-          (mode-line-y (lsp-ui-doc--line-height 'mode-line))
+          (mode-line-y (if lsp-ui-doc-use-webkit 0 (lsp-ui-doc--line-height 'mode-line)))
           (char-height (frame-char-height))
           (y (or (and (> y (/ mode-line-y 2))
                       (<= (- mode-line-y y) (+ char-height height))
@@ -342,7 +420,6 @@ START-Y is the position y of the current window."
 
 (defun lsp-ui-doc--move-frame (frame)
   "Place our FRAME on screen."
-  (lsp-ui-doc--resize-buffer)
   (-let* (((left top _right _bottom) (window-edges nil nil nil t))
           (window (frame-root-window frame))
           ((width . height) (window-text-pixel-size window nil nil 10000 10000 t))
@@ -393,16 +470,30 @@ FN is the function to call on click."
         (lsp-ui-doc--put-click (match-beginning 0) (match-end 0)
                                'browse-url-at-mouse)))))
 
+(defun lsp-ui-doc--webkit-render-callback (_)
+  (lsp-ui-doc--resize-buffer)
+  (lsp-ui-doc--move-frame (lsp-ui-doc--get-frame)))
+
 (defun lsp-ui-doc--render-buffer (string symbol)
   "Set the buffer with STRING."
   (lsp-ui-doc--with-buffer
-   (erase-buffer)
-   (let ((inline-p (lsp-ui-doc--inline-p)))
-     (insert (concat (unless inline-p (propertize "\n" 'face '(:height 0.2)))
-                     (-> (replace-regexp-in-string "`\\([\n]+\\)" "" string)
-                         (string-trim-right))
-                     (unless inline-p (propertize "\n\n" 'face '(:height 0.3))))))
-   (lsp-ui-doc--make-clickable-link)
+   (if lsp-ui-doc-use-webkit
+       (progn
+         (lsp-ui-doc--webkit-execute-script
+          (format
+           "renderMarkdown('%s', '%s');"
+           symbol
+           (url-hexify-string string))
+          'lsp-ui-doc--webkit-render-callback)
+         (lsp-ui-doc--webkit-set-background)
+         (lsp-ui-doc--webkit-set-foreground))
+     (erase-buffer)
+     (let ((inline-p (lsp-ui-doc--inline-p)))
+       (insert (concat (unless inline-p (propertize "\n" 'face '(:height 0.2)))
+                       (-> (replace-regexp-in-string "`\\([\n]+\\)" "" string)
+                           (string-trim-right))
+                       (unless inline-p (propertize "\n\n" 'face '(:height 0.3))))))
+     (lsp-ui-doc--make-clickable-link))
    (setq-local face-remapping-alist `((header-line lsp-ui-doc-header)))
    (setq-local window-min-height 1)
    (setq header-line-format (when lsp-ui-doc-header (concat " " symbol))
@@ -522,6 +613,7 @@ HEIGHT is the documentation number of lines."
         (lsp-ui-doc--inline)
       (unless (lsp-ui-doc--get-frame)
         (lsp-ui-doc--set-frame (lsp-ui-doc--make-frame)))
+      (lsp-ui-doc--resize-buffer)
       (lsp-ui-doc--move-frame (lsp-ui-doc--get-frame))
       (unless (frame-visible-p (lsp-ui-doc--get-frame))
         (make-frame-visible (lsp-ui-doc--get-frame))))))
@@ -547,6 +639,20 @@ HEIGHT is the documentation number of lines."
     (redirect-frame-focus frame (frame-parent frame))
     (set-face-background 'internal-border lsp-ui-doc-border frame)
     (run-hook-with-args 'lsp-ui-doc-frame-hook frame window)
+    (when lsp-ui-doc-use-webkit
+      (define-key (current-global-map) [xwidget-event]
+        (lambda ()
+          (interactive)
+
+          (let ((xwidget-event-type (nth 1 last-input-event)))
+            ;; (when (eq xwidget-event-type 'load-changed)
+            ;;   (lsp-ui-doc--move-frame (lsp-ui-doc--get-frame)))
+
+            (when (eq xwidget-event-type 'javascript-callback)
+              (let ((proc (nth 3 last-input-event))
+                    (arg (nth 4 last-input-event)))
+                (funcall proc arg))))))
+      (lsp-ui-doc--webkit-run-xwidget))
     frame))
 
 (defun lsp-ui-doc--delete-frame ()
