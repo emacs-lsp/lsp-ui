@@ -245,8 +245,16 @@ MODE is the mode used in the parent frame."
                        (and (functionp lsp-ui-doc-render-function)
                             lsp-ui-doc-render-function)))
           (mode major-mode))
-     (if render-fn
-         (funcall render-fn string)
+     (cond
+      (lsp-ui-doc-use-webkit
+       (if (and language (not (string= "text" language)))
+           (progn
+             (message (format "```%s\n%s\n```" language string))
+             (format "```%s\n%s\n```" language string))
+         string))
+      (render-fn
+       (funcall render-fn string))
+      (t
        (with-temp-buffer
          (if (lsp-ui-doc--inline-p)
              (insert (lsp-ui-doc--inline-formatted-string string))
@@ -261,7 +269,7 @@ MODE is the mode used in the parent frame."
              (lsp-ui-doc--setup-markdown mode))
            (ignore-errors
              (font-lock-ensure)))
-         (buffer-string))))))
+         (buffer-string)))))))
 
 (defun lsp-ui-doc--filter-marked-string (list-marked-string)
   (let ((groups (--separate (and (hash-table-p it)
