@@ -35,6 +35,9 @@
 (require 'goto-addr)
 (require 'markdown-mode)
 
+(when (featurep 'xwidget-internal)
+  (require 'xwidget))
+
 (defgroup lsp-ui-doc nil
   "Display informations of the current line."
   :group 'tools
@@ -92,9 +95,6 @@ This requires GNU/Emacs version >= 26 and built with the `--with-xwidgets`
 option."
   :type 'boolean
   :group 'lsp-ui-doc)
-
-(when lsp-ui-doc-use-webkit
-  (require 'xwidget))
 
 (defface lsp-ui-doc-background
   '((((background light)) :background "#b3b3b3")
@@ -248,9 +248,7 @@ MODE is the mode used in the parent frame."
      (cond
       (lsp-ui-doc-use-webkit
        (if (and language (not (string= "text" language)))
-           (progn
-             (message (format "```%s\n%s\n```" language string))
-             (format "```%s\n%s\n```" language string))
+         (format "```%s\n%s\n```" language string)
          string))
       (render-fn
        (funcall render-fn string))
@@ -417,7 +415,9 @@ START-X is the position x of the current window.
 START-Y is the position y of the current window."
   (-let* (((x . y) (--> (bounds-of-thing-at-point 'symbol)
                         (nth 2 (posn-at-point (car it)))))
-          (mode-line-y (if lsp-ui-doc-use-webkit 0 (lsp-ui-doc--line-height 'mode-line)))
+          (mode-line-y (if lsp-ui-doc-use-webkit
+                           0
+                         (lsp-ui-doc--line-height 'mode-line)))
           (char-height (frame-char-height))
           (y (or (and (> y (/ mode-line-y 2))
                       (<= (- mode-line-y y) (+ char-height height))
@@ -614,6 +614,8 @@ HEIGHT is the documentation number of lines."
 
 (defun lsp-ui-doc--display (symbol string)
   "Display the documentation."
+  (when (and lsp-ui-doc-use-webkit (not (featurep 'xwidget-internal)))
+    (setq lsp-ui-doc-use-webkit nil))
   (if (or (null string) (string-empty-p string))
       (lsp-ui-doc--hide-frame)
     (lsp-ui-doc--render-buffer string symbol)
