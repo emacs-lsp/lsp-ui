@@ -7,4 +7,4 @@
 (depends-on "markdown-mode")
 
 (package-file "lsp-ui.el")
-(files "*.el")
+(files "*.el" "lsp-ui-doc.html")
