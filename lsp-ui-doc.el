@@ -607,5 +607,15 @@ HOVER is the returned signature information."
 It is supposed to be called from `lsp-ui--toggle'"
   (lsp-ui-doc-mode (if enable 1 -1)))
 
+(defun lsp-ui-doc-show ()
+  "Trigger display hover information popup."
+  (interactive)
+  (lsp-ui-doc--on-hover (lsp-request "textDocument/hover" (lsp--text-document-position-params))))
+
+(defun lsp-ui-doc-hide ()
+  "Hide hover information popup."
+  (interactive)
+  (lsp-ui-doc--hide-frame))
+
 (provide 'lsp-ui-doc)
 ;;; lsp-ui-doc.el ends here
