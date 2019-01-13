@@ -25,7 +25,7 @@
      var elem = document.getElementById('lsp-ui-webkit');
 
      function renderMarkdown(symbol, markedString) {
-       if (symbol == lastSymbol) return 0;
+       if (symbol == lastSymbol) return [elem.offsetWidth, elem.offsetHeight];
        decodedString = decodeURIComponent(markedString);
        html = converter.makeHtml(decodedString);
        elem.innerHTML = html;
@@ -35,8 +35,7 @@
          hljs.highlightBlock(codeBlock);
        });
 
-       var top = elem.offsetTop;
-       return top;
+       return [elem.offsetWidth, elem.offsetHeight];
      }
 
     </script>

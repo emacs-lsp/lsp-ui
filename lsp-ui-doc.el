@@ -346,7 +346,7 @@ We don't extract the string that `lps-line' is already displaying."
 (defun lsp-ui-doc--webkit-execute-script-rv (script)
   "Execute SCRIPT in embedded Xwidget synchronously."
   (when-let* ((xw (lsp-ui-doc--webkit-get-xwidget)))
-    (xwidget-webkit-execute-script xw script)))
+    (xwidget-webkit-execute-script-rv xw script)))
 
 (defun lsp-ui-doc--hide-frame ()
   "Hide the frame."
@@ -478,10 +478,6 @@ FN is the function to call on click."
         (lsp-ui-doc--put-click (match-beginning 0) (match-end 0)
                                'browse-url-at-mouse)))))
 
-(defun lsp-ui-doc--webkit-render-callback (_)
-  (lsp-ui-doc--resize-buffer)
-  (lsp-ui-doc--move-frame (lsp-ui-doc--get-frame)))
-
 (defun lsp-ui-doc--render-buffer (string symbol)
   "Set the buffer with STRING."
   (lsp-ui-doc--with-buffer
@@ -492,9 +488,7 @@ FN is the function to call on click."
            "renderMarkdown('%s', '%s');"
            symbol
            (url-hexify-string string))
-          'lsp-ui-doc--webkit-render-callback)
-         (lsp-ui-doc--webkit-set-background)
-         (lsp-ui-doc--webkit-set-foreground))
+          'lsp-ui-doc--webkit-resize-callback))
      (erase-buffer)
      (let ((inline-p (lsp-ui-doc--inline-p)))
        (insert (concat (unless inline-p (propertize "\n" 'face '(:height 0.2)))
@@ -623,8 +617,9 @@ HEIGHT is the documentation number of lines."
         (lsp-ui-doc--inline)
       (unless (lsp-ui-doc--get-frame)
         (lsp-ui-doc--set-frame (lsp-ui-doc--make-frame)))
-      (lsp-ui-doc--resize-buffer)
-      (lsp-ui-doc--move-frame (lsp-ui-doc--get-frame))
+      (unless lsp-ui-doc-use-webkit
+        (lsp-ui-doc--resize-buffer)
+        (lsp-ui-doc--move-frame (lsp-ui-doc--get-frame)))
       (unless (frame-visible-p (lsp-ui-doc--get-frame))
         (make-frame-visible (lsp-ui-doc--get-frame))))))
 
