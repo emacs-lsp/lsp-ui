@@ -180,9 +180,9 @@ CALLBACK is the status callback passed by Flycheck."
   ;; flycheck-error objects and pass them immediately to the callback
   (let ((errors))
     (dolist (diag (or
-                   (gethash (lsp--downcasePathOnWindows buffer-file-name)
+                   (gethash (lsp--fix-path-casing buffer-file-name)
                             (lsp-diagnostics))
-                   (gethash (lsp--downcasePathOnWindows (file-truename buffer-file-name))
+                   (gethash (lsp--fix-path-casing (file-truename buffer-file-name))
                             (lsp-diagnostics))))
       (push (flycheck-error-new
              :buffer (current-buffer)
