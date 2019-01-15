@@ -309,7 +309,6 @@ We don't extract the string that `lps-line' is already displaying."
                 1
                 nil
                 (buffer-name))))
-       (xwidget-resize id 1 1)
        (set-xwidget-query-on-exit-flag id nil)
        (put-text-property (point) (+ 1 (point))
                           'display (list 'xwidget ':xwidget id))
@@ -415,9 +414,7 @@ START-X is the position x of the current window.
 START-Y is the position y of the current window."
   (-let* (((x . y) (--> (bounds-of-thing-at-point 'symbol)
                         (nth 2 (posn-at-point (car it)))))
-          (mode-line-y (if lsp-ui-doc-use-webkit
-                           0
-                         (lsp-ui-doc--line-height 'mode-line)))
+          (mode-line-y (lsp-ui-doc--line-height 'mode-line))
           (char-height (frame-char-height))
           (y (or (and (> y (/ mode-line-y 2))
                       (<= (- mode-line-y y) (+ char-height height))
