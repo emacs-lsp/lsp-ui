@@ -179,8 +179,11 @@ CALLBACK is the status callback passed by Flycheck."
   ;; Turn all errors from lsp-diagnostics for the current buffer into
   ;; flycheck-error objects and pass them immediately to the callback
   (let ((errors))
-    (dolist (diag (or (gethash buffer-file-name (lsp-diagnostics))
-                      (gethash (file-truename buffer-file-name) (lsp-diagnostics))))
+    (dolist (diag (or
+                   (gethash (lsp--fix-path-casing buffer-file-name)
+                            (lsp-diagnostics))
+                   (gethash (lsp--fix-path-casing (file-truename buffer-file-name))
+                            (lsp-diagnostics))))
       (push (flycheck-error-new
              :buffer (current-buffer)
              :checker checker
