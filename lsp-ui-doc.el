@@ -372,9 +372,11 @@ We don't extract the string that `lps-line' is already displaying."
 
 (defun lsp-ui-doc--line-height (&optional line)
   "Return the pos-y of the LINE on screen, in pixel."
-  (nth 2 (or (window-line-height line)
-             (and (redisplay t)
-                  (window-line-height line)))))
+  (or
+   (nth 2 (or (window-line-height line)
+              (and (redisplay t)
+                   (window-line-height line))))
+   0))
 
 (defun lsp-ui-doc--sideline-pos-y ()
   (-> (when (bound-and-true-p lsp-ui-sideline--occupied-lines)
