@@ -557,8 +557,7 @@ HEIGHT is the documentation number of lines."
 
 (defadvice select-window (after lsp-ui-doc--select-window activate)
   "Delete the child frame if window changes."
-  (unless (equal (ad-get-arg 0) (selected-window))
-    (lsp-ui-doc--hide-frame)))
+  (lsp-ui-doc--hide-frame))
 
 (advice-add 'load-theme :before (lambda (&rest _) (lsp-ui-doc--delete-frame)))
 (add-hook 'window-configuration-change-hook #'lsp-ui-doc--hide-frame)
