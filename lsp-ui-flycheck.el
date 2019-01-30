@@ -39,10 +39,10 @@
   :link '(custom-manual "(lsp-ui-flycheck) Top")
   :link '(info-link "(lsp-ui-flycheck) Customizing"))
 
-(defcustom lsp-ui-flycheck-enable t
-  "Whether or not to enable ‘lsp-ui-flycheck’."
+(defcustom lsp-ui-use-flycheck-checker t
+  "Whether or not to use lsp-ui flycheck checker"
   :type 'boolean
-  :group 'lsp-ui)
+  :group 'lsp-ui-flycheck)
 
 (defcustom lsp-ui-flycheck-live-reporting t
   "If non-nil, diagnostics in buffer will be reported as soon as possible.
@@ -224,10 +224,11 @@ See https://github.com/emacs-lsp/lsp-mode."
   "Enable flycheck integration for the current buffer."
   (when lsp-ui-flycheck-live-reporting
     (setq-local flycheck-check-syntax-automatically nil))
-  (setq-local flycheck-checker 'lsp-ui)
-  (lsp-ui-flycheck-add-mode major-mode)
-  (add-to-list 'flycheck-checkers 'lsp-ui)
-  (add-hook 'lsp-after-diagnostics-hook 'lsp-ui-flycheck--report nil t))
+  (when lsp-ui-use-flycheck-checker
+    (setq-local flycheck-checker 'lsp-ui)
+    (lsp-ui-flycheck-add-mode major-mode)
+    (add-to-list 'flycheck-checkers 'lsp-ui)
+    (add-hook 'lsp-after-diagnostics-hook 'lsp-ui-flycheck--report nil t)))
 
 ;; lsp-ui.el loads lsp-ui-flycheck.el, so we can’t ‘require’ lsp-ui.
 ;; FIXME: Remove this cyclic dependency.
