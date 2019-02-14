@@ -494,7 +494,10 @@ This does not toggle display of flycheck diagnostics or code actions."
 
 (defun lsp-ui-sideline-enable (enable)
   "Enable/disable `lsp-ui-sideline-mode'."
-  (lsp-ui-sideline-mode (if enable 1 -1)))
+  (lsp-ui-sideline-mode (if enable 1 -1))
+  (if enable
+      (add-hook 'before-revert-hook 'lsp-ui-sideline--delete-ov nil t)
+    (remove-hook 'before-revert-hook 'lsp-ui-sideline--delete-ov t)))
 
 (provide 'lsp-ui-sideline)
 ;;; lsp-ui-sideline.el ends here
