@@ -1,0 +1,43 @@
+<html>
+  <head>
+    <meta charset="utf-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/showdown/1.9.0/showdown.min.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/highlight.js/9.13.1/highlight.min.js"></script>
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/github-markdown-css/2.10.0/github-markdown.css">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/highlight.js/9.13.1/styles/default.min.css">
+    <style>
+     .markdown-body {
+       box-sizing: border-box;
+       min-width: 400px;
+       max-width: 600px;
+       margin: 0 auto;
+       padding: 10px;
+     }
+    </style>
+  </head>
+  <body>
+    <div id="lsp-ui-webkit" class="markdown-body">
+    </div>
+    <script>
+     var converter = new showdown.Converter({simpleLineBreaks: true});
+     var lastSymbol = "";
+     var elem = document.getElementById('lsp-ui-webkit');
+
+     function renderMarkdown(symbol, markedString) {
+       if (symbol == lastSymbol) return [elem.offsetWidth, elem.offsetHeight];
+       decodedString = decodeURIComponent(markedString);
+       html = converter.makeHtml(decodedString);
+       elem.innerHTML = html;
+       lastSymbol = symbol;
+
+       document.querySelectorAll('pre code').forEach(function(codeBlock) {
+         hljs.highlightBlock(codeBlock);
+       });
+
+       return [elem.offsetWidth, elem.offsetHeight];
+     }
+
+    </script>
+  </body>
+</html>

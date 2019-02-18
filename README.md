@@ -59,3 +59,6 @@ Other cross references:
 ### lsp-ui-doc:
 Show object documentation at point in a child frame.  
 ![lsp-ui-doc](images/lsp-ui-doc.gif)
+
+Show documentation in a WebKit widget
+![lsp-ui-doc-webkit](images/lsp-ui-doc-webkit.png)
