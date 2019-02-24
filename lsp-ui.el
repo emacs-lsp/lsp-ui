@@ -44,6 +44,10 @@
 (require 'lsp-ui-peek)
 (require 'lsp-ui-imenu)
 (require 'lsp-ui-doc)
+(require 'dash)
+
+(with-eval-after-load 'flycheck
+  (require 'lsp-ui-flycheck))
 
 (defun lsp-ui-peek--render (major string)
   (with-temp-buffer
@@ -66,13 +70,14 @@ If the PATH is not in the workspace, it returns the original PATH."
       path)))
 
 (defun lsp-ui--toggle (enable)
-  (dolist (feature '(lsp-ui-peek lsp-ui-sideline lsp-ui-doc lsp-ui-imenu))
-    (let* ((sym (intern-soft (concat (symbol-name feature) "-enable")))
+  (dolist (feature '(lsp-ui-flycheck lsp-ui-peek lsp-ui-sideline lsp-ui-doc lsp-ui-imenu))
+    (let* ((sym (--> (intern-soft (concat (symbol-name feature) "-enable"))
+                     (and (boundp it) it)))
            (value (symbol-value sym))
            (fn (symbol-function sym)))
-      (when (and (or value (not enable))
-                 (functionp fn))
-        (funcall fn enable)))))
+      (and (or value (not enable))
+           (functionp fn)
+           (funcall fn enable)))))
 
 (defvar lsp-ui-mode-map (make-sparse-keymap))
 
