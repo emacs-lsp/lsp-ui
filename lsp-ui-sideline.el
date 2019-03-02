@@ -472,6 +472,15 @@ This does not toggle display of flycheck diagnostics or code actions."
   (setq lsp-ui-sideline--tag nil)
   (lsp-ui-sideline))
 
+(defun lsp-ui-sideline--erase (&rest _)
+  (when (bound-and-true-p lsp-ui-sideline-mode)
+    (ignore-errors
+      (lsp-ui-sideline--delete-ov)
+      (setq lsp-ui-sideline--tag nil))))
+
+(defvar lsp-ui-sideline-cmd-erase
+  '(kill-region))
+
 (define-minor-mode lsp-ui-sideline-mode
   "Minor mode for showing information of current line."
   :init-value nil
@@ -481,6 +490,8 @@ This does not toggle display of flycheck diagnostics or code actions."
     (add-hook 'post-command-hook 'lsp-ui-sideline nil t)
     (advice-add 'company-pseudo-tooltip-frontend :before 'lsp-ui-sideline--hide-before-company)
     (add-hook 'lsp-after-diagnostics-hook 'lsp-ui-sideline--diagnostics-changed nil t)
+    (dolist (cmd lsp-ui-sideline-cmd-erase)
+      (advice-add cmd :before 'lsp-ui-sideline--erase))
     (when lsp-ui-sideline-show-diagnostics
       (setq-local flycheck-display-errors-function nil)))
    (t
@@ -489,6 +500,8 @@ This does not toggle display of flycheck diagnostics or code actions."
     (lsp-ui-sideline--delete-ov)
     (remove-hook 'lsp-after-diagnostics-hook 'lsp-ui-sideline--diagnostics-changed)
     (remove-hook 'post-command-hook 'lsp-ui-sideline t)
+    (dolist (cmd lsp-ui-sideline-cmd-erase)
+      (advice-remove cmd 'lsp-ui-sideline--erase))
     (when lsp-ui-sideline-show-diagnostics
       (kill-local-variable 'flycheck-display-errors-function)))))
 
