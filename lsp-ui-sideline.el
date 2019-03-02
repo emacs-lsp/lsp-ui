@@ -417,13 +417,19 @@ to the language server."
                 ;; Skip strings and comments
                 (when (and symbol (not in-string) outside-comment)
                   (push (list symbol tag bounds (lsp--position (1- line-widen) (- (point) bol))) symbols))))
-            (dolist (entry symbols)
-              (-let [(symbol tag bounds position) entry]
+            (--each-indexed symbols
+              (-let (((symbol tag bounds position) it)
+                     (index it-index))
                 (lsp--send-request-async
                  (lsp--make-request
                   "textDocument/hover"
                   (list :textDocument doc-id :position position))
-                 (lambda (info) (if info (lsp-ui-sideline--push-info symbol tag bounds info))))))))))))
+                 (lambda (info)
+                   (when (eq index 0)
+                     (lsp-ui-sideline--erase)
+                     (setq lsp-ui-sideline--ovs nil
+                           lsp-ui-sideline--occupied-lines nil))
+                   (when info (lsp-ui-sideline--push-info symbol tag bounds info))))))))))))
 
 (defun lsp-ui-sideline--stop-p ()
   "Return non-nil if the sideline should not be display."
@@ -469,6 +475,7 @@ This does not toggle display of flycheck diagnostics or code actions."
 
 (defun lsp-ui-sideline--diagnostics-changed ()
   "Handler for flycheck notifications."
+  (lsp-ui-sideline--delete-ov)
   (setq lsp-ui-sideline--tag nil)
   (lsp-ui-sideline))
 
