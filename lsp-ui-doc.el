@@ -678,9 +678,12 @@ before, or if the new window is the minibuffer."
   (let ((initial-window (selected-window)))
     (prog1 ad-do-it
       (when (lsp-ui-doc--visible-p)
-        (let ((current-window (selected-window)))
+        (let* ((current-window (selected-window))
+               (doc-buffer (get-buffer (lsp-ui-doc--make-buffer-name))))
           (unless (or (window-minibuffer-p current-window)
-                      (equal current-window initial-window))
+                      (equal current-window initial-window)
+                      (and doc-buffer
+                           (equal (window-buffer initial-window) doc-buffer)))
             (lsp-ui-doc--hide-frame)))))))
 
 (advice-add 'load-theme :before (lambda (&rest _) (lsp-ui-doc--delete-frame)))
