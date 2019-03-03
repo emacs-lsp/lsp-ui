@@ -665,10 +665,26 @@ HEIGHT is the documentation number of lines."
     (delete-frame frame)
     (lsp-ui-doc--set-frame nil)))
 
-(defadvice select-window (after lsp-ui-doc--select-window activate)
-  "Delete the child frame if window changes."
-  (unless (equal (ad-get-arg 0) (selected-window))
-    (lsp-ui-doc--hide-frame)))
+(defun lsp-ui-doc--visible-p ()
+  "Return whether the LSP UI doc is visible"
+  (or (overlayp lsp-ui-doc--inline-ov)
+      (and (lsp-ui-doc--get-frame)
+           (frame-visible-p (lsp-ui-doc--get-frame)))))
+
+(defadvice select-window (around lsp-ui-doc--select-window activate)
+  "Delete the child frame if currently selected window changes.
+Does nothing if the newly-selected window is the same window as
+before, or if the new window is the minibuffer."
+  (let ((initial-window (selected-window)))
+    (prog1 ad-do-it
+      (when (lsp-ui-doc--visible-p)
+        (let* ((current-window (selected-window))
+               (doc-buffer (get-buffer (lsp-ui-doc--make-buffer-name))))
+          (unless (or (window-minibuffer-p current-window)
+                      (equal current-window initial-window)
+                      (and doc-buffer
+                           (equal (window-buffer initial-window) doc-buffer)))
+            (lsp-ui-doc--hide-frame)))))))
 
 (advice-add 'load-theme :before (lambda (&rest _) (lsp-ui-doc--delete-frame)))
 (add-hook 'window-configuration-change-hook #'lsp-ui-doc--hide-frame)
