@@ -277,6 +277,7 @@ CURRENT is non-nil when the point is on the symbol."
             (overlay-put ov 'current current)
             (overlay-put ov 'after-string final-string)
             (overlay-put ov 'window (get-buffer-window))
+            (overlay-put ov 'kind 'info)
             (push ov lsp-ui-sideline--ovs)))))))
 
 (defun lsp-ui-sideline--toggle-current (ov current)
@@ -321,6 +322,7 @@ CURRENT is non-nil when the point is on the symbol."
                (ov (and pos-ov (make-overlay pos-ov pos-ov))))
           (when pos-ov
             (overlay-put ov 'after-string string)
+            (overlay-put ov 'kind 'diagnotics)
             (push ov lsp-ui-sideline--ovs)))))))
 
 (defvar-local lsp-ui-sideline--code-actions nil)
@@ -341,6 +343,11 @@ CURRENT is non-nil when the point is on the symbol."
 (defun lsp-ui-sideline--code-actions (actions)
   "Show code ACTIONS."
   (setq lsp-ui-sideline--code-actions actions)
+  (dolist (ov lsp-ui-sideline--ovs)
+    (when (eq (overlay-get ov 'kind) 'actions)
+      (setq lsp-ui-sideline--occupied-lines
+            (delq (overlay-get ov 'position) lsp-ui-sideline--occupied-lines))
+      (delete-overlay ov)))
   (seq-doseq (action actions)
     (-let* ((title (->> (gethash "title" action)
                         (replace-regexp-in-string "[\n\t ]+" " ")
@@ -362,6 +369,8 @@ CURRENT is non-nil when the point is on the symbol."
             (ov (and pos-ov (make-overlay pos-ov pos-ov))))
       (when pos-ov
         (overlay-put ov 'after-string string)
+        (overlay-put ov 'kind 'actions)
+        (overlay-put ov 'position pos-ov)
         (push ov lsp-ui-sideline--ovs)))))
 
 (defun lsp-ui-sideline--calculate-tag()
@@ -426,9 +435,11 @@ to the language server."
                   (list :textDocument doc-id :position position))
                  (lambda (info)
                    (when (eq index 0)
-                     (lsp-ui-sideline--erase)
-                     (setq lsp-ui-sideline--ovs nil
-                           lsp-ui-sideline--occupied-lines nil))
+                     (setq lsp-ui-sideline--occupied-lines
+                           (--remove (> it (point)) lsp-ui-sideline--occupied-lines))
+                     (dolist (ov lsp-ui-sideline--ovs)
+                       (when (eq (overlay-get ov 'kind) 'info)
+                         (delete-overlay ov))))
                    (when info (lsp-ui-sideline--push-info symbol tag bounds info))))))))))))
 
 (defun lsp-ui-sideline--stop-p ()
