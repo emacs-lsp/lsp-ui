@@ -385,7 +385,9 @@ We don't extract the string that `lps-line' is already displaying."
       (lsp-ui-doc--line-height)))
 
 (defun lsp-ui-doc--webkit-resize-callback (size)
-  (xwidget-resize (lsp-ui-doc--webkit-get-xwidget) (aref size 0) (aref size 1))
+  (let ((offset-width (round (aref size 0)))
+        (offset-height (round (aref size 1))))
+    (xwidget-resize (lsp-ui-doc--webkit-get-xwidget) offset-width offset-height))
   (lsp-ui-doc--move-frame (lsp-ui-doc--get-frame)))
 
 (defun lsp-ui-doc--resize-buffer ()
