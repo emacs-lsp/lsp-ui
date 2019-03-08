@@ -516,7 +516,7 @@ This does not toggle display of flycheck diagnostics or code actions."
     (setq lsp-ui-sideline--tag nil)
     (advice-remove 'company-pseudo-tooltip-frontend 'lsp-ui-sideline--hide-before-company)
     (lsp-ui-sideline--delete-ov)
-    (remove-hook 'lsp-after-diagnostics-hook 'lsp-ui-sideline--diagnostics-changed)
+    (remove-hook 'lsp-after-diagnostics-hook 'lsp-ui-sideline--diagnostics-changed t)
     (remove-hook 'post-command-hook 'lsp-ui-sideline t)
     (dolist (cmd lsp-ui-sideline-cmd-erase)
       (advice-remove cmd 'lsp-ui-sideline--erase))
