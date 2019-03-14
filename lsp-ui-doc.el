@@ -701,11 +701,38 @@ before, or if the new window is the minibuffer."
 (defun lsp-ui-doc--on-hover (hover)
   "Handler for `lsp-on-hover-hook'.
 HOVER is the returned signature information."
+  (remove-overlays nil nil 'lsp-ui-doc 'lsp-hover)
   (--if-let (-some->> hover (gethash "contents"))
       (lsp-ui-doc--display (thing-at-point 'symbol t)
                            (lsp-ui-doc--extract it))
     (eldoc-message nil)
+    (lsp-ui-doc--hide-frame))
+  (--if-let (-some->> hover (gethash "range"))
+      (let* ((start (gethash "start" it))
+             (end (gethash "end" it))
+             (overlay (make-overlay (lsp--position-to-point start)
+                                    (lsp--position-to-point end))))
+        (overlay-put overlay 'lsp-ui-doc 'lsp-hover))))
+
+(defun lsp-ui-doc--on-overlay-p ()
+  "Return whether point is on a `lsp-ui-doc' overlay."
+  (cl-find-if (lambda (el)
+                (eq (overlay-get el 'lsp-ui-doc) 'lsp-hover))
+              (overlays-at (point))))
+
+(defun lsp-ui-doc--on-post-command ()
+  "Handler for `post-command-hook'.
+Hide the information popup if the point moves out of the symbol
+concerned by the hover."
+  (unless (lsp-ui-doc--on-overlay-p)
+    (remove-overlays nil nil 'lsp-ui-doc 'lsp-hover)
     (lsp-ui-doc--hide-frame)))
+
+(defun lsp-ui-doc--on-change (_beg _end)
+  "Handler for `before-change-functions'.
+Hide the information popup."
+  (remove-overlays nil nil 'lsp-ui-doc 'lsp-hover)
+  (lsp-ui-doc--hide-frame))
 
 (define-minor-mode lsp-ui-doc-mode
   "Minor mode for showing hover information in child frame."
@@ -725,10 +752,14 @@ HOVER is the returned signature information."
         (push '(lsp-ui-doc-frame . :never) frameset-filter-alist)))
 
     (add-hook 'lsp-on-hover-hook 'lsp-ui-doc--on-hover nil t)
-    (add-hook 'delete-frame-functions 'lsp-ui-doc--on-delete nil t))
+    (add-hook 'delete-frame-functions 'lsp-ui-doc--on-delete nil t)
+    (add-hook 'post-command-hook 'lsp-ui-doc--on-post-command nil t)
+    (add-hook 'before-change-functions 'lsp-ui-doc--on-change nil t))
    (t
     (remove-hook 'lsp-on-hover-hook 'lsp-ui-doc--on-hover t)
-    (remove-hook 'delete-frame-functions 'lsp-ui-doc--on-delete t))))
+    (remove-hook 'delete-frame-functions 'lsp-ui-doc--on-delete t)
+    (remove-hook 'post-command-hook 'lsp-ui-doc--on-post-command t)
+    (remove-hook 'before-change-functions 'lsp-ui-doc--on-change t))))
 
 (defun lsp-ui-doc-enable (enable)
   "Enable/disable ‘lsp-ui-doc-mode’.
