@@ -632,7 +632,8 @@ HEIGHT is the documentation number of lines."
          (name-buffer (lsp-ui-doc--make-buffer-name))
          (buffer (get-buffer name-buffer))
          (params (append lsp-ui-doc-frame-parameters
-                         `((default-minibuffer-frame . ,(selected-frame))
+                         `((name . "")
+                           (default-minibuffer-frame . ,(selected-frame))
                            (minibuffer . ,(minibuffer-window))
                            (left-fringe . ,(frame-char-width))
                            (background-color . ,(face-background 'lsp-ui-doc-background nil t)))))
