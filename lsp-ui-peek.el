@@ -688,7 +688,7 @@ references.  The function returns a list of `ls-xref-item'."
   "Get all references/definitions for the symbol under point.
 Returns item(s)."
   (-when-let* ((locs (lsp-request method params))
-               (locs (if (listp locs) locs (append locs nil))))
+               (locs (if (listp locs) locs (if (vectorp locs) (append locs nil) (list locs)))))
     (mapcar #'lsp-ui-peek--get-xrefs-list
             (if (gethash "uri" (car locs))
                 ;; Location[]
