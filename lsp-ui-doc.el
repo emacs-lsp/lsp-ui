@@ -711,6 +711,7 @@ HOVER is the returned signature information."
   "Save the buffer during `pre-command-hook' so that
 `post-command-hook' can check if the buffer is different and
 cleanup the hover state.")
+(defvar lsp-ui-doc--line-saved nil)
 
 (defun lsp-ui-doc--cleanup-hover-state ()
   "Unset state used by hover/eldoc."
@@ -723,6 +724,7 @@ cleanup the hover state.")
 Hide the information popup if the point moves out of the range
 concerned by the hover."
   (setq lsp-ui-doc--command-saved-buffer (current-buffer))
+  (setq lsp-ui-doc--line-saved (line-number-at-pos))
   (unless (and lsp--hover-saved-bounds
                (lsp--point-in-bounds-p lsp--hover-saved-bounds))
     (lsp-ui-doc--cleanup-hover-state)))
@@ -738,7 +740,8 @@ cleanup the hover state of the original buffer."
              (not (eq (current-buffer) lsp-ui-doc--command-saved-buffer)))
     (with-current-buffer lsp-ui-doc--command-saved-buffer
       (lsp-ui-doc--cleanup-hover-state)))
-  (unless (and lsp--hover-saved-bounds
+  (unless (and (eq (line-number-at-pos) lsp-ui-doc--line-saved)
+               lsp--hover-saved-bounds
                (lsp--point-in-bounds-p lsp--hover-saved-bounds))
     (lsp-ui-doc--cleanup-hover-state)))
 
