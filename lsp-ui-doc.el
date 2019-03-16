@@ -233,14 +233,15 @@ MODE is the mode used in the parent frame."
              (split-string string "\n")
              "\n"))
 
-(defun lsp-ui-doc--extract-marked-string (marked-string)
+(defun lsp-ui-doc--extract-marked-string (marked-string &optional language)
   "Render the MARKED-STRING."
   (string-trim-right
    (let* ((string (if (stringp marked-string)
                       marked-string
                     (gethash "value" marked-string)))
           (with-lang (hash-table-p marked-string))
-          (language (and with-lang (gethash "language" marked-string)))
+          (language (or (and with-lang (gethash "language" marked-string))
+                        language))
           (render-fn (if with-lang (lsp-get-renderer language)
                        (and (functionp lsp-ui-doc-render-function)
                             lsp-ui-doc-render-function)))
@@ -291,8 +292,9 @@ We don't extract the string that `lps-line' is already displaying."
                ;; (propertize "\n\n" 'face '(:height 0.4))
                ))
    ;; when we get markdown contents, render using emacs gfm-view-mode / markdown-mode
-   ((string= (gethash "kind" contents) "markdown") (lsp-ui-doc--extract-marked-string contents))
-   ((gethash "kind" contents) (gethash "value" contents)) ;; MarkupContent
+   ((string= (gethash "kind" contents) "markdown") ;; Markdown MarkupContent
+    (lsp-ui-doc--extract-marked-string contents "markdown"))
+   ((gethash "kind" contents) (gethash "value" contents)) ;; Plaintext MarkupContent
    ((gethash "language" contents) ;; MarkedString
     (lsp-ui-doc--extract-marked-string contents))))
 
