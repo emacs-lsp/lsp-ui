@@ -96,6 +96,11 @@ option."
   :type 'boolean
   :group 'lsp-ui-doc)
 
+(defcustom lsp-ui-doc-delay 0.2
+  "Number of seconds before showing the doc."
+  :type 'number
+  :group 'lsp-ui-doc)
+
 (defface lsp-ui-doc-background
   '((((background light)) :background "#b3b3b3")
     (t :background "#272A36"))
@@ -172,6 +177,9 @@ Because some variables are buffer local.")
 
 (defvar-local lsp-ui-doc--inline-ov nil
   "Overlay used to display the documentation in the buffer.")
+
+(defvar-local lsp-ui-doc--bounds nil)
+(defvar-local lsp-ui-doc--timer nil)
 
 (defmacro lsp-ui-doc--with-buffer (&rest body)
   "Execute BODY in the lsp-ui-doc buffer."
@@ -351,6 +359,7 @@ We don't extract the string that `lps-line' is already displaying."
 
 (defun lsp-ui-doc--hide-frame ()
   "Hide the frame."
+  (setq lsp-ui-doc--bounds nil)
   (when (overlayp lsp-ui-doc--inline-ov)
     (delete-overlay lsp-ui-doc--inline-ov))
   (when (lsp-ui-doc--get-frame)
@@ -664,6 +673,36 @@ HEIGHT is the documentation number of lines."
       (lsp-ui-doc--webkit-run-xwidget))
     frame))
 
+(defun lsp-ui-doc--make-request nil
+  "Request the documentation to the LS."
+  (when (and (not (bound-and-true-p lsp-ui-peek-mode))
+             (lsp--capability "hoverProvider"))
+    (-if-let (bounds (or (and (symbol-at-point) (bounds-of-thing-at-point 'symbol))
+                         (and (looking-at "[[:graph:]]") (cons (point) (1+ (point))))))
+        (unless (equal lsp-ui-doc--bounds bounds)
+          (lsp--send-request-async
+           (lsp--make-request "textDocument/hover" (lsp--text-document-position-params))
+           (lambda (hover) (lsp-ui-doc--callback hover bounds (current-buffer)))))
+      (lsp-ui-doc--hide-frame))))
+
+(defun lsp-ui-doc--callback (hover bounds buffer)
+  "Process the received documentation.
+HOVER is the doc returned by the LS.
+BOUNDS are points of the symbol that have been requested.
+BUFFER is the buffer where the request has been made."
+  (if (and hover
+           (>= (point) (car bounds)) (<= (point) (cdr bounds))
+           (eq buffer (current-buffer)))
+      (progn
+        (setq lsp-ui-doc--bounds bounds)
+        (and lsp-ui-doc--timer (cancel-timer lsp-ui-doc--timer))
+        (setq lsp-ui-doc--timer
+              (run-with-idle-timer
+               lsp-ui-doc-delay nil
+               (lambda nil (lsp-ui-doc--display
+                            (thing-at-point 'symbol t) (lsp-ui-doc--extract (gethash "contents" hover)))))))
+    (lsp-ui-doc--hide-frame)))
+
 (defun lsp-ui-doc--delete-frame ()
   "Delete the child frame if it exists."
   (-when-let (frame (lsp-ui-doc--get-frame))
@@ -701,15 +740,6 @@ before, or if the new window is the minibuffer."
             (and (buffer-live-p it) it)
             (kill-buffer it)))
 
-(defun lsp-ui-doc--on-hover (hover)
-  "Handler for `lsp-on-hover-hook'.
-HOVER is the returned signature information."
-  (--if-let (-some->> hover (gethash "contents"))
-      (lsp-ui-doc--display (thing-at-point 'symbol t)
-                           (lsp-ui-doc--extract it))
-    (eldoc-message nil)
-    (lsp-ui-doc--hide-frame)))
-
 (define-minor-mode lsp-ui-doc-mode
   "Minor mode for showing hover information in child frame."
   :init-value nil
@@ -726,11 +756,10 @@ HOVER is the returned signature information."
         ;; ‘frameset-filter-alist’ for explanation.
         (cl-callf copy-tree frameset-filter-alist)
         (push '(lsp-ui-doc-frame . :never) frameset-filter-alist)))
-
-    (add-hook 'lsp-on-hover-hook 'lsp-ui-doc--on-hover nil t)
+    (add-hook 'post-command-hook 'lsp-ui-doc--make-request nil t)
     (add-hook 'delete-frame-functions 'lsp-ui-doc--on-delete nil t))
    (t
-    (remove-hook 'lsp-on-hover-hook 'lsp-ui-doc--on-hover t)
+    (remove-hook 'post-command-hook 'lsp-ui-doc--make-request t)
     (remove-hook 'delete-frame-functions 'lsp-ui-doc--on-delete t))))
 
 (defun lsp-ui-doc-enable (enable)
@@ -741,7 +770,9 @@ It is supposed to be called from `lsp-ui--toggle'"
 (defun lsp-ui-doc-show ()
   "Trigger display hover information popup."
   (interactive)
-  (lsp-ui-doc--on-hover (lsp-request "textDocument/hover" (lsp--text-document-position-params))))
+  (lsp-ui-doc--callback (lsp-request "textDocument/hover" (lsp--text-document-position-params))
+                        (or (bounds-of-thing-at-point 'symbol) (cons (point) (1+ (point))))
+                        (current-buffer)))
 
 (defun lsp-ui-doc-hide ()
   "Hide hover information popup."
