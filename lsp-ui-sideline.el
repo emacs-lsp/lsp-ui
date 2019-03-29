@@ -152,13 +152,13 @@ INDEX is the line number (relative to the current line)."
         (when (>= (- win-width (current-column)) str-len)
           eol)))))
 
-(defun lsp-ui-sideline--find-line (str-len &optional up)
+(defun lsp-ui-sideline--find-line (str-len bol eol &optional up)
   "Find a line where the string can be inserted.
 It loops on the nexts lines to find enough space.
 Returns the point of the last character on the line.
 
-WIN-WIDTH is the window width.
 STR-LEN is the string size.
+BOL & EOL are beginning and ending of the user point line.
 if UP is non-nil, it loops on the previous lines.."
   (let ((win-width (lsp-ui-sideline--window-width))
         (index 1) pos)
@@ -168,8 +168,9 @@ if UP is non-nil, it loops on the previous lines.."
     (when pos (push pos lsp-ui-sideline--occupied-lines))
     (if (or (equal pos (point-min))
             (and up (null pos)))
-        (lsp-ui-sideline--find-line str-len)
-      pos)))
+        (lsp-ui-sideline--find-line str-len bol eol)
+      (and pos (or (> pos eol) (< pos bol))
+           pos))))
 
 (defun lsp-ui-sideline--delete-ov ()
   "Delete overlays."
@@ -258,7 +259,7 @@ CURRENT is non-nil when the point is on the symbol."
   (- (min (window-text-width) (window-body-width))
      (lsp-ui-sideline--margin-width)))
 
-(defun lsp-ui-sideline--push-info (symbol tag bounds info)
+(defun lsp-ui-sideline--push-info (symbol tag bounds info bol eol)
   (when (and (= tag (lsp-ui-sideline--calculate-tag))
              (not (lsp-ui-sideline--stop-p)))
     (let* ((info (concat (thread-first (gethash "contents" info)
@@ -268,7 +269,7 @@ CURRENT is non-nil when the point is on the symbol."
       (when (and (> (length info) 0)
                  (lsp-ui-sideline--check-duplicate symbol info))
         (let* ((final-string (lsp-ui-sideline--make-display-string info symbol current))
-               (pos-ov (lsp-ui-sideline--find-line (length final-string)))
+               (pos-ov (lsp-ui-sideline--find-line (length final-string) bol eol))
                (ov (when pos-ov (make-overlay pos-ov pos-ov))))
           (when pos-ov
             (overlay-put ov 'info info)
@@ -300,30 +301,28 @@ CURRENT is non-nil when the point is on the symbol."
         (when (overlay-get ov 'current)
           (lsp-ui-sideline--toggle-current ov nil))))))
 
-(defun lsp-ui-sideline--diagnostics ()
+(defun lsp-ui-sideline--diagnostics (bol eol)
   "Show diagnostics on the current line."
-  (let ((bol (line-beginning-position))
-        (eol (line-end-position)))
-    (when (bound-and-true-p flycheck-mode)
-      (dolist (e (flycheck-overlay-errors-in bol (1+ eol)))
-        (let* ((message (--> (flycheck-error-format-message-and-id e)
-                             (car (split-string it "\n"))
-                             (replace-regexp-in-string "[\n\t ]+" " " it)))
-               (len (length message))
-               (level (flycheck-error-level e))
-               (face (if (eq level 'info) 'success level))
-               (margin (lsp-ui-sideline--margin-width))
-               (message (progn (add-face-text-property 0 len 'lsp-ui-sideline-global nil message)
-                               (add-face-text-property 0 len face nil message)
-                               message))
-               (string (concat (propertize " " 'display `(space :align-to (- right-fringe ,(lsp-ui-sideline--align len margin))))
-                               message))
-               (pos-ov (lsp-ui-sideline--find-line len t))
-               (ov (and pos-ov (make-overlay pos-ov pos-ov))))
-          (when pos-ov
-            (overlay-put ov 'after-string string)
-            (overlay-put ov 'kind 'diagnotics)
-            (push ov lsp-ui-sideline--ovs)))))))
+  (when (bound-and-true-p flycheck-mode)
+    (dolist (e (flycheck-overlay-errors-in bol (1+ eol)))
+      (let* ((message (--> (flycheck-error-format-message-and-id e)
+                           (car (split-string it "\n"))
+                           (replace-regexp-in-string "[\n\t ]+" " " it)))
+             (len (length message))
+             (level (flycheck-error-level e))
+             (face (if (eq level 'info) 'success level))
+             (margin (lsp-ui-sideline--margin-width))
+             (message (progn (add-face-text-property 0 len 'lsp-ui-sideline-global nil message)
+                             (add-face-text-property 0 len face nil message)
+                             message))
+             (string (concat (propertize " " 'display `(space :align-to (- right-fringe ,(lsp-ui-sideline--align len margin))))
+                             message))
+             (pos-ov (lsp-ui-sideline--find-line len bol eol t))
+             (ov (and pos-ov (make-overlay pos-ov pos-ov))))
+        (when pos-ov
+          (overlay-put ov 'after-string string)
+          (overlay-put ov 'kind 'diagnotics)
+          (push ov lsp-ui-sideline--ovs))))))
 
 (defvar-local lsp-ui-sideline--code-actions nil)
 
@@ -340,7 +339,7 @@ CURRENT is non-nil when the point is on the symbol."
       (error "Fail to apply action"))
     (lsp-execute-code-action action)))
 
-(defun lsp-ui-sideline--code-actions (actions)
+(defun lsp-ui-sideline--code-actions (actions bol eol)
   "Show code ACTIONS."
   (setq lsp-ui-sideline--code-actions actions)
   (dolist (ov lsp-ui-sideline--ovs)
@@ -365,7 +364,7 @@ CURRENT is non-nil when the point is on the symbol."
                           title))
             (string (concat (propertize " " 'display `(space :align-to (- right-fringe ,(lsp-ui-sideline--align len margin))))
                             title))
-            (pos-ov (lsp-ui-sideline--find-line (1+ (length title)) t))
+            (pos-ov (lsp-ui-sideline--find-line (1+ (length title)) bol eol t))
             (ov (and pos-ov (make-overlay pos-ov pos-ov))))
       (when pos-ov
         (overlay-put ov 'after-string string)
@@ -395,7 +394,7 @@ to the language server."
               lsp-ui-sideline--tag tag
               lsp-ui-sideline--last-width (window-text-width))
         (when lsp-ui-sideline-show-diagnostics
-          (lsp-ui-sideline--diagnostics))
+          (lsp-ui-sideline--diagnostics bol eol))
         (when (and lsp-ui-sideline-show-code-actions (or (lsp--capability "codeActionProvider")
                                                          (lsp--registered-capability "textDocument/codeAction")))
           (lsp--send-request-async (lsp--make-request
@@ -405,7 +404,7 @@ to the language server."
                                               :range (lsp--region-to-range bol eol)
                                               :context (list :diagnostics (lsp--cur-line-diagnotics)))
                                       (lsp--text-document-code-action-params)))
-                                   #'lsp-ui-sideline--code-actions
+                                   (lambda (actions) (lsp-ui-sideline--code-actions actions bol eol))
                                    'alive))
         ;; Go through all symbols and request hover information.  Note that the symbols are
         ;; traversed backwards as `forward-symbol' with a positive argument will jump just past the
@@ -440,7 +439,7 @@ to the language server."
                      (dolist (ov lsp-ui-sideline--ovs)
                        (when (eq (overlay-get ov 'kind) 'info)
                          (delete-overlay ov))))
-                   (when info (lsp-ui-sideline--push-info symbol tag bounds info))))))))))))
+                   (when info (lsp-ui-sideline--push-info symbol tag bounds info bol eol))))))))))))
 
 (defun lsp-ui-sideline--stop-p ()
   "Return non-nil if the sideline should not be display."
