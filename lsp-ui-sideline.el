@@ -137,6 +137,13 @@ It is used to know when the window has changed of width.")
 This face have a low priority over the others."
   :group 'lsp-ui-sideline)
 
+(defun lsp-ui-sideline--first-line-p (pos)
+  "Return non-nil if POS is on the first line."
+  (save-excursion
+    (goto-char 1)
+    (forward-line)
+    (> (point) pos)))
+
 (defun lsp-ui-sideline--calc-space (win-width str-len index)
   "Calcul whether there is enough space on line.
 If there is enough space, it returns the point of the last
@@ -165,11 +172,13 @@ if UP is non-nil, it loops on the previous lines.."
     (while (and (null pos) (<= (abs index) 30))
       (setq index (if up (1- index) (1+ index)))
       (setq pos (lsp-ui-sideline--calc-space win-width str-len index)))
-    (when pos (push pos lsp-ui-sideline--occupied-lines))
-    (if (or (equal pos (point-min))
-            (and up (null pos)))
+    (if (and up (or (null pos) (and (lsp-ui-sideline--first-line-p pos)
+                                    ;; line-end-position returns a wrong value when its
+                                    ;; argument lead to a line < 0, so we need to use this trick
+                                    (-any-p 'lsp-ui-sideline--first-line-p lsp-ui-sideline--occupied-lines))))
         (lsp-ui-sideline--find-line str-len bol eol)
       (and pos (or (> pos eol) (< pos bol))
+           (push pos lsp-ui-sideline--occupied-lines)
            pos))))
 
 (defun lsp-ui-sideline--delete-ov ()
@@ -434,10 +443,10 @@ to the language server."
                   (list :textDocument doc-id :position position))
                  (lambda (info)
                    (when (eq index 0)
-                     (setq lsp-ui-sideline--occupied-lines
-                           (--remove (> it (point)) lsp-ui-sideline--occupied-lines))
                      (dolist (ov lsp-ui-sideline--ovs)
                        (when (eq (overlay-get ov 'kind) 'info)
+                         (setq lsp-ui-sideline--occupied-lines
+                               (delq (overlay-get ov 'position) lsp-ui-sideline--occupied-lines))
                          (delete-overlay ov))))
                    (when info (lsp-ui-sideline--push-info symbol tag bounds info bol eol))))))))))))
 
