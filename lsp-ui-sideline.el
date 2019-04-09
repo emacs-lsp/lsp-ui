@@ -199,24 +199,16 @@ function signature)."
       (seq-find (lambda (it) (and (hash-table-p it)
                                   (lsp-get-renderer (gethash "language" it))))
                 contents))
-     ((gethash "kind" contents) (gethash "value" contents)) ;; MarkupContent
-     ((gethash "language" contents) ;; MarkedString
-      (and (lsp-get-renderer (gethash "language" contents))
-           (gethash "value" contents))))))
+     ((gethash "kind" contents) contents) ;; MarkupContent
+     ((gethash "language" contents) contents))))
 
 (defun lsp-ui-sideline--format-info (marked-string)
   "Format MARKED-STRING.
 If the string has a language, we fontify it with the function provided
 by `lsp-mode'.
 MARKED-STRING is the string returned by `lsp-ui-sideline--extract-info'."
-  (when marked-string
-    (when (hash-table-p marked-string)
-      (let* ((language (gethash "language" marked-string))
-             (value (gethash "value" marked-string))
-             (renderer (lsp-get-renderer language)))
-        (setq marked-string (if (and (functionp renderer) value)
-                                (funcall renderer value)
-                              value))))
+  (when (and marked-string (hash-table-p marked-string))
+    (setq marked-string (lsp--render-element marked-string))
     (add-face-text-property 0 (length marked-string) 'lsp-ui-sideline-symbol-info nil marked-string)
     (add-face-text-property 0 (length marked-string) 'default t marked-string)
     (replace-regexp-in-string "[\n\t ]+" " " marked-string)))
