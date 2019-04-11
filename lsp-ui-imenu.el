@@ -324,12 +324,8 @@ Return the updated COLOR-INDEX."
 (define-derived-mode lsp-ui-imenu-mode special-mode "lsp-ui-imenu"
   "Mode showing imenu entries.")
 
-(defun lsp-ui-imenu-enable (enable)
-  (if enable
-      (lsp-enable-imenu)
-    (when (eq imenu-create-index-function 'lsp--imenu-create-index)
-      (setq imenu-create-index-function
-            'imenu-default-create-index-function))))
+(defun lsp-ui-imenu-enable (_enable)
+  )
 
 (provide 'lsp-ui-imenu)
 ;;; lsp-ui-imenu.el ends here
