@@ -319,6 +319,8 @@ Return the updated COLOR-INDEX."
     (define-key map (kbd "<left>") 'lsp-ui-imenu--prev-kind)
     (define-key map (kbd "<return>") 'lsp-ui-imenu--view)
     (define-key map (kbd "<M-return>") 'lsp-ui-imenu--visit)
+    (define-key map (kbd "RET") 'lsp-ui-imenu--view)
+    (define-key map (kbd "M-RET") 'lsp-ui-imenu--visit)
     (setq lsp-ui-imenu-mode-map map)))
 
 (define-derived-mode lsp-ui-imenu-mode special-mode "lsp-ui-imenu"
