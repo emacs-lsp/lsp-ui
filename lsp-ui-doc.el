@@ -679,20 +679,23 @@ BUFFER is the buffer where the request has been made."
       (and (lsp-ui-doc--get-frame)
            (frame-visible-p (lsp-ui-doc--get-frame)))))
 
-(defadvice select-window (around lsp-ui-doc--select-window activate)
+(defun lsp-ui--hide-doc-frame-on-window-change (fun window &optional no-record)
   "Delete the child frame if currently selected window changes.
 Does nothing if the newly-selected window is the same window as
 before, or if the new window is the minibuffer."
   (let ((initial-window (selected-window)))
-    (prog1 ad-do-it
-      (when (lsp-ui-doc--visible-p)
-        (let* ((current-window (selected-window))
-               (doc-buffer (get-buffer (lsp-ui-doc--make-buffer-name))))
-          (unless (or (window-minibuffer-p current-window)
-                      (equal current-window initial-window)
-                      (and doc-buffer
-                           (equal (window-buffer initial-window) doc-buffer)))
-            (lsp-ui-doc--hide-frame)))))))
+    (prog1 (funcall fun window no-record)
+      (unless no-record
+        (when (lsp-ui-doc--visible-p)
+          (let* ((current-window (selected-window))
+                 (doc-buffer (get-buffer (lsp-ui-doc--make-buffer-name))))
+            (unless (or (window-minibuffer-p current-window)
+                        (equal current-window initial-window)
+                        (and doc-buffer
+                             (equal (window-buffer initial-window) doc-buffer)))
+              (lsp-ui-doc--hide-frame))))))))
+
+(advice-add #'select-window :around #'lsp-ui--hide-doc-frame-on-window-change)
 
 (advice-add 'load-theme :before (lambda (&rest _) (lsp-ui-doc--delete-frame)))
 (add-hook 'window-configuration-change-hook #'lsp-ui-doc--hide-frame)
