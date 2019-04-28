@@ -403,7 +403,7 @@ to the language server."
                                     (if (equal lsp-ui-sideline-update-mode 'line)
                                         (list :textDocument doc-id
                                               :range (lsp--region-to-range bol eol)
-                                              :context (list :diagnostics (lsp--cur-line-diagnotics)))
+                                              :context (list :diagnostics (lsp--cur-line-diagnostics)))
                                       (lsp--text-document-code-action-params)))
                                    #'lsp-ui-sideline--code-actions))
         ;; Go through all symbols and request hover information.  Note that the symbols are
