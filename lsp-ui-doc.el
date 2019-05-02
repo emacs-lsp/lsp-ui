@@ -228,6 +228,7 @@ Because some variables are buffer local.")
 
 (defun lsp-ui-doc--extract-marked-string (marked-string &optional language)
   "Render the MARKED-STRING."
+  (let ((extracted
   (string-trim-right
    (let* ((string (if (stringp marked-string)
                       marked-string
@@ -240,7 +241,10 @@ Because some variables are buffer local.")
        (if (and language (not (string= "text" language)))
            (format "```%s\n%s\n```" language string)
          string))
-      (t (lsp--render-element marked-string))))))
+      (t (lsp--render-element marked-string)))))))
+    (if (functionp lsp-ui-doc-render-function)
+        (funcall lsp-ui-doc-render-function extracted)
+      extracted)))
 
 (defun lsp-ui-doc--filter-marked-string (list-marked-string)
   (let ((groups (--separate (and (hash-table-p it)
