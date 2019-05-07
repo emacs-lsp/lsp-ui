@@ -246,6 +246,7 @@ CURRENT is non-nil when the point is on the symbol."
               (or (equal (car fringe-mode) 0)
                   (equal (cdr fringe-mode) 0))
               1)
+         (and (boundp 'fringe-mode) (equal fringe-mode 0) 1)
          0)
      (if (bound-and-true-p display-line-numbers-mode)
          (+ 2 (line-number-display-width))
