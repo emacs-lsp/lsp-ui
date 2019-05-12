@@ -32,6 +32,8 @@
 (require 'lsp-mode)
 (require 'flycheck nil 'noerror)
 (require 'dash)
+(require 'seq)
+(require 'subr-x)
 
 (defgroup lsp-ui-sideline nil
   "Display informations of the current line."
@@ -84,6 +86,11 @@ when user changes current point."
 (defcustom lsp-ui-sideline-delay 0.2
   "Number of seconds to wait before showing sideline."
   :type 'number
+  :group 'lsp-ui-sideline)
+
+(defcustom lsp-ui-sideline-diagnostic-max-lines 20
+  "Maximum number of lines to show of diagnostics in sideline."
+  :type 'integer
   :group 'lsp-ui-sideline)
 
 (defvar lsp-ui-sideline-code-actions-prefix ""
@@ -159,16 +166,18 @@ INDEX is the line number (relative to the current line)."
         (when (>= (- win-width (current-column)) str-len)
           eol)))))
 
-(defun lsp-ui-sideline--find-line (str-len bol eol &optional up)
+(defun lsp-ui-sideline--find-line (str-len bol eol &optional up offset)
   "Find a line where the string can be inserted.
 It loops on the nexts lines to find enough space.
 Returns the point of the last character on the line.
 
 STR-LEN is the string size.
 BOL & EOL are beginning and ending of the user point line.
-if UP is non-nil, it loops on the previous lines.."
+if UP is non-nil, it loops on the previous lines.
+if OFFSET is non-nil, it starts search OFFSET lines from user point line."
   (let ((win-width (lsp-ui-sideline--window-width))
-        (index 1) pos)
+        (index (if (null offset) 1 (1+ offset)))
+        pos)
     (while (and (null pos) (<= (abs index) 30))
       (setq index (if up (1- index) (1+ index)))
       (setq pos (lsp-ui-sideline--calc-space win-width str-len index)))
@@ -176,10 +185,10 @@ if UP is non-nil, it loops on the previous lines.."
                                     ;; line-end-position returns a wrong value when its
                                     ;; argument lead to a line < 0, so we need to use this trick
                                     (-any-p 'lsp-ui-sideline--first-line-p lsp-ui-sideline--occupied-lines))))
-        (lsp-ui-sideline--find-line str-len bol eol)
+        (lsp-ui-sideline--find-line str-len bol eol nil offset)
       (and pos (or (> pos eol) (< pos bol))
            (push pos lsp-ui-sideline--occupied-lines)
-           pos))))
+           (list pos index)))))
 
 (defun lsp-ui-sideline--delete-ov ()
   "Delete overlays."
@@ -272,7 +281,7 @@ CURRENT is non-nil when the point is on the symbol."
                  (lsp-ui-sideline--check-duplicate symbol info))
         (let* ((final-string (lsp-ui-sideline--make-display-string info symbol current))
                (pos-ov (lsp-ui-sideline--find-line (length final-string) bol eol))
-               (ov (when pos-ov (make-overlay pos-ov pos-ov))))
+               (ov (when pos-ov (make-overlay (car pos-ov) (car pos-ov)))))
           (when pos-ov
             (overlay-put ov 'info info)
             (overlay-put ov 'symbol symbol)
@@ -306,25 +315,30 @@ CURRENT is non-nil when the point is on the symbol."
 (defun lsp-ui-sideline--diagnostics (bol eol)
   "Show diagnostics on the current line."
   (when (bound-and-true-p flycheck-mode)
-    (dolist (e (flycheck-overlay-errors-in bol (1+ eol)))
-      (let* ((message (--> (flycheck-error-format-message-and-id e)
-                           (car (split-string it "\n"))
-                           (replace-regexp-in-string "[\n\t ]+" " " it)))
-             (len (length message))
-             (level (flycheck-error-level e))
-             (face (if (eq level 'info) 'success level))
-             (margin (lsp-ui-sideline--margin-width))
-             (message (progn (add-face-text-property 0 len 'lsp-ui-sideline-global nil message)
-                             (add-face-text-property 0 len face nil message)
-                             message))
-             (string (concat (propertize " " 'display `(space :align-to (- right-fringe ,(lsp-ui-sideline--align len margin))))
-                             message))
-             (pos-ov (lsp-ui-sideline--find-line len bol eol t))
-             (ov (and pos-ov (make-overlay pos-ov pos-ov))))
-        (when pos-ov
-          (overlay-put ov 'after-string string)
-          (overlay-put ov 'kind 'diagnotics)
-          (push ov lsp-ui-sideline--ovs))))))
+      (dolist (e (flycheck-overlay-errors-in bol (1+ eol)))
+        (let* ((lines (--> (flycheck-error-format-message-and-id e)
+                           (split-string it "\n")))
+               (display-lines (butlast lines (- (length lines) lsp-ui-sideline-diagnostic-max-lines)))
+               (offset 0))
+          (dolist (line display-lines)
+            (let* ((message (string-trim (replace-regexp-in-string "[\t ]+" " " line)))
+                   (len (length message))
+                   (level (flycheck-error-level e))
+                   (face (if (eq level 'info) 'success level))
+                   (margin (lsp-ui-sideline--margin-width))
+                   (message (progn (add-face-text-property 0 len 'lsp-ui-sideline-global nil message)
+                                   (add-face-text-property 0 len face nil message)
+                                   message))
+                   (string (concat (propertize " " 'display `(space :align-to (- right-fringe ,(lsp-ui-sideline--align len margin))))
+                                   message))
+                   (pos-ov (lsp-ui-sideline--find-line len bol eol nil offset))
+                   (ov (and pos-ov (make-overlay (car pos-ov) (car pos-ov))))
+                   )
+              (when pos-ov
+                (setq offset (car (cdr pos-ov)))
+                (overlay-put ov 'after-string string)
+                (overlay-put ov 'kind 'diagnotics)
+                (push ov lsp-ui-sideline--ovs))))))))
 
 (defvar-local lsp-ui-sideline--code-actions nil)
 
@@ -367,11 +381,11 @@ CURRENT is non-nil when the point is on the symbol."
             (string (concat (propertize " " 'display `(space :align-to (- right-fringe ,(lsp-ui-sideline--align len margin))))
                             title))
             (pos-ov (lsp-ui-sideline--find-line (1+ (length title)) bol eol t))
-            (ov (and pos-ov (make-overlay pos-ov pos-ov))))
+            (ov (and pos-ov (make-overlay (car pos-ov) (car pos-ov)))))
       (when pos-ov
         (overlay-put ov 'after-string string)
         (overlay-put ov 'kind 'actions)
-        (overlay-put ov 'position pos-ov)
+        (overlay-put ov 'position (car pos-ov))
         (push ov lsp-ui-sideline--ovs)))))
 
 (defun lsp-ui-sideline--calculate-tag()
