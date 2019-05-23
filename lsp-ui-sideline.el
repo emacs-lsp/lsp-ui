@@ -347,13 +347,7 @@ CURRENT is non-nil when the point is on the symbol."
   (interactive)
   (unless lsp-ui-sideline--code-actions
     (user-error "No code actions on the current line"))
-  (let* ((actions lsp-ui-sideline--code-actions)
-         (title (completing-read "Apply: " (--map (gethash "title" it) actions)
-                                 nil t))
-         (action (--first (equal (gethash "title" it) title) actions)))
-    (unless action
-      (error "Fail to apply action"))
-    (lsp-execute-code-action action)))
+  (lsp-execute-code-action (lsp--select-action lsp-ui-sideline--code-actions)))
 
 (defun lsp-ui-sideline--code-actions (actions bol eol)
   "Show code ACTIONS."
