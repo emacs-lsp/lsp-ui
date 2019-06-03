@@ -222,12 +222,19 @@ See https://github.com/emacs-lsp/lsp-mode."
 ;; FIXME: Provide a way to disable lsp-ui-flycheck
 (defun lsp-ui-flycheck-enable (_)
   "Enable flycheck integration for the current buffer."
-  (when lsp-ui-flycheck-live-reporting
-    (setq-local flycheck-check-syntax-automatically nil))
-  (setq-local flycheck-checker 'lsp-ui)
-  (lsp-ui-flycheck-add-mode major-mode)
-  (add-to-list 'flycheck-checkers 'lsp-ui)
-  (add-hook 'lsp-after-diagnostics-hook 'lsp-ui-flycheck--report nil t))
+  (let ((buffer-checker (flycheck-get-checker-for-buffer)))
+
+    (unless (and lsp-ui-flycheck-chain-checkers
+                 (or (eq buffer-checker 'lsp-ui)
+                     (memq buffer-checker (flycheck-get-next-checkers 'lsp-ui))))
+      (flycheck-add-next-checker 'lsp-ui (cons 'warning buffer-checker)))
+
+    (when lsp-ui-flycheck-live-reporting
+      (setq-local flycheck-check-syntax-automatically nil))
+    (setq-local flycheck-checker 'lsp-ui)
+    (lsp-ui-flycheck-add-mode major-mode)
+    (add-to-list 'flycheck-checkers 'lsp-ui)
+    (add-hook 'lsp-after-diagnostics-hook 'lsp-ui-flycheck--report nil t)))
 
 ;; lsp-ui.el loads lsp-ui-flycheck.el, so we can’t ‘require’ lsp-ui.
 ;; FIXME: Remove this cyclic dependency.
