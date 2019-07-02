@@ -35,8 +35,8 @@
 ;;; Code:
 
 (require 'lsp-mode)
+(require 'lsp-ui)
 (require 'xref)
-(require 'dash)
 
 (defgroup lsp-ui-peek nil
   "Improve version of xref with peek feature."
@@ -702,10 +702,6 @@ Returns item(s)."
   (interactive)
   (unless (bound-and-true-p lsp-ui-mode-map)
     (user-error "Please load lsp-ui before trying to enable lsp-ui-peek")))
-
-;; lsp-ui.el loads lsp-ui-peek.el, so we can’t ‘require’ lsp-ui.
-;; FIXME: Remove this cyclic dependency.
-(declare-function lsp-ui--workspace-path "lsp-ui" (path))
 
 (declare-function evil-set-jump "evil-jumps.el" (&optional pos))
 
