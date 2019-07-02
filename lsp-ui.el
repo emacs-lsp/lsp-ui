@@ -40,14 +40,17 @@
   :link '(custom-manual "(lsp-ui) Top")
   :link '(info-link "(lsp-ui) Customizing"))
 
-(require 'lsp-ui-sideline)
-(require 'lsp-ui-peek)
-(require 'lsp-ui-imenu)
-(require 'lsp-ui-doc)
+(require 'cl-lib)
 (require 'dash)
 
-(with-eval-after-load 'flycheck
-  (require 'lsp-ui-flycheck))
+(cl-eval-when '(load eval)
+  (require 'lsp-ui-sideline)
+  (require 'lsp-ui-peek)
+  (require 'lsp-ui-imenu)
+  (require 'lsp-ui-doc)
+
+  (with-eval-after-load 'flycheck
+    (require 'lsp-ui-flycheck)))
 
 (with-eval-after-load 'winum
   (when (and (boundp 'winum-ignored-buffers-regexp) lsp-ui-doc-winum-ignore)
