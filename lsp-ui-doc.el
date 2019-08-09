@@ -68,6 +68,12 @@
                  (const :tag "At point" at-point))
   :group 'lsp-ui-doc)
 
+(defcustom lsp-ui-doc-alignment 'frame
+  "How to align the doc."
+  :type '(choice (const :tag "Frame" frame)
+                 (const :tag "Window" window))
+  :group 'lsp-ui-doc)
+
 (defcustom lsp-ui-doc-border "white"
   "Border color of the frame."
   :type 'color
@@ -377,14 +383,6 @@ We don't extract the string that `lps-line' is already displaying."
         (lsp-ui-doc--with-buffer
          (fill-region (point-min) (point-max)))))))
 
-(defun lsp-ui-doc--next-to-side-window-p nil
-  "Return non-nil if the window on the left is a side window."
-  (let* ((win (window-at 0 0))
-         (left (window-left (selected-window))))
-    (and (not (eq win (selected-window)))
-         (or (not left) (eq win left))
-         (eq (window-parameter win 'window-side) 'left))))
-
 (defun lsp-ui-doc--mv-at-point (frame height start-x start-y)
   "Move the FRAME at point.
 HEIGHT is the child frame height.
@@ -403,21 +401,21 @@ START-Y is the position y of the current window."
 
 (defun lsp-ui-doc--move-frame (frame)
   "Place our FRAME on screen."
-  (-let* (((left top _right _bottom) (window-edges nil nil nil t))
+  (-let* (((left top right _bottom) (window-edges nil nil nil t))
           (window (frame-root-window frame))
           ((width . height) (window-text-pixel-size window nil nil 10000 10000 t))
           (width (+ width (* (frame-char-width frame) 1))) ;; margins
           (char-h (frame-char-height))
           (height (min (- (* lsp-ui-doc-max-height char-h) (/ char-h 2)) height))
+          (frame-right (pcase lsp-ui-doc-alignment
+                         ('frame (frame-pixel-width))
+                         ('window right)))
           (frame-resize-pixelwise t))
     (set-frame-size frame width height t)
     (if (eq lsp-ui-doc-position 'at-point)
         (lsp-ui-doc--mv-at-point frame height left top)
       (set-frame-position frame
-                          (if (and (>= left (+ width 10 (frame-char-width)))
-                                   (not (lsp-ui-doc--next-to-side-window-p)))
-                              10
-                            (- (frame-pixel-width) width 10 (frame-char-width)))
+                          (max (- frame-right width 10 (frame-char-width)) 10)
                           (pcase lsp-ui-doc-position
                             ('top (+ top 10))
                             ('bottom (- (lsp-ui-doc--line-height 'mode-line)
