@@ -261,7 +261,7 @@ CONTENTS can be differents type of values:
 MarkedString | MarkedString[] | MarkupContent (as defined in the LSP).
 We don't extract the string that `lps-line' is already displaying."
   (cond
-   ((stringp contents) contents)
+   ((stringp contents) (lsp-ui-doc--extract-marked-string contents)) ;; MarkedString
    ((sequencep contents) ;; MarkedString[]
     (mapconcat 'lsp-ui-doc--extract-marked-string
                (lsp-ui-doc--filter-marked-string contents)
