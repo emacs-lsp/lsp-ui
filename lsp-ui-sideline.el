@@ -93,6 +93,11 @@ when user changes current point."
   :type 'integer
   :group 'lsp-ui-sideline)
 
+(defcustom lsp-ui-sideline-actions-kind-regex "quickfix.*\\|refactor.*"
+  "Regex for the code actions kinds to show in the sideline."
+  :type 'string
+  :group 'lsp-ui-sideline)
+
 (defvar lsp-ui-sideline-code-actions-prefix ""
   "Prefix to insert before the code action title.
 This can be used to insert, for example, an unicode character: 💡")
@@ -351,6 +356,11 @@ CURRENT is non-nil when the point is on the symbol."
 
 (defun lsp-ui-sideline--code-actions (actions bol eol)
   "Show code ACTIONS."
+  (when lsp-ui-sideline-actions-kind-regex
+    (setq actions (seq-filter (-lambda ((&hash "kind"))
+                                (or (not kind)
+                                    (s-match lsp-ui-sideline-actions-kind-regex kind)))
+                             actions)))
   (setq lsp-ui-sideline--code-actions actions)
   (dolist (ov lsp-ui-sideline--ovs)
     (when (eq (overlay-get ov 'kind) 'actions)
