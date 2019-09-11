@@ -58,7 +58,7 @@
   :type 'boolean
   :group 'lsp-ui-sideline)
 
-(defcustom lsp-ui-sideline-show-hover t
+(defcustom lsp-ui-sideline-show-hover nil
   "Whether to show hover messages in sideline."
   :type 'boolean
   :group 'lsp-ui-sideline)
@@ -73,7 +73,7 @@
   :type 'boolean
   :group 'lsp-ui-sideline)
 
-(defcustom lsp-ui-sideline-update-mode 'line
+(defcustom lsp-ui-sideline-update-mode 'point
   "Define the mode for updating sideline information.
 
 When set to `line' the information will be updated when user
