@@ -107,6 +107,11 @@ option."
   :type 'number
   :group 'lsp-ui-doc)
 
+(defcustom lsp-ui-doc-winum-ignore t
+  "Whether to ignore lsp-ui-doc buffers in winum."
+  :type 'boolean
+  :group 'lsp-ui-doc)
+
 (defface lsp-ui-doc-background
   '((((background light)) :background "#b3b3b3")
     (t :background "#272A36"))
@@ -182,6 +187,8 @@ Because some variables are buffer local.")
 (defvar-local lsp-ui-doc--bounds nil)
 (defvar-local lsp-ui-doc--timer nil)
 
+(defconst lsp-ui-doc--buffer-prefix " *lsp-ui-doc-")
+
 (defmacro lsp-ui-doc--with-buffer (&rest body)
   "Execute BODY in the lsp-ui-doc buffer."
   `(let ((parent-vars (list :buffer (current-buffer)
@@ -207,7 +214,7 @@ Because some variables are buffer local.")
 
 (defun lsp-ui-doc--make-buffer-name ()
   "Construct the buffer name, it should be unique for each frame."
-  (concat " *lsp-ui-doc-"
+  (concat lsp-ui-doc--buffer-prefix
           (or (frame-parameter nil 'window-id)
               (frame-parameter nil 'name))
           "*"))

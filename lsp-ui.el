@@ -49,6 +49,10 @@
 (with-eval-after-load 'flycheck
   (require 'lsp-ui-flycheck))
 
+(with-eval-after-load 'winum
+  (when (and (boundp 'winum-ignored-buffers-regexp) lsp-ui-doc-winum-ignore)
+    (add-to-list 'winum-ignored-buffers-regexp lsp-ui-doc--buffer-prefix)))
+
 (defun lsp-ui-peek--render (major string)
   (with-temp-buffer
     (insert string)
