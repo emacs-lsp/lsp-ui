@@ -189,7 +189,7 @@ will cause performances issues.")
 
 (defun lsp-ui-peek--truncate (len s)
   (if (> (string-width s) len)
-      (format "%s.." (substring s 0 (- len 2)))
+      (concat (truncate-string-to-width s (max (- len 2) 0)) "..")
     s))
 
 (defun lsp-ui-peek--get-text-selection (&optional n)
