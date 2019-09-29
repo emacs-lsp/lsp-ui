@@ -645,8 +645,9 @@ HEIGHT is the documentation number of lines."
   "Request the documentation to the LS."
   (when (and (not (bound-and-true-p lsp-ui-peek-mode))
              (lsp--capability "hoverProvider"))
-    (-if-let (bounds (or (and (symbol-at-point) (bounds-of-thing-at-point 'symbol))
-                         (and (looking-at "[[:graph:]]") (cons (point) (1+ (point))))))
+    (-if-let (bounds (and (not (memq (char-after) '(?  ?\t ?\n ?\) ?\] ?\})))
+                          (or (and (symbol-at-point) (bounds-of-thing-at-point 'symbol))
+                              (and (looking-at "[[:graph:]]") (cons (point) (1+ (point)))))))
         (unless (equal lsp-ui-doc--bounds bounds)
           (lsp--send-request-async
            (lsp--make-request "textDocument/hover" (lsp--text-document-position-params))
