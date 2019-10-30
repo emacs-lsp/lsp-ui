@@ -200,7 +200,7 @@ CALLBACK is the status callback passed by Flycheck."
     (funcall callback 'finished errors)))
 
 (flycheck-define-generic-checker 'lsp-ui
-  "A syntax checker using the Language Server Protocol (RLS)
+  "A syntax checker using the Language Server Protocol (LSP)
 provided by lsp-mode.
 
 See https://github.com/emacs-lsp/lsp-mode."

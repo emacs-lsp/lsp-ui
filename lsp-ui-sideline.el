@@ -25,7 +25,7 @@
 
 ;;; Commentary:
 ;;
-;; Utility to show informations of the current line
+;; Utility to show information for the current line
 
 ;;; Code:
 
@@ -36,7 +36,7 @@
 (require 'subr-x)
 
 (defgroup lsp-ui-sideline nil
-  "Display informations of the current line."
+  "Display information for the current line."
   :group 'tools
   :group 'convenience
   :group 'lsp-ui
@@ -49,7 +49,7 @@
   :group 'lsp-ui)
 
 (defcustom lsp-ui-sideline-ignore-duplicate nil
-  "Control to ignore duplicates when there is a same symbol with the same contents."
+  "Ignore duplicates when there is a same symbol with the same contents."
   :type 'boolean
   :group 'lsp-ui-sideline)
 
@@ -232,9 +232,9 @@ MARKED-STRING is the string returned by `lsp-ui-sideline--extract-info'."
      (if (display-graphic-p) 1 2)))
 
 (defun lsp-ui-sideline--make-display-string (info symbol current)
-  "Make final string to display on buffer.
+  "Make final string to display in buffer.
 INFO is the information to display.
-SYMBOL is the symbol associated to the info.
+SYMBOL is the symbol associated with the info.
 CURRENT is non-nil when the point is on the symbol."
   (let* ((face (if current 'lsp-ui-sideline-current-symbol 'lsp-ui-sideline-symbol))
          (str (if lsp-ui-sideline-show-symbol
@@ -393,15 +393,15 @@ CURRENT is non-nil when the point is on the symbol."
         (push ov lsp-ui-sideline--ovs)))))
 
 (defun lsp-ui-sideline--calculate-tag()
-  "Calculate the tag used to determinie whether to update sideline information."
+  "Calculate the tag used to determine whether to update sideline information."
   (if (equal lsp-ui-sideline-update-mode 'line)
       (line-number-at-pos)
     (point)))
 
 (defun lsp-ui-sideline--run ()
-  "Show informations (flycheck + lsp).
-It loops on the symbols of the current line and request information
-to the language server."
+  "Show information (flycheck + lsp).
+It loops on the symbols of the current line and requests information
+from the language server."
   (lsp-ui-sideline--delete-ov)
   (when buffer-file-name
     (let ((eol (line-end-position))
@@ -475,7 +475,7 @@ COMMAND is `company-pseudo-tooltip-frontend' parameter."
     (setq lsp-ui-sideline--tag nil)))
 
 (defun lsp-ui-sideline ()
-  "Show informations of the current line."
+  "Show information for the current line."
   (if (lsp-ui-sideline--stop-p)
       (progn (setq lsp-ui-sideline--tag nil)
              (lsp-ui-sideline--delete-ov))
@@ -495,7 +495,7 @@ COMMAND is `company-pseudo-tooltip-frontend' parameter."
                                        (lsp-ui-sideline--run)))))))))
 
 (defun lsp-ui-sideline-toggle-symbols-info ()
-  "Toggle display of symbols informations.
+  "Toggle display of symbols information.
 This does not toggle display of flycheck diagnostics or code actions."
   (interactive)
   (when (bound-and-true-p lsp-ui-sideline-mode)
@@ -519,7 +519,7 @@ This does not toggle display of flycheck diagnostics or code actions."
   '(kill-region))
 
 (define-minor-mode lsp-ui-sideline-mode
-  "Minor mode for showing information of current line."
+  "Minor mode for showing information for current line."
   :init-value nil
   :group lsp-ui-sideline
   (cond
