@@ -243,7 +243,7 @@ Return the updated COLOR-INDEX."
              (grouped-by-subs (-partition-by 'imenu--subalist-p list))
              (color-index 0)
              (bars (make-bool-vector lsp-ui-imenu--max-bars t))
-             buffer-read-only)
+             (inhibit-read-only t))
         (remove-overlays)
         (erase-buffer)
         (dolist (group grouped-by-subs)
