@@ -51,6 +51,12 @@
   :type 'boolean
   :group 'lsp-ui)
 
+(defcustom lsp-ui-peek-show-directory t
+  "Whether or not to show the directory of files."
+  :type 'boolean
+  :safe t
+  :group 'lsp-ui-peek)
+
 (defcustom lsp-ui-peek-peek-height 20
   "Height of the peek code."
   :type 'integer
@@ -301,7 +307,9 @@ XREFS is a list of references/definitions."
     (-let* (((&plist :file filename :xrefs xrefs :count count) it)
             (len-str (number-to-string count)))
       (setq lsp-ui-peek--size-list (+ lsp-ui-peek--size-list count))
-      (push (concat (propertize (lsp-ui--workspace-path filename)
+      (push (concat (propertize (if lsp-ui-peek-show-directory
+                                    (lsp-ui--workspace-path filename)
+                                  (file-name-nondirectory filename))
                                 'face 'lsp-ui-peek-filename
                                 'file filename
                                 'xrefs xrefs)
