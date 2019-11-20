@@ -669,8 +669,12 @@ BUFFER is the buffer where the request has been made."
         (setq lsp-ui-doc--timer
               (run-with-idle-timer
                lsp-ui-doc-delay nil
-               (lambda nil (lsp-ui-doc--display
-                            (thing-at-point 'symbol t) (lsp-ui-doc--extract (gethash "contents" hover)))))))
+               (lambda nil
+                 (lsp-ui-doc--display
+                  (thing-at-point 'symbol t)
+                  (->> (gethash "contents" hover)
+                       lsp-ui-doc--extract
+                       (replace-regexp-in-string "\r" "")))))))
     (lsp-ui-doc--hide-frame)))
 
 (defun lsp-ui-doc--delete-frame ()
