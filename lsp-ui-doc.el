@@ -672,9 +672,9 @@ BUFFER is the buffer where the request has been made."
                (lambda nil
                  (lsp-ui-doc--display
                   (thing-at-point 'symbol t)
-                  (->> (gethash "contents" hover)
-                       lsp-ui-doc--extract
-                       (replace-regexp-in-string "\r" "")))))))
+                  (-some->> (gethash "contents" hover)
+                    lsp-ui-doc--extract
+                    (replace-regexp-in-string "\r" "")))))))
     (lsp-ui-doc--hide-frame)))
 
 (defun lsp-ui-doc--delete-frame ()

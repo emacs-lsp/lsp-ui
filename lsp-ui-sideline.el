@@ -278,10 +278,10 @@ CURRENT is non-nil when the point is on the symbol."
 (defun lsp-ui-sideline--push-info (symbol tag bounds info bol eol)
   (when (and (= tag (lsp-ui-sideline--calculate-tag))
              (not (lsp-ui-sideline--stop-p)))
-    (let* ((info (concat (->> (gethash "contents" info)
-                             lsp-ui-sideline--extract-info
-                             lsp-ui-sideline--format-info
-                             (replace-regexp-in-string "\r" ""))))
+    (let* ((info (concat (-some->> (gethash "contents" info)
+                           lsp-ui-sideline--extract-info
+                           lsp-ui-sideline--format-info
+                           (replace-regexp-in-string "\r" ""))))
            (current (and (>= (point) (car bounds)) (<= (point) (cdr bounds)))))
       (when (and (> (length info) 0)
                  (lsp-ui-sideline--check-duplicate symbol info))
