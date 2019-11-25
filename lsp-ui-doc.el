@@ -757,5 +757,16 @@ It is supposed to be called from `lsp-ui--toggle'"
   (interactive)
   (lsp-ui-doc--hide-frame))
 
+(defun lsp-ui-doc--glance-hide-frame ()
+  "Hook to hide hover information popup for lsp-ui-doc-glance."
+  (lsp-ui-doc-hide)
+  (remove-hook 'pre-command-hook 'lsp-ui-doc--glance-hide-frame))
+
+(defun lsp-ui-doc-glance ()
+  "Trigger display hover information popup and hide it on next typing."
+  (interactive)
+  (lsp-ui-doc-show)
+  (add-hook 'pre-command-hook 'lsp-ui-doc--glance-hide-frame))
+
 (provide 'lsp-ui-doc)
 ;;; lsp-ui-doc.el ends here
