@@ -716,7 +716,7 @@ Returns item(s)."
 ;; FIXME: Remove this cyclic dependency.
 (declare-function lsp-ui--workspace-path "lsp-ui" (path))
 
-(declare-function evil-set-jump "evil-jumps.el" (&optional pos))
+(declare-function evil-set-jump "ext:evil-jumps.el" (&optional pos))
 
 (provide 'lsp-ui-peek)
 ;;; lsp-ui-peek.el ends here
