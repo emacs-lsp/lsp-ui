@@ -186,7 +186,7 @@ BOL & EOL are beginning and ending of the user point line.
 if UP is non-nil, it loops on the previous lines.
 if OFFSET is non-nil, it starts search OFFSET lines from user point line."
   (let ((win-width (lsp-ui-sideline--window-width))
-        (index (if (null offset) 1 (1+ offset)))
+        (index (if (null offset) 1 offset))
         pos)
     (while (and (null pos) (<= (abs index) 30))
       (setq index (if up (1- index) (1+ index)))
@@ -343,7 +343,7 @@ CURRENT is non-nil when the point is on the symbol."
                            (split-string it "\n")
                            (lsp-ui-sideline--split-long-lines it)))
                (display-lines (butlast lines (- (length lines) lsp-ui-sideline-diagnostic-max-lines)))
-               (offset 0))
+               (offset 1))
           (dolist (line display-lines)
             (let* ((message (string-trim (replace-regexp-in-string "[\t ]+" " " line)))
                    (len (length message))
