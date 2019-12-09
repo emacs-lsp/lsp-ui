@@ -93,6 +93,11 @@ when user changes current point."
   :type 'integer
   :group 'lsp-ui-sideline)
 
+(defcustom lsp-ui-sideline-diagnostic-max-line-length 100
+  "Maximum line length of diagnostics in sideline."
+  :type 'integer
+  :group 'lsp-ui-sideline)
+
 (defcustom lsp-ui-sideline-actions-kind-regex "quickfix.*\\|refactor.*"
   "Regex for the code actions kinds to show in the sideline."
   :type 'string
@@ -181,7 +186,7 @@ BOL & EOL are beginning and ending of the user point line.
 if UP is non-nil, it loops on the previous lines.
 if OFFSET is non-nil, it starts search OFFSET lines from user point line."
   (let ((win-width (lsp-ui-sideline--window-width))
-        (index (if (null offset) 1 (1+ offset)))
+        (index (if (null offset) 1 offset))
         pos)
     (while (and (null pos) (<= (abs index) 30))
       (setq index (if up (1- index) (1+ index)))
@@ -318,14 +323,27 @@ CURRENT is non-nil when the point is on the symbol."
         (when (overlay-get ov 'current)
           (lsp-ui-sideline--toggle-current ov nil))))))
 
+(defun lsp-ui-sideline--split-long-lines (lines)
+  "Fill LINES so that they are not longer than `lsp-ui-sideline-diagnostic-max-line-length' characters."
+  (mapcan (lambda (line)
+            (if (< (length line) lsp-ui-sideline-diagnostic-max-line-length)
+                (list line)
+              (with-temp-buffer
+                (let ((fill-column lsp-ui-sideline-diagnostic-max-line-length))
+                  (insert line)
+                  (fill-region (point-min) (point-max))
+                  (split-string (buffer-string) "\n")))))
+          lines))
+
 (defun lsp-ui-sideline--diagnostics (bol eol)
   "Show diagnostics on the current line."
   (when (bound-and-true-p flycheck-mode)
       (dolist (e (flycheck-overlay-errors-in bol (1+ eol)))
         (let* ((lines (--> (flycheck-error-format-message-and-id e)
-                           (split-string it "\n")))
+                           (split-string it "\n")
+                           (lsp-ui-sideline--split-long-lines it)))
                (display-lines (butlast lines (- (length lines) lsp-ui-sideline-diagnostic-max-lines)))
-               (offset 0))
+               (offset 1))
           (dolist (line display-lines)
             (let* ((message (string-trim (replace-regexp-in-string "[\t ]+" " " line)))
                    (len (length message))
