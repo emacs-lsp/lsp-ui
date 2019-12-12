@@ -271,7 +271,7 @@ We don't extract the string that `lps-line' is already displaying."
    ((stringp contents) (lsp-ui-doc--extract-marked-string contents)) ;; MarkedString
    ((sequencep contents) ;; MarkedString[]
     (mapconcat 'lsp-ui-doc--extract-marked-string
-               (lsp-ui-doc--filter-marked-string contents)
+               (lsp-ui-doc--filter-marked-string (seq-filter #'identity contents))
                "\n\n"
                ;; (propertize "\n\n" 'face '(:height 0.4))
                ))
