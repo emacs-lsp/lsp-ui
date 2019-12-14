@@ -280,10 +280,11 @@ We don't extract the string that `lps-line' is already displaying."
                ))
    ;; when we get markdown contents, render using emacs gfm-view-mode / markdown-mode
    ((string= (gethash "kind" contents) "markdown") ;; Markdown MarkupContent
-    (lsp-ui-doc--extract-marked-string contents "markdown"))
+    (lsp-ui-doc--extract-marked-string (gethash "value" contents) "markdown"))
    ((gethash "kind" contents) (gethash "value" contents)) ;; Plaintext MarkupContent
    ((gethash "language" contents) ;; MarkedString
-    (lsp-ui-doc--extract-marked-string contents))))
+    (lsp-ui-doc--extract-marked-string (gethash "value" contents)
+                                       (gethash "language" contents)))))
 
 (defun lsp-ui-doc--webkit-run-xwidget ()
   "Launch embedded WebKit instance."
