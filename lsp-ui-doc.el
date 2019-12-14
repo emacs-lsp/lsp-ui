@@ -225,18 +225,21 @@ Because some variables are buffer local.")
 
 (defun lsp-ui-doc--inline-wrapped-line (string)
   "Wraps a line of text for inline display."
-  (cond ((string-empty-p string) "")
-        ((< (length string) lsp-ui-doc-max-width) string)
-        (t (concat (substring string 0 (- lsp-ui-doc-max-width 1))
-                   "\\\n"
-                   (lsp-ui-doc--inline-wrapped-line (substring string (- lsp-ui-doc-max-width 1)))))))
+  (let ((doc-max-width (lsp-ui-doc--inline-window-width)))
+    (cond ((string-empty-p string) "")
+          ((< (length string) doc-max-width) string)
+          (t (concat (substring string 0 (- doc-max-width 4))
+                     "\\\n"
+                     (string-trim-left
+                      (lsp-ui-doc--inline-wrapped-line
+                       (substring string (- doc-max-width 4)))))))))
 
 (defun lsp-ui-doc--inline-formatted-string (string)
   "Formats STRING for inline rendering."
   (mapconcat (lambda (line)
                (lsp-ui-doc--inline-wrapped-line (string-trim-right line)))
-             (split-string string "\n")
-             "\n"))
+             (split-string string "[\n\v\f\r]+")
+             "\n\n"))
 
 (defun lsp-ui-doc--extract-marked-string (marked-string &optional language)
   "Render the MARKED-STRING."
@@ -252,7 +255,7 @@ Because some variables are buffer local.")
        (if (and language (not (string= "text" language)))
            (format "```%s\n%s\n```" language string)
          string))
-      (t (lsp--render-element marked-string))))))
+      (t (lsp--render-element (lsp-ui-doc--inline-formatted-string marked-string)))))))
 
 (defun lsp-ui-doc--filter-marked-string (list-marked-string)
   (let ((groups (--separate (and (hash-table-p it)
