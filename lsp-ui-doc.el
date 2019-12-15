@@ -255,7 +255,7 @@ Because some variables are buffer local.")
        (if (and language (not (string= "text" language)))
            (format "```%s\n%s\n```" language string)
          string))
-      (t (lsp--render-element (lsp-ui-doc--inline-formatted-string marked-string)))))))
+      (t (lsp--render-element (lsp-ui-doc--inline-formatted-string string)))))))
 
 (defun lsp-ui-doc--filter-marked-string (list-marked-string)
   (let ((groups (--separate (and (hash-table-p it)
