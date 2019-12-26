@@ -239,7 +239,7 @@ Because some variables are buffer local.")
   (mapconcat (lambda (line)
                (lsp-ui-doc--inline-wrapped-line (string-trim-right line)))
              (split-string string "[\n\v\f\r]+")
-             "\n\n"))
+             "\n"))
 
 (defun lsp-ui-doc--extract-marked-string (marked-string &optional language)
   "Render the MARKED-STRING."
