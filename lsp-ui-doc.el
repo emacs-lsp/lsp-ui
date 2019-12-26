@@ -229,7 +229,7 @@ Because some variables are buffer local.")
     (cond ((string-empty-p string) "")
           ((< (length string) doc-max-width) string)
           (t (concat (substring string 0 (- doc-max-width 4))
-                     "\\\n"
+                     "\n"
                      (string-trim-left
                       (lsp-ui-doc--inline-wrapped-line
                        (substring string (- doc-max-width 4)))))))))
