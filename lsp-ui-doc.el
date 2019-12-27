@@ -61,7 +61,7 @@
   :type 'boolean
   :group 'lsp-ui-doc)
 
-(defcustom lsp-ui-doc-position 'top
+(defcustom lsp-ui-doc-position 'at-point
   "Where to display the doc."
   :type '(choice (const :tag "Top" top)
                  (const :tag "Bottom" bottom)
@@ -69,7 +69,8 @@
   :group 'lsp-ui-doc)
 
 (defcustom lsp-ui-doc-alignment 'frame
-  "How to align the doc."
+  "How to align the doc.
+This only takes effect when `lsp-ui-doc-position' is 'top or 'bottom."
   :type '(choice (const :tag "Frame" frame)
                  (const :tag "Window" window))
   :group 'lsp-ui-doc)
