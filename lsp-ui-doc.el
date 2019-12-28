@@ -61,7 +61,7 @@
   :type 'boolean
   :group 'lsp-ui-doc)
 
-(defcustom lsp-ui-doc-position 'top
+(defcustom lsp-ui-doc-position 'at-point
   "Where to display the doc."
   :type '(choice (const :tag "Top" top)
                  (const :tag "Bottom" bottom)
@@ -69,7 +69,8 @@
   :group 'lsp-ui-doc)
 
 (defcustom lsp-ui-doc-alignment 'frame
-  "How to align the doc."
+  "How to align the doc.
+This only takes effect when `lsp-ui-doc-position' is 'top or 'bottom."
   :type '(choice (const :tag "Frame" frame)
                  (const :tag "Window" window))
   :group 'lsp-ui-doc)
@@ -394,21 +395,31 @@ We don't extract the string that `lps-line' is already displaying."
         (lsp-ui-doc--with-buffer
          (fill-region (point-min) (point-max)))))))
 
-(defun lsp-ui-doc--mv-at-point (frame height start-x start-y)
-  "Move the FRAME at point.
+(defun lsp-ui-doc--mv-at-point (frame width height start-x start-y)
+  "Move FRAME to be where the point is.
+WIDTH is the child frame width.
 HEIGHT is the child frame height.
 START-X is the position x of the current window.
-START-Y is the position y of the current window."
+START-Y is the position y of the current window.
+The algorithm prefers to position FRAME just above the
+symbol at point, to not obstruct the view of the code that follows.
+If there's no space above in the current window, it places
+FRAME just below the symbol at point."
   (-let* (((x . y) (--> (bounds-of-thing-at-point 'symbol)
-                        (nth 2 (posn-at-point (car it)))))
-          (mode-line-y (lsp-ui-doc--line-height 'mode-line))
+                        (posn-x-y (posn-at-point (car it)))))
+          (frame-relative-symbol-x (+ start-x x))
+          (frame-relative-symbol-y (+ start-y y))
           (char-height (frame-char-height))
-          (y (or (and (> y (/ mode-line-y 2))
-                      (<= (- mode-line-y y) (+ char-height height))
-                      (> (- y height) 0)
-                      (- y height))
-                 (+ y char-height))))
-    (set-frame-position frame (+ x start-x) (+ y start-y))))
+          ;; Make sure the frame is positioned horizontally such that
+          ;; it does not go beyond the frame boundaries.
+          (frame-x (or (and (<= (frame-outer-width) (+ frame-relative-symbol-x width))
+                            (- x (- (+ frame-relative-symbol-x width)
+                                    (frame-outer-width))))
+                       x))
+          (frame-y (or (and (<= height frame-relative-symbol-y)
+                            (- y height))
+                       (+ y char-height))))
+    (set-frame-position frame (+ start-x frame-x) (+ start-y frame-y))))
 
 (defun lsp-ui-doc--move-frame (frame)
   "Place our FRAME on screen."
@@ -424,7 +435,7 @@ START-Y is the position y of the current window."
           (frame-resize-pixelwise t))
     (set-frame-size frame width height t)
     (if (eq lsp-ui-doc-position 'at-point)
-        (lsp-ui-doc--mv-at-point frame height left top)
+        (lsp-ui-doc--mv-at-point frame width height left top)
       (set-frame-position frame
                           (max (- frame-right width 10 (frame-char-width)) 10)
                           (pcase lsp-ui-doc-position
