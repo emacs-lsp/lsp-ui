@@ -216,14 +216,14 @@ See https://github.com/emacs-lsp/lsp-mode."
 
 (defun lsp-ui-flycheck--report nil
   (and flycheck-mode
-       lsp-ui-flycheck-live-reporting
+       (or lsp-ui-flycheck-live-reporting
+	   (not (buffer-modified-p)))
        (flycheck-buffer)))
 
 ;; FIXME: Provide a way to disable lsp-ui-flycheck
 (defun lsp-ui-flycheck-enable (_)
   "Enable flycheck integration for the current buffer."
-  (when lsp-ui-flycheck-live-reporting
-    (setq-local flycheck-check-syntax-automatically nil))
+  (setq-local flycheck-check-syntax-automatically nil)
   (setq-local flycheck-checker 'lsp-ui)
   (lsp-ui-flycheck-add-mode major-mode)
   (add-to-list 'flycheck-checkers 'lsp-ui)
