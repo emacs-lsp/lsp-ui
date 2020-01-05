@@ -117,7 +117,7 @@ option."
   '((((background light)) :background "#b3b3b3")
     (t :background "#272A36"))
   "Background color of the documentation.
-Only the `background' is used in this face."
+Do not set any other attributes than `background' in this face."
   :group 'lsp-ui-doc)
 
 (defface lsp-ui-doc-header
@@ -313,8 +313,7 @@ We don't extract the string that `lps-line' is already displaying."
   "Set background color of the WebKit widget."
   (lsp-ui-doc--webkit-execute-script
    (format "document.body.style.background = '%s';"
-           "#fdfdfd"
-           ;; (face-attribute 'lsp-ui-doc-background :background)
+           (face-attribute 'lsp-ui-doc-background :background)
            )))
 
 (defun lsp-ui-doc--webkit-set-foreground ()
@@ -530,7 +529,7 @@ FN is the function to call on click."
 
 (defun lsp-ui-doc--inline-padding (string len)
   (let ((string (concat " " string (make-string (- len (string-width string)) ?\s) " ")))
-    (add-face-text-property 0 (length string) (list :background (face-background 'lsp-ui-doc-background nil t)) t string)
+    (add-face-text-property 0 (length string) 'lsp-ui-doc-background t string)
     string))
 
 (defun lsp-ui-doc--inline-faking-frame (doc-strings)
@@ -722,7 +721,19 @@ before, or if the new window is the minibuffer."
 
 (advice-add #'select-window :around #'lsp-ui--hide-doc-frame-on-window-change)
 
-(advice-add 'load-theme :before (lambda (&rest _) (lsp-ui-doc--delete-frame)))
+;; Theme changes won't update background color and fringe width automatically.
+;; Using advice to make that work.
+(defun lsp-ui-doc--update-frame-settings (&rest _ignore)
+  (if-let (frame (lsp-ui-doc--get-frame))
+      (if  lsp-ui-doc-use-webkit
+          (lsp-ui-doc--webkit-set-background)
+        (set-frame-parameter
+         frame 'left-fringe (frame-char-width))
+        (set-frame-parameter
+         frame 'background-color (face-background 'lsp-ui-doc-background nil t)))))
+(advice-add 'load-theme :after #'lsp-ui-doc--update-frame-settings)
+(advice-add 'custom-set-faces :after #'lsp-ui-doc--update-frame-settings)
+
 (add-hook 'window-configuration-change-hook #'lsp-ui-doc--hide-frame)
 
 (defun lsp-ui-doc--on-delete (frame)
