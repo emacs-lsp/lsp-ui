@@ -58,6 +58,7 @@ If nil, diagnostics will be reported according to `flycheck-check-syntax-automat
   :group 'lsp-ui-flycheck)
 
 (defvar-local lsp-ui-flycheck-list--buffer nil)
+(defvar-local lsp-ui-flycheck--save-mode nil)
 
 (defun lsp-ui-flycheck-list--post-command ()
   (when (eobp)
@@ -215,15 +216,19 @@ See https://github.com/emacs-lsp/lsp-mode."
     (flycheck-add-mode 'lsp-ui mode)))
 
 (defun lsp-ui-flycheck--report nil
+  "This callback is invoked when new diagnostics are received from the language server.  Invoke flycheck-buffer to update the display of errors if flycheck-mode is on and we are live reporting or we are in save-mode and the buffer is not modified."
   (and flycheck-mode
-       lsp-ui-flycheck-live-reporting
+       (or lsp-ui-flycheck-live-reporting
+	   (and lsp-ui-flycheck--save-mode (not (buffer-modified-p))))
        (flycheck-buffer)))
 
 ;; FIXME: Provide a way to disable lsp-ui-flycheck
 (defun lsp-ui-flycheck-enable (_)
   "Enable flycheck integration for the current buffer."
-  (when lsp-ui-flycheck-live-reporting
-    (setq-local flycheck-check-syntax-automatically nil))
+  (setq-local lsp-ui-flycheck--save-mode
+	       (or (memq 'save flycheck-check-syntax-automatically)
+		   lsp-ui-flycheck--save-mode))
+  (setq-local flycheck-check-syntax-automatically nil)
   (setq-local flycheck-checker 'lsp-ui)
   (lsp-ui-flycheck-add-mode major-mode)
   (add-to-list 'flycheck-checkers 'lsp-ui)
