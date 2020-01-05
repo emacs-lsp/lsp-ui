@@ -225,7 +225,9 @@ See https://github.com/emacs-lsp/lsp-mode."
 ;; FIXME: Provide a way to disable lsp-ui-flycheck
 (defun lsp-ui-flycheck-enable (_)
   "Enable flycheck integration for the current buffer."
-  (setq-local lsp-ui-flycheck--save-mode (memq 'save flycheck-check-syntax-automatically))
+  (setq-local lsp-ui-flycheck--save-mode
+	       (or (memq 'save flycheck-check-syntax-automatically)
+		   lsp-ui-flycheck--save-mode))
   (setq-local flycheck-check-syntax-automatically nil)
   (setq-local flycheck-checker 'lsp-ui)
   (lsp-ui-flycheck-add-mode major-mode)
