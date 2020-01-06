@@ -325,15 +325,15 @@ CURRENT is non-nil when the point is on the symbol."
 
 (defun lsp-ui-sideline--split-long-lines (lines)
   "Fill LINES so that they are not longer than `lsp-ui-sideline-diagnostic-max-line-length' characters."
-  (mapcan (lambda (line)
-            (if (< (length line) lsp-ui-sideline-diagnostic-max-line-length)
-                (list line)
-              (with-temp-buffer
-                (let ((fill-column lsp-ui-sideline-diagnostic-max-line-length))
-                  (insert line)
-                  (fill-region (point-min) (point-max))
-                  (split-string (buffer-string) "\n")))))
-          lines))
+  (cl-mapcan (lambda (line)
+               (if (< (length line) lsp-ui-sideline-diagnostic-max-line-length)
+                   (list line)
+                 (with-temp-buffer
+                   (let ((fill-column lsp-ui-sideline-diagnostic-max-line-length))
+                     (insert line)
+                     (fill-region (point-min) (point-max))
+                     (split-string (buffer-string) "\n")))))
+             lines))
 
 (defun lsp-ui-sideline--diagnostics (bol eol)
   "Show diagnostics on the current line."
