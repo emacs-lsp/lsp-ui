@@ -107,6 +107,9 @@ when user changes current point."
   "Prefix to insert before the code action title.
 This can be used to insert, for example, an unicode character: 💡")
 
+(defvar-local lsp-ui-sideline--requests nil
+  "Pending requests sent by `lsp-ui-sideline'.")
+
 (defvar-local lsp-ui-sideline--ovs nil
   "Overlays used by `lsp-ui-sideline'.")
 
@@ -464,21 +467,22 @@ from the language server."
                 ;; Skip strings and comments
                 (when (and symbol (not in-string) outside-comment)
                   (push (list symbol tag bounds (lsp--position (1- line-widen) (- (point) bol))) symbols))))
-            (--each-indexed symbols
-              (-let (((symbol tag bounds position) it)
-                     (index it-index))
-                (lsp--send-request-async
-                 (lsp--make-request
-                  "textDocument/hover"
-                  (list :textDocument doc-id :position position))
-                 (lambda (info)
-                   (when (eq index 0)
-                     (dolist (ov lsp-ui-sideline--ovs)
-                       (when (eq (overlay-get ov 'kind) 'info)
-                         (setq lsp-ui-sideline--occupied-lines
-                               (delq (overlay-get ov 'position) lsp-ui-sideline--occupied-lines))
-                         (delete-overlay ov))))
-                   (when info (lsp-ui-sideline--push-info symbol tag bounds info bol eol))))))))))))
+            (seq-do #'lsp--cancel-request lsp-ui-sideline--requests)
+            (dolist (ov lsp-ui-sideline--ovs)
+              (when (eq (overlay-get ov 'kind) 'info)
+                (setq lsp-ui-sideline--occupied-lines
+                  (delq (overlay-get ov 'position) lsp-ui-sideline--occupied-lines))
+                (delete-overlay ov)))
+            (setq lsp-ui-sideline--requests
+              (mapcar (lambda (it)
+                        (-let (((symbol tag bounds position) it))
+                          (plist-get (lsp-request-async
+                                       "textDocument/hover"
+                                       (list :textDocument doc-id :position position)
+                                       (lambda (info)
+                                         (when info (lsp-ui-sideline--push-info symbol tag bounds info bol eol))))
+                            :id)))
+                symbols))))))))
 
 (defun lsp-ui-sideline--stop-p ()
   "Return non-nil if the sideline should not be display."
