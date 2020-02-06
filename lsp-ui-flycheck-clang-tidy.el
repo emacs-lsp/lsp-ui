@@ -103,6 +103,7 @@ Information comes from the clang.llvm.org website."
                        #'shr-insert-document doc-contents)))))
   "Loading documentation...")
 
+;;;###autoload
 (defun lsp-ui-flycheck-clang-tidy-error-explainer (error)
   "Explain a clang-tidy ERROR by scraping documentation from llvm.org."
   (unless (fboundp 'libxml-parse-html-region)

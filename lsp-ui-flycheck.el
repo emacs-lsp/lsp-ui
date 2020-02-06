@@ -27,7 +27,6 @@
 ;;; Code:
 
 (require 'lsp-mode)
-(require 'lsp-ui-flycheck-clang-tidy)       ; Specific logic for `clang-tidy' errors
 (require 'flycheck)
 (require 'pcase)
 (require 'dash)
