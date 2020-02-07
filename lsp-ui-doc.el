@@ -34,6 +34,7 @@
 (require 'dash-functional)
 (require 'goto-addr)
 (require 'markdown-mode)
+(require 'cl-lib)
 
 (when (featurep 'xwidget-internal)
   (require 'xwidget))
@@ -133,7 +134,6 @@ Only the `background' is used in this face."
 
 (defvar lsp-ui-doc-frame-parameters
   '((left . -1)
-    (no-accept-focus . t)
     (no-focus-on-map . t)
     (min-width  . 0)
     (width  . 0)
@@ -152,7 +152,6 @@ Only the `background' is used in this face."
     (visibility . nil)
     (mouse-wheel-frame . nil)
     (no-other-frame . t)
-    (cursor-type . nil)
     (inhibit-double-buffering . t)
     (drag-internal-border . t)
     (no-special-glyphs . t)
@@ -634,6 +633,8 @@ HEIGHT is the documentation number of lines."
                   buffer
                   `((child-frame-parameters . ,params))))
          (frame (window-frame window)))
+    (with-current-buffer buffer
+      (lsp-ui-doc-frame-mode 1))
     (set-frame-parameter nil 'lsp-ui-doc-buffer buffer)
     (set-window-dedicated-p window t)
     (redirect-frame-focus frame (frame-parent frame))
@@ -773,14 +774,42 @@ It is supposed to be called from `lsp-ui--toggle'"
 
 (defun lsp-ui-doc--glance-hide-frame ()
   "Hook to hide hover information popup for lsp-ui-doc-glance."
-  (lsp-ui-doc-hide)
-  (remove-hook 'pre-command-hook 'lsp-ui-doc--glance-hide-frame))
+  (cl-letf (((symbol-function 'frame?) (lambda (frame)
+                                         (and frame
+                                              (frame-visible-p frame)
+                                              (not (frame-focus-state frame))))))
+    (when (or (overlayp lsp-ui-doc--inline-ov)
+              (frame? (lsp-ui-doc--get-frame)))
+      (lsp-ui-doc-hide)
+      (remove-hook 'post-command-hook 'lsp-ui-doc--glance-hide-frame))))
 
 (defun lsp-ui-doc-glance ()
   "Trigger display hover information popup and hide it on next typing."
   (interactive)
   (lsp-ui-doc-show)
-  (add-hook 'pre-command-hook 'lsp-ui-doc--glance-hide-frame))
+  (add-hook 'post-command-hook 'lsp-ui-doc--glance-hide-frame))
+
+(define-minor-mode lsp-ui-doc-frame-mode
+  "Marker mode to add additional key bind for lsp-ui-doc-frame."
+  :init-value nil
+  :lighter ""
+  :group lsp-ui-doc
+  :keymap `(([?q] . lsp-ui-doc-unfocus-frame)))
+
+(defun lsp-ui-doc-focus-frame ()
+  "Focus into lsp-ui-doc-frame."
+  (interactive)
+  (let ((frame (lsp-ui-doc--get-frame)))
+    (when (and frame (frame-visible-p frame))
+      (lsp-ui-doc--with-buffer
+       (setq cursor-type t))
+      (select-frame-set-input-focus frame))))
+
+(defun lsp-ui-doc-unfocus-frame ()
+  "Unfocus from lsp-ui-doc-frame."
+  (interactive)
+  (when-let ((frame (frame-parent (lsp-ui-doc--get-frame))))
+    (select-frame-set-input-focus frame)))
 
 (provide 'lsp-ui-doc)
 ;;; lsp-ui-doc.el ends here
