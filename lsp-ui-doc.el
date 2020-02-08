@@ -660,6 +660,7 @@ HEIGHT is the documentation number of lines."
 (defun lsp-ui-doc--make-request nil
   "Request the documentation to the LS."
   (when (and (not (eq this-command 'lsp-ui-doc-hide))
+             (not (eq this-command 'keyboard-quit))
              (not (bound-and-true-p lsp-ui-peek-mode))
              (lsp--capability "hoverProvider"))
     (-if-let (bounds (or (and (symbol-at-point) (bounds-of-thing-at-point 'symbol))
@@ -724,6 +725,8 @@ before, or if the new window is the minibuffer."
 
 (advice-add 'load-theme :before (lambda (&rest _) (lsp-ui-doc--delete-frame)))
 (add-hook 'window-configuration-change-hook #'lsp-ui-doc--hide-frame)
+
+(advice-add #'keyboard-quit :before #'lsp-ui-doc--hide-frame)
 
 (defun lsp-ui-doc--on-delete (frame)
   "Function called when a FRAME is deleted."
