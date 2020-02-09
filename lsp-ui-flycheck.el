@@ -39,17 +39,7 @@
   :link '(custom-manual "(lsp-ui-flycheck) Top")
   :link '(info-link "(lsp-ui-flycheck) Customizing"))
 
-(defcustom lsp-ui-flycheck-enable nil
-  "Whether or not to enable ‘lsp-ui-flycheck’."
-  :type 'boolean
-  :group 'lsp-ui)
 
-(defcustom lsp-ui-flycheck-live-reporting t
-  "If non-nil, diagnostics in buffer will be reported as soon as possible.
-Typically, on every keystroke.
-If nil, diagnostics will be reported according to `flycheck-check-syntax-automatically'."
-  :type 'boolean
-  :group 'lsp-ui-flycheck)
 
 (defcustom lsp-ui-flycheck-list-position 'bottom
   "Position where `lsp-ui-flycheck-list' will show diagnostics for the whole workspace."
@@ -173,69 +163,15 @@ If nil, diagnostics will be reported according to `flycheck-check-syntax-automat
   (setq mode-line-format nil)
   (add-hook 'post-command-hook 'lsp-ui-flycheck-list--post-command nil t))
 
-(defun lsp-ui-flycheck--start (checker callback)
-  "Start an LSP syntax check with CHECKER.
+(define-obsolete-function-alias 'lsp-ui-flycheck-add-mode
+  'lsp-flycheck-add-mode "lsp-mode 6.3")
 
-CALLBACK is the status callback passed by Flycheck."
-  ;; Turn all errors from lsp-diagnostics for the current buffer into
-  ;; flycheck-error objects and pass them immediately to the callback
-  (let ((errors))
-    (dolist (diag (or
-                   (gethash (lsp--fix-path-casing buffer-file-name)
-                            (lsp-diagnostics))
-                   (gethash (lsp--fix-path-casing (file-truename buffer-file-name))
-                            (lsp-diagnostics))))
-      (push (flycheck-error-new
-             :buffer (current-buffer)
-             :checker checker
-             :filename buffer-file-name
-             :line (1+ (lsp-diagnostic-line diag))
-             :column (1+ (lsp-diagnostic-column diag))
-             :message (lsp-diagnostic-message diag)
-             :level (pcase (lsp-diagnostic-severity diag)
-                      (1 'error)
-                      (2 'warning)
-                      (_ 'info))
-             :id (lsp-diagnostic-code diag))
-            errors))
-    (funcall callback 'finished errors)))
+(define-obsolete-function-alias 'lsp-ui-flycheck-enable
+  'lsp-flycheck-enable  "lsp-mode 6.3")
 
-(flycheck-define-generic-checker 'lsp-ui
-  "A syntax checker using the Language Server Protocol (LSP)
-provided by lsp-mode.
+(define-obsolete-variable-alias 'lsp-ui-flycheck-live-reporting
+  'lsp-flycheck-live-reporting  "lsp-mode 6.3")
 
-See https://github.com/emacs-lsp/lsp-mode."
-  :start #'lsp-ui-flycheck--start
-  :modes '(python-mode) ; Need a default mode
-  :predicate (lambda () lsp-mode)
-  :error-explainer (lambda (e) (flycheck-error-message e)))
-
-(defun lsp-ui-flycheck-add-mode (mode)
-  "Add MODE as a valid major mode for the lsp checker."
-  (unless (flycheck-checker-supports-major-mode-p 'lsp-ui mode)
-    (flycheck-add-mode 'lsp-ui mode)))
-
-(defun lsp-ui-flycheck--report nil
-  "This callback is invoked when new diagnostics are received from the language server.  Invoke flycheck-buffer to update the display of errors if flycheck-mode is on and we are live reporting or we are in save-mode and the buffer is not modified."
-  (and flycheck-mode
-       (or lsp-ui-flycheck-live-reporting
-	   (and lsp-ui-flycheck--save-mode (not (buffer-modified-p))))
-       (flycheck-buffer)))
-
-;; FIXME: Provide a way to disable lsp-ui-flycheck
-(defun lsp-ui-flycheck-enable (_)
-  "Enable flycheck integration for the current buffer."
-  (setq-local lsp-ui-flycheck--save-mode
-	       (or (memq 'save flycheck-check-syntax-automatically)
-		   lsp-ui-flycheck--save-mode))
-  (setq-local flycheck-check-syntax-automatically nil)
-  (setq-local flycheck-checker 'lsp-ui)
-  (lsp-ui-flycheck-add-mode major-mode)
-  (add-to-list 'flycheck-checkers 'lsp-ui)
-  (add-hook 'lsp-after-diagnostics-hook 'lsp-ui-flycheck--report nil t))
-
-;; lsp-ui.el loads lsp-ui-flycheck.el, so we can’t ‘require’ lsp-ui.
-;; FIXME: Remove this cyclic dependency.
 (declare-function lsp-ui--workspace-path "lsp-ui" (path))
 
 (provide 'lsp-ui-flycheck)
