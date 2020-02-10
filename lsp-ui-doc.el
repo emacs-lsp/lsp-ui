@@ -207,10 +207,15 @@ Because some variables are buffer local.")
   "Set the frame parameter ‘lsp-ui-doc-frame’ to FRAME."
   `(set-frame-parameter nil 'lsp-ui-doc-frame ,frame))
 
-(defun lsp-ui-doc--get-frame (&optional include-deleted-frame)
+(defun lsp-ui-doc--get-frame (&optional _)
   "Return the child frame."
   (let ((frame (frame-parameter nil 'lsp-ui-doc-frame)))
     (and (frame-live-p frame) frame)))
+
+(defsubst lsp-ui-doc--frame-visible-p ()
+  "Return child frame visibility."
+  (let ((frame (lsp-ui-doc--get-frame)))
+    (and frame (frame-visible-p frame))))
 
 (defun lsp-ui-doc--make-buffer-name ()
   "Construct the buffer name, it should be unique for each frame."
@@ -773,15 +778,13 @@ It is supposed to be called from `lsp-ui--toggle'"
   (lsp-ui-doc--hide-frame))
 
 (defun lsp-ui-doc--glance-hide-frame ()
-  "Hook to hide hover information popup for lsp-ui-doc-glance."
-  (cl-letf (((symbol-function 'frame?) (lambda (frame)
-                                         (and frame
-                                              (frame-visible-p frame)
-                                              (not (frame-focus-state frame))))))
-    (when (or (overlayp lsp-ui-doc--inline-ov)
-              (frame? (lsp-ui-doc--get-frame)))
-      (lsp-ui-doc-hide)
-      (remove-hook 'post-command-hook 'lsp-ui-doc--glance-hide-frame))))
+  "Hook to hide hover information popup for `lsp-ui-doc-glance'."
+  (when (or (overlayp lsp-ui-doc--inline-ov)
+            (lsp-ui-doc--frame-visible-p))
+    (lsp-ui-doc-hide)
+    ;; make sure child frame is unfocused
+    (lsp-ui-doc-unfocus-frame)
+    (remove-hook 'post-command-hook 'lsp-ui-doc--glance-hide-frame)))
 
 (defun lsp-ui-doc-glance ()
   "Trigger display hover information popup and hide it on next typing."
@@ -799,11 +802,10 @@ It is supposed to be called from `lsp-ui--toggle'"
 (defun lsp-ui-doc-focus-frame ()
   "Focus into lsp-ui-doc-frame."
   (interactive)
-  (let ((frame (lsp-ui-doc--get-frame)))
-    (when (and frame (frame-visible-p frame))
-      (lsp-ui-doc--with-buffer
-       (setq cursor-type t))
-      (select-frame-set-input-focus frame))))
+  (when (lsp-ui-doc--frame-visible-p)
+    (lsp-ui-doc--with-buffer
+     (setq cursor-type t))
+    (select-frame-set-input-focus (lsp-ui-doc--get-frame))))
 
 (defun lsp-ui-doc-unfocus-frame ()
   "Unfocus from lsp-ui-doc-frame."
