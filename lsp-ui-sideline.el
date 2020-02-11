@@ -201,7 +201,7 @@ if OFFSET is non-nil, it starts search OFFSET lines from user point line."
         (lsp-ui-sideline--find-line str-len bol eol nil offset)
       (and pos (or (> pos eol) (< pos bol))
            (push pos lsp-ui-sideline--occupied-lines)
-           (list pos index)))))
+           (list pos (1- index))))))
 
 (defun lsp-ui-sideline--delete-ov ()
   "Delete overlays."
