@@ -777,19 +777,23 @@ It is supposed to be called from `lsp-ui--toggle'"
   (interactive)
   (lsp-ui-doc--hide-frame))
 
+(defvar-local lsp-ui-doc--unfocus-frame-timer nil)
 (defun lsp-ui-doc--glance-hide-frame ()
   "Hook to hide hover information popup for `lsp-ui-doc-glance'."
   (when (or (overlayp lsp-ui-doc--inline-ov)
             (lsp-ui-doc--frame-visible-p))
-    (lsp-ui-doc-hide)
+    (lsp-ui-doc--hide-frame)
+    (remove-hook 'post-command-hook 'lsp-ui-doc--glance-hide-frame)
     ;; make sure child frame is unfocused
-    (lsp-ui-doc-unfocus-frame)
-    (remove-hook 'post-command-hook 'lsp-ui-doc--glance-hide-frame)))
+    (setq lsp-ui-doc--unfocus-frame-timer
+          (run-at-time 1 nil #'lsp-ui-doc-unfocus-frame))))
 
 (defun lsp-ui-doc-glance ()
   "Trigger display hover information popup and hide it on next typing."
   (interactive)
-  (lsp-ui-doc-show)
+  (lsp-ui-doc--make-request)
+  (when lsp-ui-doc--unfocus-frame-timer
+    (cancel-timer lsp-ui-doc--unfocus-frame-timer))
   (add-hook 'post-command-hook 'lsp-ui-doc--glance-hide-frame))
 
 (define-minor-mode lsp-ui-doc-frame-mode
