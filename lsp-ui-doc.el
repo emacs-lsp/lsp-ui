@@ -670,9 +670,15 @@ HEIGHT is the documentation number of lines."
     (-if-let (bounds (or (and (symbol-at-point) (bounds-of-thing-at-point 'symbol))
                          (and (looking-at "[[:graph:]]") (cons (point) (1+ (point))))))
         (unless (equal lsp-ui-doc--bounds bounds)
-          (lsp--send-request-async
-           (lsp--make-request "textDocument/hover" (lsp--text-document-position-params))
-           (lambda (hover) (lsp-ui-doc--callback hover bounds (current-buffer)))))
+          (lsp-ui-doc--hide-frame)
+          (and lsp-ui-doc--timer (cancel-timer lsp-ui-doc--timer))
+          (setq lsp-ui-doc--timer
+                (run-with-idle-timer
+                 lsp-ui-doc-delay nil
+                 (lambda nil
+                   (lsp--send-request-async
+                    (lsp--make-request "textDocument/hover" (lsp--text-document-position-params))
+                    (lambda (hover) (lsp-ui-doc--callback hover bounds (current-buffer))))))))
       (lsp-ui-doc--hide-frame))))
 
 (defun lsp-ui-doc--callback (hover bounds buffer)
@@ -685,16 +691,11 @@ BUFFER is the buffer where the request has been made."
            (eq buffer (current-buffer)))
       (progn
         (setq lsp-ui-doc--bounds bounds)
-        (and lsp-ui-doc--timer (cancel-timer lsp-ui-doc--timer))
-        (setq lsp-ui-doc--timer
-              (run-with-idle-timer
-               lsp-ui-doc-delay nil
-               (lambda nil
-                 (lsp-ui-doc--display
-                  (thing-at-point 'symbol t)
-                  (-some->> (gethash "contents" hover)
-                    lsp-ui-doc--extract
-                    (replace-regexp-in-string "\r" "")))))))
+        (lsp-ui-doc--display
+         (thing-at-point 'symbol t)
+         (-some->> (gethash "contents" hover)
+           lsp-ui-doc--extract
+           (replace-regexp-in-string "\r" ""))))
     (lsp-ui-doc--hide-frame)))
 
 (defun lsp-ui-doc--delete-frame ()
@@ -777,19 +778,23 @@ It is supposed to be called from `lsp-ui--toggle'"
   (interactive)
   (lsp-ui-doc--hide-frame))
 
+(defvar-local lsp-ui-doc--unfocus-frame-timer nil)
 (defun lsp-ui-doc--glance-hide-frame ()
   "Hook to hide hover information popup for `lsp-ui-doc-glance'."
   (when (or (overlayp lsp-ui-doc--inline-ov)
             (lsp-ui-doc--frame-visible-p))
-    (lsp-ui-doc-hide)
+    (lsp-ui-doc--hide-frame)
+    (remove-hook 'post-command-hook 'lsp-ui-doc--glance-hide-frame)
     ;; make sure child frame is unfocused
-    (lsp-ui-doc-unfocus-frame)
-    (remove-hook 'post-command-hook 'lsp-ui-doc--glance-hide-frame)))
+    (setq lsp-ui-doc--unfocus-frame-timer
+          (run-at-time 1 nil #'lsp-ui-doc-unfocus-frame))))
 
 (defun lsp-ui-doc-glance ()
   "Trigger display hover information popup and hide it on next typing."
   (interactive)
-  (lsp-ui-doc-show)
+  (lsp-ui-doc--make-request)
+  (when lsp-ui-doc--unfocus-frame-timer
+    (cancel-timer lsp-ui-doc--unfocus-frame-timer))
   (add-hook 'post-command-hook 'lsp-ui-doc--glance-hide-frame))
 
 (define-minor-mode lsp-ui-doc-frame-mode
