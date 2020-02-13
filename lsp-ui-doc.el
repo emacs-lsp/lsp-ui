@@ -670,9 +670,15 @@ HEIGHT is the documentation number of lines."
     (-if-let (bounds (or (and (symbol-at-point) (bounds-of-thing-at-point 'symbol))
                          (and (looking-at "[[:graph:]]") (cons (point) (1+ (point))))))
         (unless (equal lsp-ui-doc--bounds bounds)
-          (lsp--send-request-async
-           (lsp--make-request "textDocument/hover" (lsp--text-document-position-params))
-           (lambda (hover) (lsp-ui-doc--callback hover bounds (current-buffer)))))
+          (lsp-ui-doc--hide-frame)
+          (and lsp-ui-doc--timer (cancel-timer lsp-ui-doc--timer))
+          (setq lsp-ui-doc--timer
+                (run-with-idle-timer
+                 lsp-ui-doc-delay nil
+                 (lambda nil
+                   (lsp--send-request-async
+                    (lsp--make-request "textDocument/hover" (lsp--text-document-position-params))
+                    (lambda (hover) (lsp-ui-doc--callback hover bounds (current-buffer))))))))
       (lsp-ui-doc--hide-frame))))
 
 (defun lsp-ui-doc--callback (hover bounds buffer)
@@ -685,16 +691,11 @@ BUFFER is the buffer where the request has been made."
            (eq buffer (current-buffer)))
       (progn
         (setq lsp-ui-doc--bounds bounds)
-        (and lsp-ui-doc--timer (cancel-timer lsp-ui-doc--timer))
-        (setq lsp-ui-doc--timer
-              (run-with-idle-timer
-               lsp-ui-doc-delay nil
-               (lambda nil
-                 (lsp-ui-doc--display
-                  (thing-at-point 'symbol t)
-                  (-some->> (gethash "contents" hover)
-                    lsp-ui-doc--extract
-                    (replace-regexp-in-string "\r" "")))))))
+        (lsp-ui-doc--display
+         (thing-at-point 'symbol t)
+         (-some->> (gethash "contents" hover)
+           lsp-ui-doc--extract
+           (replace-regexp-in-string "\r" ""))))
     (lsp-ui-doc--hide-frame)))
 
 (defun lsp-ui-doc--delete-frame ()
