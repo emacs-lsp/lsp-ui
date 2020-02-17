@@ -142,11 +142,11 @@ Both should have the form (FILENAME LINE COLUMN)."
          (res (-first (lambda (ref) (cl-incf idx) (lsp-ui--location< cur ref)) refs)))
     (if res
         (progn
-         (find-file (car res))
-         (goto-char 1)
-         (forward-line (cadr res))
-         (forward-char (caddr res))
-         (cons idx (length refs)))
+          (find-file (car res))
+          (goto-char 1)
+          (forward-line (cadr res))
+          (forward-char (caddr res))
+          (cons idx (length refs)))
       (cons 0 0))))
 
 ;; TODO Make it efficient

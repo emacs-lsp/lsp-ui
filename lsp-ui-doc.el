@@ -330,7 +330,7 @@ We don't extract the string that `lps-line' is already displaying."
 (defun lsp-ui-doc--webkit-get-xwidget ()
   "Return Xwidget instance."
   (lsp-ui-doc--with-buffer
-    (xwidget-at 1)))
+   (xwidget-at 1)))
 
 (defun lsp-ui-doc--webkit-execute-script (script &optional fn)
   "Execute SCRIPT in embedded Xwidget and run optional callback FN."
@@ -389,8 +389,8 @@ We don't extract the string that `lps-line' is already displaying."
 (defun lsp-ui-doc--resize-buffer ()
   "If the buffer's width is larger than the current frame, resize it."
   (if lsp-ui-doc-use-webkit
-       (lsp-ui-doc--webkit-execute-script
-        "[document.querySelector('#lsp-ui-webkit').offsetWidth, document.querySelector('#lsp-ui-webkit').offsetHeight];"
+      (lsp-ui-doc--webkit-execute-script
+       "[document.querySelector('#lsp-ui-webkit').offsetWidth, document.querySelector('#lsp-ui-webkit').offsetHeight];"
        'lsp-ui-doc--webkit-resize-callback)
 
     (let* ((frame-width (frame-width))
@@ -451,7 +451,7 @@ FRAME just below the symbol at point."
 (defun lsp-ui-doc--visit-file (filename)
   "Visit FILENAME in the parent frame."
   (-some->> (find-file-noselect filename)
-            (set-window-buffer (lsp-ui-doc--get-parent :window))))
+    (set-window-buffer (lsp-ui-doc--get-parent :window))))
 
 (defun lsp-ui-doc--put-click (start end fn)
   "Add text properties on text to make it clickable.
@@ -510,7 +510,7 @@ FN is the function to call on click."
     (while start
       (setq string (concat (substring string 0 start)
                            (-some->> (next-single-property-change start 'invisible string)
-                                     (substring string))))
+                             (substring string))))
       (setq start (text-property-not-all 0 (length string) 'invisible nil string)))
     string))
 
@@ -734,9 +734,9 @@ before, or if the new window is the minibuffer."
 (defun lsp-ui-doc--on-delete (frame)
   "Function called when a FRAME is deleted."
   (-some--> (frame-parameter frame 'lsp-ui-doc-buffer)
-            (get-buffer it)
-            (and (buffer-live-p it) it)
-            (kill-buffer it)))
+    (get-buffer it)
+    (and (buffer-live-p it) it)
+    (kill-buffer it)))
 
 (define-minor-mode lsp-ui-doc-mode
   "Minor mode for showing hover information in child frame."
