@@ -3,35 +3,27 @@
 <!-- markdown-toc start - Don't edit this section. Run M-x markdown-toc-refresh-toc -->
 **Table of Contents**
 
+- [Intro](#intro)
 - [lsp-ui-sideline:](#lsp-ui-sideline)
 - [lsp-ui-peek:](#lsp-ui-peek)
-- [lsp-ui-imenu:](#lsp-ui-imenu)
-- [lsp-ui-doc:](#lsp-ui-doc)
+- [lsp-ui-doc](#lsp-ui-doc)
 
 <!-- markdown-toc end -->
 
+# Intro
+
 This package contains all the higher level UI modules of `lsp-mode`, like flycheck support and code lenses.
 
-More info to follow.
+By default, `lsp-mode` automatically activates `lsp-ui` unless `lsp-auto-configure` is set to `nil`.
 
-To enable the package and its features:
+You only have to put `(use-package lsp-ui)` in your config and the package will work out of the box.
+([use-package](https://github.com/jwiegley/use-package))
 
-``` el
-(require 'lsp-ui)
-(add-hook 'lsp-mode-hook 'lsp-ui-mode)
+Or use the builtin package manager.
+
 ```
-
-To enable `flycheck-mode` for a particular LSP client, add the following:
-
-```el
-(add-hook 'XXXXX-mode-hook 'flycheck-mode)
+M-x ~package-install~ [RET] ~lsp-ui~ [RET]
 ```
-
-Otherwise the flycheck diagnostics will not be rendered.
-
-
-To customize:
-`M-x customize-group [RET] lsp-ui [RET]`
 
 # lsp-ui-sideline:
 
@@ -63,8 +55,6 @@ Other cross references:
 ;; If the server supports custom cross references
 (lsp-ui-peek-find-custom 'base "$cquery/base")
 ```
-
-# lsp-ui-imenu
 
 # lsp-ui-doc
 
