@@ -698,12 +698,18 @@ references.  The function returns a list of `ls-xref-item'."
 Returns item(s)."
   (-when-let* ((locs (lsp-request method params))
                (locs (if (listp locs) locs (if (vectorp locs) (append locs nil) (list locs)))))
-    (mapcar #'lsp-ui-peek--get-xrefs-list
-            (if (gethash "uri" (car locs))
-                ;; Location[]
-                (--group-by (lsp--uri-to-path (gethash "uri" it)) locs)
-              ;; LocationLink[]
-              (--group-by (lsp--uri-to-path (gethash "targetUri" it)) locs)))))
+    (-filter
+     (-lambda ((&plist :file))
+       (or (f-file? file)
+           (ignore
+            (lsp-log "The following file %s is missing, ignoring from the results."
+                     file))))
+     (mapcar #'lsp-ui-peek--get-xrefs-list
+             (if (gethash "uri" (car locs))
+                 ;; Location[]
+                 (--group-by (lsp--uri-to-path (gethash "uri" it)) locs)
+               ;; LocationLink[]
+               (--group-by (lsp--uri-to-path (gethash "targetUri" it)) locs))))))
 
 (defvar lsp-ui-mode-map)
 
