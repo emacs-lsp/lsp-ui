@@ -441,15 +441,15 @@ from the language server."
           (lsp-ui-sideline--diagnostics bol eol))
         (when (and lsp-ui-sideline-show-code-actions (or (lsp--capability "codeActionProvider")
                                                          (lsp--registered-capability "textDocument/codeAction")))
-          (lsp--send-request-async (lsp--make-request
-                                    "textDocument/codeAction"
-                                    (if (equal lsp-ui-sideline-update-mode 'line)
-                                        (list :textDocument doc-id
-                                              :range (lsp--region-to-range bol eol)
-                                              :context (list :diagnostics (lsp-cur-line-diagnostics)))
-                                      (lsp--text-document-code-action-params)))
-                                   (lambda (actions) (lsp-ui-sideline--code-actions actions bol eol))
-                                   'alive))
+          (lsp-request-async
+           "textDocument/codeAction"
+           (if (equal lsp-ui-sideline-update-mode 'line)
+               (list :textDocument doc-id
+                     :range (lsp--region-to-range bol eol)
+                     :context (list :diagnostics (lsp-cur-line-diagnostics)))
+             (lsp--text-document-code-action-params))
+           (lambda (actions) (lsp-ui-sideline--code-actions actions bol eol))
+           :mode 'alive))
         ;; Go through all symbols and request hover information.  Note that the symbols are
         ;; traversed backwards as `forward-symbol' with a positive argument will jump just past the
         ;; current symbol.  By going from the end of the line towards the front, point will be placed
@@ -482,7 +482,8 @@ from the language server."
                                           "textDocument/hover"
                                           (list :textDocument doc-id :position position)
                                           (lambda (info)
-                                            (when info (lsp-ui-sideline--push-info symbol tag bounds info bol eol))))
+                                            (when info (lsp-ui-sideline--push-info symbol tag bounds info bol eol)))
+                                          :mode 'alive)
                                          :id)))
                           symbols))))))))
 
