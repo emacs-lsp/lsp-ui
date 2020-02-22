@@ -675,10 +675,14 @@ HEIGHT is the documentation number of lines."
           (setq lsp-ui-doc--timer
                 (run-with-idle-timer
                  lsp-ui-doc-delay nil
-                 (lambda nil
-                   (lsp--send-request-async
-                    (lsp--make-request "textDocument/hover" (lsp--text-document-position-params))
-                    (lambda (hover) (lsp-ui-doc--callback hover bounds (current-buffer))))))))
+                 (let ((buf (current-buffer)))
+                   (lambda nil
+                     (when (equal buf (current-buffer))
+                       (lsp--send-request-async
+                        (lsp--make-request "textDocument/hover" (lsp--text-document-position-params))
+                        (lambda (hover)
+                          (when (equal buf (current-buffer))
+                            (lsp-ui-doc--callback hover bounds (current-buffer)))))))))))
       (lsp-ui-doc--hide-frame))))
 
 (defun lsp-ui-doc--callback (hover bounds buffer)
