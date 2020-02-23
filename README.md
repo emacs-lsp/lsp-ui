@@ -1,4 +1,7 @@
+# lsp-ui
+
 [![MELPA](https://melpa.org/packages/lsp-ui-badge.svg)](https://melpa.org/#/lsp-ui)
+[![Build Status](https://travis-ci.com/emacs-lsp/lsp-ui.svg?branch=master)](https://travis-ci.com/emacs-lsp/lsp-ui)
 
 <!-- markdown-toc start - Don't edit this section. Run M-x markdown-toc-refresh-toc -->
 **Table of Contents**
