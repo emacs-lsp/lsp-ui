@@ -1,6 +1,12 @@
+EMACS ?= emacs
 SHELL := /bin/bash
 
 all:
-	cask build
+	EMACS=$(EMACS) cask install
+	EMACS=$(EMACS) cask build
+	EMACS=$(EMACS) cask clean-elc
 
-.PHONY: all
+test: all
+	EMACS=$(EMACS) cask exec ert-runner
+
+.PHONY: all test
