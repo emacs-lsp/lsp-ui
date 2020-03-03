@@ -176,14 +176,14 @@ will cause performances issues.")
   ;; compiling this code.  We can’t compile the code without requiring
   ;; ‘evil-macros’.
   (eval '(progn
-          (evil-define-motion lsp-ui-peek-jump-backward (count)
-            (lsp-ui-peek--with-evil-jumps
-             (evil--jump-backward count)
-             (run-hooks 'xref-after-return-hook)))
-          (evil-define-motion lsp-ui-peek-jump-forward (count)
-            (lsp-ui-peek--with-evil-jumps
-             (evil--jump-forward count)
-             (run-hooks 'xref-after-return-hook))))
+           (evil-define-motion lsp-ui-peek-jump-backward (count)
+                               (lsp-ui-peek--with-evil-jumps
+                                   (evil--jump-backward count)
+                                 (run-hooks 'xref-after-return-hook)))
+           (evil-define-motion lsp-ui-peek-jump-forward (count)
+                               (lsp-ui-peek--with-evil-jumps
+                                   (evil--jump-forward count)
+                                 (run-hooks 'xref-after-return-hook))))
         t))
 
 (defmacro lsp-ui-peek--prop (prop &optional string)
@@ -259,9 +259,9 @@ will cause performances issues.")
 (defun lsp-ui-peek--peek-new (src1 src2)
   (-let* ((win-width (window-text-width))
           (string (-some--> (-zip-fill "" src1 src2)
-                            (--map (lsp-ui-peek--adjust win-width it) it)
-                            (-map-indexed 'lsp-ui-peek--make-line it)
-                            (-concat it (lsp-ui-peek--make-footer))))
+                    (--map (lsp-ui-peek--adjust win-width it) it)
+                    (-map-indexed 'lsp-ui-peek--make-line it)
+                    (-concat it (lsp-ui-peek--make-footer))))
           (next-line (line-beginning-position 2))
           (ov (or (when (overlayp lsp-ui-peek--overlay) lsp-ui-peek--overlay)
                   (make-overlay next-line next-line))))

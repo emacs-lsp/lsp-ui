@@ -233,6 +233,9 @@ Return the updated COLOR-INDEX."
 (defun lsp-ui-imenu--clear-bit (bits offset)
   (logand bits (lognot (lsh 1 offset))))
 
+(defvar lsp-ui-imenu--custom-mode-line-format nil
+  "Custom mode line format to be used in `lsp-ui-menu-mode'.")
+
 (defun lsp-ui-imenu nil
   (interactive)
   (setq lsp-ui-imenu--origin (current-buffer))
@@ -253,7 +256,9 @@ Return the updated COLOR-INDEX."
             (lsp-ui-imenu--insert-items "" group padding bars 1 color-index)
             (setq color-index (1+ color-index))))
         (lsp-ui-imenu-mode)
-        (setq mode-line-format '(:eval (lsp-ui-imenu--win-separator)))
+        (setq mode-line-format
+              (or lsp-ui-imenu--custom-mode-line-format
+                  '(:eval (lsp-ui-imenu--win-separator))))
         (goto-char 1)
         (add-hook 'post-command-hook 'lsp-ui-imenu--post-command nil t)))
     (let ((win (display-buffer-in-side-window (get-buffer "*lsp-ui-imenu*") '((side . right))))

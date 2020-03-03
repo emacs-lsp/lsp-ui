@@ -55,6 +55,8 @@
     (forward-line -1)))
 
 (defun lsp-ui-flycheck-list--update (window workspace)
+  "Update flycheck buffer in WINDOW belonging to WORKSPACE.
+Use `lsp-diagnostics' to receive diagnostics from your LSP server."
   (let ((buffer-read-only nil)
         (lsp--cur-workspace workspace))
     (erase-buffer)
