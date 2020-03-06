@@ -1,19 +1,22 @@
 # lsp-ui
 
 [![MELPA](https://melpa.org/packages/lsp-ui-badge.svg)](https://melpa.org/#/lsp-ui)
+[![Join the chat](https://badges.gitter.im/emacs-lsp/lsp-ui.svg)](https://gitter.im/emacs-lsp/lsp-ui)
 [![Build Status](https://travis-ci.com/emacs-lsp/lsp-ui.svg?branch=master)](https://travis-ci.com/emacs-lsp/lsp-ui)
 
 <!-- markdown-toc start - Don't edit this section. Run M-x markdown-toc-refresh-toc -->
 **Table of Contents**
 
-- [Intro](#intro)
-- [lsp-ui-sideline:](#lsp-ui-sideline)
-- [lsp-ui-peek:](#lsp-ui-peek)
-- [lsp-ui-doc](#lsp-ui-doc)
+- [lsp-ui](#lsp-ui)
+    - [Intro](#intro)
+    - [lsp-ui-sideline:](#lsp-ui-sideline)
+    - [lsp-ui-peek:](#lsp-ui-peek)
+    - [lsp-ui-doc](#lsp-ui-doc)
+    - [lsp-ui-imenu](#lsp-ui-imenu)
 
 <!-- markdown-toc end -->
 
-# Intro
+## Intro
 
 This package contains all the higher level UI modules of `lsp-mode`, like flycheck support and code lenses.
 
@@ -28,13 +31,13 @@ Or use the builtin package manager.
 M-x ~package-install~ [RET] ~lsp-ui~ [RET]
 ```
 
-# lsp-ui-sideline:
+## lsp-ui-sideline:
 
 Show informations of the symbols on the current line.
 It also show flycheck diagnostics and LSP code actions
 ![lsp-line](images/lsp-line.gif)
 
-# lsp-ui-peek:
+## lsp-ui-peek:
 
 Add [peek](https://code.visualstudio.com/docs/editor/editingevolved#_peek) feature
 ![lsp-xref](images/lsp-xref.gif)
@@ -59,7 +62,7 @@ Other cross references:
 (lsp-ui-peek-find-custom 'base "$cquery/base")
 ```
 
-# lsp-ui-doc
+## lsp-ui-doc
 
 Show object documentation at point in a child frame.
 ![lsp-ui-doc](images/lsp-ui-doc.gif)
@@ -69,3 +72,7 @@ Show documentation in a WebKit widget
 
 Focus into lsp-ui-doc-frame
 ![lsp-ui-doc-focus-frame](images/lsp-ui-doc-focus-frame.gif)
+
+## lsp-ui-imenu
+
+![lsp-ui-doc](images/lsp-ui-imenu.png)
