@@ -344,7 +344,10 @@ is set to t."
              lines))
 
 (defun lsp-ui-sideline--diagnostics (bol eol)
-  "Show diagnostics on the current line."
+  "Show diagnostics belonging to the current line.
+Loop over flycheck errors with `flycheck-overlay-errors-in'.
+Find appropriate position for sideline overlays with `lsp-ui-sideline--find-line'.
+Push sideline overlays on `lsp-ui-sideline--ovs'."
   (when (bound-and-true-p flycheck-mode)
     (dolist (e (flycheck-overlay-errors-in bol (1+ eol)))
       (let* ((lines (--> (flycheck-error-format-message-and-id e)
