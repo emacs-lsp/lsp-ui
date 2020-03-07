@@ -334,12 +334,12 @@ We don't extract the string that `lps-line' is already displaying."
 
 (defun lsp-ui-doc--webkit-execute-script (script &optional fn)
   "Execute SCRIPT in embedded Xwidget and run optional callback FN."
-  (when-let* ((xw (lsp-ui-doc--webkit-get-xwidget)))
+  (-when-let* ((xw (lsp-ui-doc--webkit-get-xwidget)))
     (xwidget-webkit-execute-script xw script fn)))
 
 (defun lsp-ui-doc--webkit-execute-script-rv (script)
   "Execute SCRIPT in embedded Xwidget synchronously."
-  (when-let* ((xw (lsp-ui-doc--webkit-get-xwidget)))
+  (-when-let* ((xw (lsp-ui-doc--webkit-get-xwidget)))
     (xwidget-webkit-execute-script-rv xw script)))
 
 (defun lsp-ui-doc--hide-frame ()
