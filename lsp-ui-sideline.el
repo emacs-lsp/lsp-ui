@@ -449,7 +449,8 @@ from the language server."
                      :context (list :diagnostics (lsp-cur-line-diagnostics)))
              (lsp--text-document-code-action-params))
            (lambda (actions) (lsp-ui-sideline--code-actions actions bol eol))
-           :mode 'alive))
+           :mode 'alive
+           :cancel-token :lsp-ui-code-actions))
         ;; Go through all symbols and request hover information.  Note that the symbols are
         ;; traversed backwards as `forward-symbol' with a positive argument will jump just past the
         ;; current symbol.  By going from the end of the line towards the front, point will be placed
