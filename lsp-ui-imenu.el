@@ -60,6 +60,11 @@
   :type '(repeat color)
   :group 'lsp-ui-menu)
 
+(defcustom lsp-ui-imenu-window-width 0
+  "When not 0, don't fit window to buffer and use value as window-width."
+  :type 'number
+  :group 'lsp-ui-menu)
+
 (defconst lsp-ui-imenu--max-bars 8)
 
 (declare-function imenu--make-index-alist 'imenu)
@@ -236,12 +241,17 @@ Return the updated COLOR-INDEX."
 (defvar lsp-ui-imenu--custom-mode-line-format nil
   "Custom mode line format to be used in `lsp-ui-menu-mode'.")
 
+(defvar lsp-ui-imenu-buffer-name "*lsp-ui-imenu*"
+  "Buffer name for imenu buffers.")
+
 (defun lsp-ui-imenu nil
+  "Open ui-imenu in side window."
   (interactive)
   (setq lsp-ui-imenu--origin (current-buffer))
   (imenu--make-index-alist)
-  (let ((list imenu--index-alist))
-    (with-current-buffer (get-buffer-create "*lsp-ui-imenu*")
+  (let ((imenu-buffer (get-buffer-create lsp-ui-imenu-buffer-name))
+        (list imenu--index-alist))
+    (with-current-buffer imenu-buffer
       (let* ((padding (lsp-ui-imenu--get-padding list))
              (grouped-by-subs (-partition-by 'imenu--subalist-p list))
              (color-index 0)
@@ -259,18 +269,21 @@ Return the updated COLOR-INDEX."
         (setq mode-line-format
               (or lsp-ui-imenu--custom-mode-line-format
                   '(:eval (lsp-ui-imenu--win-separator))))
-        (goto-char 1)
+        (goto-char (point-min))
         (add-hook 'post-command-hook 'lsp-ui-imenu--post-command nil t)))
-    (let ((win (display-buffer-in-side-window (get-buffer "*lsp-ui-imenu*") '((side . right))))
-          (fit-window-to-buffer-horizontally t))
+    (let ((win (display-buffer-in-side-window imenu-buffer '((side . right)))))
       (set-window-margins win 1)
       (select-window win)
       (set-window-start win 1)
       (lsp-ui-imenu--move-to-name-beginning)
       (set-window-dedicated-p win t)
-      (let ((fit-window-to-buffer-horizontally 'only))
-        (fit-window-to-buffer win))
-      (window-resize win 3 t))))
+      ;; when `lsp-ui-imenu-window-width' is 0, fit window to buffer
+      (if (= lsp-ui-imenu-window-width 0)
+          (let ((fit-window-to-buffer-horizontally 'only))
+            (fit-window-to-buffer win)
+            (window-resize win 3 t))
+        (let ((x (- lsp-ui-imenu-window-width (window-width))))
+          (window-resize (selected-window) x t))))))
 
 (defun lsp-ui-imenu--win-separator ()
   (when (and (window-combined-p)

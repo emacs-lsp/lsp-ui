@@ -75,4 +75,10 @@ Focus into lsp-ui-doc-frame
 
 ## lsp-ui-imenu
 
+Show imenu entries.
+
 ![lsp-ui-doc](images/lsp-ui-imenu.png)
+
+Customization:
+
+- `lsp-ui-imenu-window-width` set window width
