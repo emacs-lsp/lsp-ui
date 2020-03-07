@@ -120,9 +120,8 @@ Both should have the form (FILENAME LINE COLUMN)."
 
 (defun lsp-ui--reference-triples (extra)
   "Return references as a list of (FILENAME LINE COLUMN) triples."
-  (let ((refs (lsp--send-request (lsp--make-request
-                                  "textDocument/references"
-                                  (append (lsp--text-document-position-params) extra)))))
+  (let ((refs (lsp-request "textDocument/references"
+                           (append (lsp--text-document-position-params) extra))))
     (sort
      (mapcar
       (lambda (ref)
