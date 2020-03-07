@@ -8,8 +8,8 @@
            (buf (get-buffer-create "test-buffer"))
            (dir (lsp-ui-test-create-project-buffer buf string))
            (file (concat dir "src/main.rs"))
-           (diagnostics "2: rustc: value assigned to `bar` is never read
-2: rustc: cannot assign twice to immutable variable `bar`
+           (diagnostics "3: rustc: value assigned to `bar` is never read
+3: rustc: cannot assign twice to immutable variable `bar`
 "))
       (sit-for 3)
       (with-current-buffer buf

@@ -65,6 +65,10 @@
   :type 'number
   :group 'lsp-ui-menu)
 
+(defcustom lsp-ui-imenu--custom-mode-line-format nil
+  "Custom mode line format to be used in `lsp-ui-menu-mode'."
+  :group 'lsp-ui-menu)
+
 (defconst lsp-ui-imenu--max-bars 8)
 
 (declare-function imenu--make-index-alist 'imenu)
@@ -238,9 +242,6 @@ Return the updated COLOR-INDEX."
 (defun lsp-ui-imenu--clear-bit (bits offset)
   (logand bits (lognot (lsh 1 offset))))
 
-(defvar lsp-ui-imenu--custom-mode-line-format nil
-  "Custom mode line format to be used in `lsp-ui-menu-mode'.")
-
 (defvar lsp-ui-imenu-buffer-name "*lsp-ui-imenu*"
   "Buffer name for imenu buffers.")
 
@@ -266,9 +267,8 @@ Return the updated COLOR-INDEX."
             (lsp-ui-imenu--insert-items "" group padding bars 1 color-index)
             (setq color-index (1+ color-index))))
         (lsp-ui-imenu-mode)
-        (setq mode-line-format
-              (or lsp-ui-imenu--custom-mode-line-format
-                  '(:eval (lsp-ui-imenu--win-separator))))
+        (when lsp-ui-imenu--custom-mode-line-format
+          (setq mode-line-format lsp-ui-imenu--custom-mode-line-format))
         (goto-char (point-min))
         (add-hook 'post-command-hook 'lsp-ui-imenu--post-command nil t)))
     (let ((win (display-buffer-in-side-window imenu-buffer '((side . right)))))
@@ -284,12 +284,6 @@ Return the updated COLOR-INDEX."
             (window-resize win 3 t))
         (let ((x (- lsp-ui-imenu-window-width (window-width))))
           (window-resize (selected-window) x t))))))
-
-(defun lsp-ui-imenu--win-separator ()
-  (when (and (window-combined-p)
-             (window-next-sibling)
-             (= (window-bottom-divider-width) 0))
-    (propertize (make-string (window-total-width) ?\─) 'face 'window-divider)))
 
 (defun lsp-ui-imenu--kill nil
   (interactive)
