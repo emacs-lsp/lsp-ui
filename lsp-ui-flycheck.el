@@ -73,7 +73,7 @@ Use `lsp-diagnostics' to receive diagnostics from your LSP server."
                (dolist (diag diagnostic)
                  (let* ((message (or (lsp-diagnostic-message diag) "???"))
                         (severity (or (lsp-diagnostic-severity diag) 1))
-                        (line (or (lsp-diagnostic-line diag) 1))
+                        (line (1+ (lsp-diagnostic-line diag)))
                         (face (cond ((= severity 1) 'error)
                                     ((= severity 2) 'warning)
                                     (t 'success)))
