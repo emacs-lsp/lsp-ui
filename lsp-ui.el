@@ -43,7 +43,7 @@
 (require 'cl-lib)
 (require 'dash)
 
-(cl-eval-when '(load eval)
+(cl-eval-when (load eval)
   (require 'lsp-ui-sideline)
   (require 'lsp-ui-peek)
   (require 'lsp-ui-imenu)
