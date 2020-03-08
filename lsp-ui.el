@@ -43,15 +43,6 @@
 (require 'cl-lib)
 (require 'dash)
 
-(cl-eval-when (load eval)
-  (require 'lsp-ui-sideline)
-  (require 'lsp-ui-peek)
-  (require 'lsp-ui-imenu)
-  (require 'lsp-ui-doc)
-
-  (with-eval-after-load 'flycheck
-    (require 'lsp-ui-flycheck)))
-
 (with-eval-after-load 'winum
   (when (and (boundp 'winum-ignored-buffers-regexp) lsp-ui-doc-winum-ignore)
     (add-to-list 'winum-ignored-buffers-regexp lsp-ui-doc--buffer-prefix)))
@@ -168,6 +159,15 @@ Both should have the form (FILENAME LINE COLUMN)."
           (cons idx (length refs)))
       (cons 0 0))))
 
-
 (provide 'lsp-ui)
+
+(cl-eval-when (load eval)
+  (require 'lsp-ui-sideline)
+  (require 'lsp-ui-peek)
+  (require 'lsp-ui-imenu)
+  (require 'lsp-ui-doc)
+
+  (with-eval-after-load 'flycheck
+    (require 'lsp-ui-flycheck)))
+
 ;;; lsp-ui.el ends here
