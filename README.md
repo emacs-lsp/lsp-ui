@@ -13,6 +13,7 @@
     - [lsp-ui-peek:](#lsp-ui-peek)
     - [lsp-ui-doc](#lsp-ui-doc)
     - [lsp-ui-imenu](#lsp-ui-imenu)
+    - [Contributing](#contributing)
 
 <!-- markdown-toc end -->
 
@@ -82,3 +83,8 @@ Show imenu entries.
 Customization:
 
 - `lsp-ui-imenu-window-width` set window width
+
+## Contributing
+
+Any kind of help is appreciated. If you want to help us maintaining this package,
+[leave a note](https://github.com/emacs-lsp/lsp-ui/issues/332).
