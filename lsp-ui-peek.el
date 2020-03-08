@@ -51,6 +51,12 @@
   :type 'boolean
   :group 'lsp-ui)
 
+(defcustom lsp-ui-peek-show-directory t
+  "Whether or not to show the directory of files."
+  :type 'boolean
+  :safe t
+  :group 'lsp-ui-peek)
+
 (defcustom lsp-ui-peek-peek-height 20
   "Height of the peek code."
   :type 'integer
@@ -64,8 +70,9 @@
 (defcustom lsp-ui-peek-fontify 'on-demand
   "Whether to fontify chunks of code (use semantics colors).
 WARNING: 'always can heavily slow the processing when `lsp-ui-peek-expand-function'
-expands more than 1 file.  It is recommended to keeps the default value of
-`lsp-ui-peek-expand-function' when this variable is 'always."
+expands more than 1 file.
+It is recommended to keep the default value of `lsp-ui-peek-expand-function' when
+this variable is set to 'always."
   :type '(choice (const :tag "Never" never)
                  (const :tag "On demand" on-demand)
                  (const :tag "Always" always))
@@ -169,14 +176,14 @@ will cause performances issues.")
   ;; compiling this code.  We can’t compile the code without requiring
   ;; ‘evil-macros’.
   (eval '(progn
-          (evil-define-motion lsp-ui-peek-jump-backward (count)
-            (lsp-ui-peek--with-evil-jumps
-             (evil--jump-backward count)
-             (run-hooks 'xref-after-return-hook)))
-          (evil-define-motion lsp-ui-peek-jump-forward (count)
-            (lsp-ui-peek--with-evil-jumps
-             (evil--jump-forward count)
-             (run-hooks 'xref-after-return-hook))))
+           (evil-define-motion lsp-ui-peek-jump-backward (count)
+                               (lsp-ui-peek--with-evil-jumps
+                                   (evil--jump-backward count)
+                                 (run-hooks 'xref-after-return-hook)))
+           (evil-define-motion lsp-ui-peek-jump-forward (count)
+                               (lsp-ui-peek--with-evil-jumps
+                                   (evil--jump-forward count)
+                                 (run-hooks 'xref-after-return-hook))))
         t))
 
 (defmacro lsp-ui-peek--prop (prop &optional string)
@@ -189,7 +196,7 @@ will cause performances issues.")
 
 (defun lsp-ui-peek--truncate (len s)
   (if (> (string-width s) len)
-      (format "%s.." (substring s 0 (- len 2)))
+      (concat (truncate-string-to-width s (max (- len 2) 0)) "..")
     s))
 
 (defun lsp-ui-peek--get-text-selection (&optional n)
@@ -252,9 +259,9 @@ will cause performances issues.")
 (defun lsp-ui-peek--peek-new (src1 src2)
   (-let* ((win-width (window-text-width))
           (string (-some--> (-zip-fill "" src1 src2)
-                            (--map (lsp-ui-peek--adjust win-width it) it)
-                            (-map-indexed 'lsp-ui-peek--make-line it)
-                            (-concat it (lsp-ui-peek--make-footer))))
+                    (--map (lsp-ui-peek--adjust win-width it) it)
+                    (-map-indexed 'lsp-ui-peek--make-line it)
+                    (-concat it (lsp-ui-peek--make-footer))))
           (next-line (line-beginning-position 2))
           (ov (or (when (overlayp lsp-ui-peek--overlay) lsp-ui-peek--overlay)
                   (make-overlay next-line next-line))))
@@ -300,7 +307,9 @@ XREFS is a list of references/definitions."
     (-let* (((&plist :file filename :xrefs xrefs :count count) it)
             (len-str (number-to-string count)))
       (setq lsp-ui-peek--size-list (+ lsp-ui-peek--size-list count))
-      (push (concat (propertize (lsp-ui--workspace-path filename)
+      (push (concat (propertize (if lsp-ui-peek-show-directory
+                                    (lsp-ui--workspace-path filename)
+                                  (file-name-nondirectory filename))
                                 'face 'lsp-ui-peek-filename
                                 'file filename
                                 'xrefs xrefs)
@@ -689,12 +698,18 @@ references.  The function returns a list of `ls-xref-item'."
 Returns item(s)."
   (-when-let* ((locs (lsp-request method params))
                (locs (if (listp locs) locs (if (vectorp locs) (append locs nil) (list locs)))))
-    (mapcar #'lsp-ui-peek--get-xrefs-list
-            (if (gethash "uri" (car locs))
-                ;; Location[]
-                (--group-by (lsp--uri-to-path (gethash "uri" it)) locs)
-              ;; LocationLink[]
-              (--group-by (lsp--uri-to-path (gethash "targetUri" it)) locs)))))
+    (-filter
+     (-lambda ((&plist :file))
+       (or (f-file? file)
+           (ignore
+            (lsp-log "The following file %s is missing, ignoring from the results."
+                     file))))
+     (mapcar #'lsp-ui-peek--get-xrefs-list
+             (if (gethash "uri" (car locs))
+                 ;; Location[]
+                 (--group-by (lsp--uri-to-path (gethash "uri" it)) locs)
+               ;; LocationLink[]
+               (--group-by (lsp--uri-to-path (gethash "targetUri" it)) locs))))))
 
 (defvar lsp-ui-mode-map)
 
@@ -703,7 +718,7 @@ Returns item(s)."
   (unless (bound-and-true-p lsp-ui-mode-map)
     (user-error "Please load lsp-ui before trying to enable lsp-ui-peek")))
 
-(declare-function evil-set-jump "evil-jumps.el" (&optional pos))
+(declare-function evil-set-jump "ext:evil-jumps.el" (&optional pos))
 
 (provide 'lsp-ui-peek)
 ;;; lsp-ui-peek.el ends here

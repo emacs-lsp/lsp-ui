@@ -1,0 +1,55 @@
+language: emacs-lisp
+dist: trusty
+sudo: required
+
+notifications:
+  email: false
+
+cache:
+  - directories:
+      - $HOME/emacs
+      - $HOME/.cache/pip
+      - $HOME/.emacs.d
+      - $HOME/.cargo
+      - $TRAVIS_BUILD_DIR/.cask
+
+matrix:
+  allow_failures:
+    - env: EMACS_VERSION=snapshot
+  fast_finish: true
+  include:
+    - env: EMACS_VERSION=26.1
+    - env: EMACS_VERSION=snapshot
+
+before_install:
+  # Configure $PATH: Executables are installed to $HOME/bin
+  - export PATH="$HOME/bin:$PATH"
+  # Download the makefile to emacs-travis.mk
+  - wget 'https://raw.githubusercontent.com/flycheck/emacs-travis/master/emacs-travis.mk'
+  # Install Emacs (according to $EMACS_VERSION) and Cask
+  - make -f emacs-travis.mk install_gnutls install_emacs
+  - make -f emacs-travis.mk install_cask
+
+  - sudo apt update
+  - sudo apt install -y gnutls-bin gnupg2 dirmngr
+
+  - sudo apt install -y texinfo libgif-dev libxpm-dev
+  - curl -sSf https://build.travis-ci.com/files/rustup-init.sh | sh -s -- --default-toolchain=stable -y
+  - source $HOME/.cargo/env
+
+  # install RLS
+  - rustup component add rls rust-analysis rust-src
+  # install rust-analyzer
+  - git clone https://github.com/rust-analyzer/rust-analyzer && cd rust-analyzer
+  - cargo xtask install --server && cd ..
+
+install:
+  - mkdir -p $HOME/.emacs.d/elpa/gnupg || true
+  - chmod 700 $HOME/.emacs.d/elpa/gnupg
+  - gpg2 --keyserver hkp://pool.sks-keyservers.net:80 --homedir $HOME/.emacs.d/elpa/gnupg --recv-keys 066DAFCB81E42C40 || true
+  - mkdir -p $(cask package-directory) || true
+  - rsync -azSH $HOME/.emacs.d/elpa/gnupg $(cask package-directory)
+  - cask install
+
+script:
+  - cask exec ert-runner

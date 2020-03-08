@@ -7,7 +7,7 @@
 ;; Keywords: lsp
 ;; URL: https://github.com/emacs-lsp/lsp-ui
 ;; Package-Requires: ((emacs "25.1") (dash "2.14") (dash-functional "1.2.0") (lsp-mode "6.0") (markdown-mode "2.3"))
-;; Version: 6.0
+;; Version: 6.2
 
 ;;; License
 ;;
@@ -52,6 +52,10 @@
   (with-eval-after-load 'flycheck
     (require 'lsp-ui-flycheck)))
 
+(with-eval-after-load 'winum
+  (when (and (boundp 'winum-ignored-buffers-regexp) lsp-ui-doc-winum-ignore)
+    (add-to-list 'winum-ignored-buffers-regexp lsp-ui-doc--buffer-prefix)))
+
 (defun lsp-ui-peek--render (major string)
   (with-temp-buffer
     (insert string)
@@ -73,7 +77,7 @@ If the PATH is not in the workspace, it returns the original PATH."
       path)))
 
 (defun lsp-ui--toggle (enable)
-  (dolist (feature '(lsp-ui-flycheck lsp-ui-peek lsp-ui-sideline lsp-ui-doc lsp-ui-imenu))
+  (dolist (feature '(lsp-ui-peek lsp-ui-sideline lsp-ui-doc lsp-ui-imenu))
     (let* ((sym (--> (intern-soft (concat (symbol-name feature) "-enable"))
                      (and (boundp it) it)))
            (value (symbol-value sym))
@@ -119,9 +123,8 @@ Both should have the form (FILENAME LINE COLUMN)."
 
 (defun lsp-ui--reference-triples (extra)
   "Return references as a list of (FILENAME LINE COLUMN) triples."
-  (let ((refs (lsp--send-request (lsp--make-request
-                                  "textDocument/references"
-                                  (append (lsp--text-document-position-params) extra)))))
+  (let ((refs (lsp-request "textDocument/references"
+                           (append (lsp--text-document-position-params) extra))))
     (sort
      (mapcar
       (lambda (ref)
@@ -141,11 +144,11 @@ Both should have the form (FILENAME LINE COLUMN)."
          (res (-first (lambda (ref) (cl-incf idx) (lsp-ui--location< cur ref)) refs)))
     (if res
         (progn
-         (find-file (car res))
-         (goto-char 1)
-         (forward-line (cadr res))
-         (forward-char (caddr res))
-         (cons idx (length refs)))
+          (find-file (car res))
+          (goto-char 1)
+          (forward-line (cadr res))
+          (forward-char (caddr res))
+          (cons idx (length refs)))
       (cons 0 0))))
 
 ;; TODO Make it efficient
