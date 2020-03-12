@@ -38,6 +38,17 @@ Show informations of the symbols on the current line.
 It also show flycheck diagnostics and LSP code actions
 ![lsp-line](images/lsp-line.gif)
 
+Customization:
+
+- `lsp-ui-sideline-show-diagnostics` show diagnostics messages in sideline
+- `lsp-ui-sideline-show-hover` show hover messages in sideline
+- `lsp-ui-sideline-show-code-actions` show code actions in sideline
+- `lsp-ui-sideline-update-mode`
+When set to 'line' the information will be updated when user
+changes current line otherwise the information will be updated
+when user changes current point
+- `lsp-ui-sideline-delay` seconds to wait before showing sideline
+
 ## lsp-ui-peek:
 
 Add [peek](https://code.visualstudio.com/docs/editor/editingevolved#_peek) feature
@@ -63,6 +74,11 @@ Other cross references:
 (lsp-ui-peek-find-custom 'base "$cquery/base")
 ```
 
+Customization:
+
+- `lsp-ui-peek-enable` enable ‘lsp-ui-peek’
+- `lsp-ui-peek-show-directory` show the directory of files
+
 ## lsp-ui-doc
 
 Show object documentation at point in a child frame.
@@ -74,6 +90,12 @@ Show documentation in a WebKit widget
 Focus into lsp-ui-doc-frame
 ![lsp-ui-doc-focus-frame](images/lsp-ui-doc-focus-frame.gif)
 
+Customization:
+
+- `lsp-ui-doc-enable` enable lsp-ui-doc
+- `lsp-ui-doc-position` Where to display the doc
+- `lsp-ui-doc-delay` Number of seconds before showing the doc
+
 ## lsp-ui-imenu
 
 Show imenu entries.
@@ -83,6 +105,8 @@ Show imenu entries.
 Customization:
 
 - `lsp-ui-imenu-window-width` set window width
+- `lsp-ui-imenu--custom-mode-line-format` mode line format
+
 
 ## Contributing
 
