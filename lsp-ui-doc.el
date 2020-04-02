@@ -420,9 +420,10 @@ FRAME just below the symbol at point."
                             (- x (- (+ frame-relative-symbol-x width)
                                     (frame-outer-width))))
                        x))
-          (frame-y (or (and (<= height frame-relative-symbol-y)
-                            (- y height))
-                       (+ y char-height))))
+          (frame-y (+ (or (and (<= height frame-relative-symbol-y)
+                               (- y height))
+                          (+ y char-height))
+                      (if (fboundp 'window-tab-line-height) (window-tab-line-height) 0))))
     (set-frame-position frame (+ start-x frame-x) (+ start-y frame-y))))
 
 (defun lsp-ui-doc--move-frame (frame)
