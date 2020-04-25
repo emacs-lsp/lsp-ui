@@ -25,12 +25,10 @@ jobs:
         architecture: 'x64'
 
     - uses: purcell/setup-emacs@master
-      env:
       with:
         version: ${{ matrix.emacs_version }}
 
     - uses: conao3/setup-cask@master
-      env:
       with:
         version: 0.8.4
 
