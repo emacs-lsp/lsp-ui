@@ -1,12 +1,27 @@
-EMACS ?= emacs
-SHELL := /bin/bash
+SHELL := /usr/bin/env bash
 
-all:
+EMACS ?= emacs
+CASK ?= cask
+
+build:
 	EMACS=$(EMACS) cask install
 	EMACS=$(EMACS) cask build
 	EMACS=$(EMACS) cask clean-elc
 
-test: all
+ci: build compile test clean
+
+compile:
+	@echo "Compiling..."
+	@$(CASK) $(EMACS) -Q --batch \
+		-L . \
+		--eval '(setq byte-compile-error-on-warn t)' \
+		-f batch-byte-compile \
+		*.el
+
+test:
 	EMACS=$(EMACS) cask exec ert-runner
 
-.PHONY: all test
+clean:
+	EMACS=$(EMACS) cask clean-elc
+
+.PHONY: build ci compile test clean
