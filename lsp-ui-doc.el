@@ -4,7 +4,9 @@
 
 ;; Author: Sebastien Chapuis <sebastien@chapu.is>
 ;; URL: https://github.com/emacs-lsp/lsp-ui
-;; Keywords: lsp, ui
+;; Keywords: languagues, tools
+;; Package-Requires: ((emacs "26.1") (dash "2.14") (lsp-mode "6.0") (markdown-mode "2.3"))
+;; Version: 6.2
 
 ;;; License
 ;;
@@ -38,6 +40,15 @@
 
 (when (featurep 'xwidget-internal)
   (require 'xwidget))
+
+(declare-function make-xwidget "ext:xwidget" (type title width height arguments &optional buffer))
+(declare-function set-xwidget-query-on-exit-flag "ext:xwidget")
+(declare-function xwidget-webkit-mode "ext:xwidget")
+(declare-function xwidget-webkit-goto-uri "ext:xwidget" (xwidget uri))
+(declare-function xwidget-at "ext:xwidget" (pos))
+(declare-function xwidget-webkit-execute-script "ext:xwidget" (xwidget script &optional callback))
+(declare-function xwidget-webkit-execute-script-rv "ext:xwidget" (xwidget script &optional default))
+(declare-function xwidget-resize "ext:xwidget" (xwidget new-width new-height))
 
 (defgroup lsp-ui-doc nil
   "Display informations of the current line."
@@ -719,7 +730,7 @@ BUFFER is the buffer where the request has been made."
       (and (lsp-ui-doc--get-frame)
            (frame-visible-p (lsp-ui-doc--get-frame)))))
 
-(defun lsp-ui--hide-doc-frame-on-window-change (fun window &optional no-record)
+(defun lsp-ui-doc-hide-frame-on-window-change (fun window &optional no-record)
   "Delete the child frame if currently selected window changes.
 Does nothing if the newly-selected window is the same window as
 before, or if the new window is the minibuffer."
@@ -735,7 +746,7 @@ before, or if the new window is the minibuffer."
                              (equal (window-buffer initial-window) doc-buffer)))
               (lsp-ui-doc--hide-frame))))))))
 
-(advice-add #'select-window :around #'lsp-ui--hide-doc-frame-on-window-change)
+(advice-add #'select-window :around #'lsp-ui-doc-hide-frame-on-window-change)
 
 (advice-add 'load-theme :before (lambda (&rest _) (lsp-ui-doc--delete-frame)))
 (add-hook 'window-configuration-change-hook #'lsp-ui-doc--hide-frame)

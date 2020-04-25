@@ -3,8 +3,10 @@
 ;; Copyright (C) 2017 Sebastien Chapuis
 
 ;; Author: Sebastien Chapuis <sebastien@chapu.is>
+;; Package-Requires: ((emacs "26.1") (dash "2.14") (dash-functional "1.2.0") (lsp-mode "6.0"))
 ;; URL: https://github.com/emacs-lsp/lsp-ui
-;; Keywords: lsp, ui
+;; Keywords: languages, tools
+;; Version: 6.2
 
 ;;; License
 ;;
