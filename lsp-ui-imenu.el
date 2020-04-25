@@ -4,7 +4,9 @@
 
 ;; Author: Sebastien Chapuis <sebastien@chapu.is>
 ;; URL: https://github.com/emacs-lsp/lsp-ui
-;; Keywords: lsp, ui
+;; Keywords: languages, tools
+;; Package-Requires: ((emacs "26.1") (dash "2.14") (dash-functional "1.2.0") (lsp-mode "6.0"))
+;; Version: 6.2
 
 ;;; License
 ;;
@@ -24,12 +26,11 @@
 ;; Floor, Boston, MA 02110-1301, USA.
 
 ;;; Commentary:
-;;
+
 ;; Show imenu entries
 ;; Call the function `lsp-ui-imenu'
 ;;
 ;; (define-key lsp-ui-mode-map (kbd "C-c l") 'lsp-ui-imenu)
-;;
 
 ;;; Code:
 
@@ -67,6 +68,7 @@
 
 (defcustom lsp-ui-imenu--custom-mode-line-format nil
   "Custom mode line format to be used in `lsp-ui-menu-mode'."
+  :type 'sexp
   :group 'lsp-ui-menu)
 
 (defconst lsp-ui-imenu--max-bars 8)
@@ -338,8 +340,7 @@ Return the updated COLOR-INDEX."
 (define-derived-mode lsp-ui-imenu-mode special-mode "lsp-ui-imenu"
   "Mode showing imenu entries.")
 
-(defun lsp-ui-imenu-enable (_enable)
-  )
+(defun lsp-ui-imenu-enable (_enable))
 
 (provide 'lsp-ui-imenu)
 ;;; lsp-ui-imenu.el ends here
