@@ -38,16 +38,16 @@ jobs:
         profile: minimal
         toolchain: stable
         override: true
-        components: rls, rust-analysis
+        components: rust-src
 
     - name: Install Rust Analyzer
       env:
         RUST_ANALYZER_VERSION: 2020-04-20
       run: |
-        mkdir -p $GITHUB_WORKSPACE/bin
-        wget https://github.com/rust-analyzer/rust-analyzer/releases/download/$RUST_ANALYZER_VERSION/rust-analyzer-linux -O $GITHUB_WORKSPACE/bin/rust-analyzer
-        chmod +x $GITHUB_WORKSPACE/bin/rust-analyzer
-        export PATH="$PATH:$GITHUB_WORKSPACE/bin"
+        mkdir -p $HOME/bin
+        wget https://github.com/rust-analyzer/rust-analyzer/releases/download/$RUST_ANALYZER_VERSION/rust-analyzer-linux -O $HOME/bin/rust-analyzer
+        chmod +x $HOME/bin/rust-analyzer
+        echo "::add-path::$HOME/bin"
 
     - name: Run tests
       run: 'make ci'
