@@ -46,10 +46,10 @@
 (require 'lsp-ui-doc)
 (require 'dash)
 
-(when (featurep'flycheck)
+(with-eval-after-load 'flycheck
   (require 'lsp-ui-flycheck))
 
-(when (featurep 'winum)
+(with-eval-after-load 'winum
   (when (and (boundp 'winum-ignored-buffers-regexp) lsp-ui-doc-winum-ignore)
     (add-to-list 'winum-ignored-buffers-regexp lsp-ui-doc--buffer-prefix)))
 

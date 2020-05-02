@@ -3,7 +3,6 @@
 ;; Copyright (C) 2017  fmdkdd
 ;; URL: https://github.com/emacs-lsp/lsp-ui
 ;; Keywords: languagues, tools
-;; Package-Requires: ((emacs "26.1") (dash "2.14") (dash-functional "1.2.0") (lsp-mode "6.0"))
 ;; Version: 6.2
 
 ;; This program is free software: you can redistribute it and/or modify
