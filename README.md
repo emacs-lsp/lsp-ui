@@ -1,4 +1,5 @@
-# lsp-ui
+lsp-ui
+======
 
 [![MELPA](https://melpa.org/packages/lsp-ui-badge.svg)](https://melpa.org/#/lsp-ui)
 [![Join the chat](https://badges.gitter.im/emacs-lsp/lsp-ui.svg)](https://gitter.im/emacs-lsp/lsp-ui)
