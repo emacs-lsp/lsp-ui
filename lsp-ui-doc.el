@@ -559,10 +559,11 @@ FN is the function to call on click."
   (let* ((buffer-strings (-> (lsp-ui-doc--inline-untab strings)
                              (lsp-ui-doc--remove-invisibles)
                              (split-string "\n")))
-         (doc-strings (-> (lsp-ui-doc--with-buffer (buffer-string))
-                          (lsp-ui-doc--inline-untab)
-                          (lsp-ui-doc--remove-invisibles)
-                          (split-string "\n")))
+         (doc-strings (--> (lsp-ui-doc--with-buffer (buffer-string))
+                          (lsp-ui-doc--inline-untab it)
+                          (lsp-ui-doc--remove-invisibles it)
+                          (split-string it "\n")
+                          (-take lsp-ui-doc-max-height it)))
          (merged (--> (lsp-ui-doc--inline-faking-frame doc-strings)
                       (-zip-with 'lsp-ui-doc--inline-zip buffer-strings it)
                       (string-join it "\n")
@@ -599,7 +600,7 @@ HEIGHT is the documentation number of lines."
 
 (defun lsp-ui-doc--inline ()
   "Display the doc in the buffer."
-  (-let* ((height (lsp-ui-doc--inline-height))
+  (-let* ((height (min lsp-ui-doc-max-height (lsp-ui-doc--inline-height)))
           ((start . end) (lsp-ui-doc--inline-pos height))
           (buffer-string (buffer-substring start end))
           (ov (if (overlayp lsp-ui-doc--inline-ov) lsp-ui-doc--inline-ov
