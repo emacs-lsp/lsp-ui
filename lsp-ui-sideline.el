@@ -558,7 +558,7 @@ This does not toggle display of flycheck diagnostics or code actions."
    (lsp-ui-sideline-mode
     (add-hook 'post-command-hook 'lsp-ui-sideline nil t)
     (advice-add 'company-pseudo-tooltip-frontend :before 'lsp-ui-sideline--hide-before-company)
-    (add-hook 'lsp-after-diagnostics-hook 'lsp-ui-sideline--diagnostics-changed nil t)
+    (add-hook 'flycheck-after-syntax-check-hook 'lsp-ui-sideline--diagnostics-changed nil t)
     (dolist (cmd lsp-ui-sideline-cmd-erase)
       (advice-add cmd :before 'lsp-ui-sideline--erase))
     (when lsp-ui-sideline-show-diagnostics
@@ -567,7 +567,7 @@ This does not toggle display of flycheck diagnostics or code actions."
     (setq lsp-ui-sideline--tag nil)
     (advice-remove 'company-pseudo-tooltip-frontend 'lsp-ui-sideline--hide-before-company)
     (lsp-ui-sideline--delete-ov)
-    (remove-hook 'lsp-after-diagnostics-hook 'lsp-ui-sideline--diagnostics-changed t)
+    (remove-hook 'flycheck-after-syntax-check-hook  'lsp-ui-sideline--diagnostics-changed t)
     (remove-hook 'post-command-hook 'lsp-ui-sideline t)
     (dolist (cmd lsp-ui-sideline-cmd-erase)
       (advice-remove cmd 'lsp-ui-sideline--erase))
