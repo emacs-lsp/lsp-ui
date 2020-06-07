@@ -135,7 +135,7 @@ Both should have the form (FILENAME LINE COLUMN)."
 (defun lsp-ui-find-next-reference (&optional extra)
   "Find next reference of the symbol at point."
   (interactive)
-  (let* ((cur (list buffer-file-name (lsp--cur-line) (lsp--cur-column)))
+  (let* ((cur (list buffer-file-name (line-number-at-pos) (- (point) (line-beginning-position))))
          (refs (lsp-ui--reference-triples extra))
          (idx -1)
          (res (-first (lambda (ref) (cl-incf idx) (lsp-ui--location< cur ref)) refs)))
@@ -152,7 +152,7 @@ Both should have the form (FILENAME LINE COLUMN)."
 (defun lsp-ui-find-prev-reference (&optional extra)
   "Find previous reference of the symbol at point."
   (interactive)
-  (let* ((cur (list buffer-file-name (lsp--cur-line) (lsp--cur-column)))
+  (let* ((cur (list buffer-file-name (line-number-at-pos) (- (point) (line-beginning-position))))
          (refs (lsp-ui--reference-triples extra))
          (idx -1)
          (res (-last (lambda (ref) (and (lsp-ui--location< ref cur) (cl-incf idx))) refs)))
