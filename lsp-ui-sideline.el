@@ -473,7 +473,7 @@ from the language server."
                      (outside-comment (eq (nth 4 parsing-state) nil)))
                 ;; Skip strings and comments
                 (when (and symbol (not in-string) outside-comment)
-                  (push (list symbol tag bounds (lsp--position (1- line-widen) (- (point) bol))) symbols))))
+                  (push (list symbol tag bounds (list :line (1- line-widen) :character (- (point) bol))) symbols))))
             (seq-do #'lsp--cancel-request lsp-ui-sideline--requests)
             (dolist (ov lsp-ui-sideline--ovs)
               (when (eq (overlay-get ov 'kind) 'info)
