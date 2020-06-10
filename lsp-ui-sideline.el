@@ -36,6 +36,8 @@
 (require 'seq)
 (require 'subr-x)
 
+(require 'lsp-ui-modeline)
+
 (defgroup lsp-ui-sideline nil
   "Display information for the current line."
   :group 'tools
@@ -73,6 +75,12 @@
   "Whether to show code actions in sideline."
   :type 'boolean
   :group 'lsp-ui-sideline)
+
+(defcustom lsp-ui-code-actions-type 'modeline
+  "The UI type of code actions."
+  :type '(choice (const modeline)
+                 (const sideline))
+  :group 'lsp-ui)
 
 (defcustom lsp-ui-sideline-update-mode 'point
   "Define the mode for updating sideline information.
@@ -127,7 +135,7 @@ It is used to know when the window has changed of width.")
 
 (defvar-local lsp-ui-sideline--timer nil)
 
-(defvar-local lsp-ui-sideline--code-actions nil
+(defvar-local lsp-ui--code-actions nil
   "Holds the latest code actions.")
 
 (defface lsp-ui-sideline-symbol
@@ -378,18 +386,14 @@ Push sideline overlays on `lsp-ui-sideline--ovs'."
 (defun lsp-ui-sideline-apply-code-actions nil
   "Choose and apply code action(s) on the current line."
   (interactive)
-  (unless lsp-ui-sideline--code-actions
+  (unless lsp-ui--code-actions
     (user-error "No code actions on the current line"))
-  (lsp-execute-code-action (lsp--select-action lsp-ui-sideline--code-actions)))
+  (lsp-execute-code-action (lsp--select-action lsp-ui--code-actions)))
 
 (defun lsp-ui-sideline--code-actions (actions bol eol)
-  "Show code ACTIONS."
-  (when lsp-ui-sideline-actions-kind-regex
-    (setq actions (seq-filter (-lambda ((&hash "kind"))
-                                (or (not kind)
-                                    (s-match lsp-ui-sideline-actions-kind-regex kind)))
-                              actions)))
-  (setq lsp-ui-sideline--code-actions actions)
+  "Show code ACTIONS on sideline.
+BOL is the beginning of line.
+EOL is the end of line."
   (dolist (ov lsp-ui-sideline--ovs)
     (when (eq (overlay-get ov 'kind) 'actions)
       (setq lsp-ui-sideline--occupied-lines
@@ -419,6 +423,20 @@ Push sideline overlays on `lsp-ui-sideline--ovs'."
         (overlay-put ov 'kind 'actions)
         (overlay-put ov 'position (car pos-ov))
         (push ov lsp-ui-sideline--ovs)))))
+
+(defun lsp-ui--code-actions (actions bol eol)
+  "Show code ACTIONS.
+BOL is the beginning of line.
+EOL is the end of line."
+  (when lsp-ui-sideline-actions-kind-regex
+    (setq actions (seq-filter (-lambda ((&hash "kind"))
+                                (or (not kind)
+                                    (s-match lsp-ui-sideline-actions-kind-regex kind)))
+                              actions)))
+  (setq lsp-ui--code-actions actions)
+  (if (equal lsp-ui-code-actions-type 'sideline)
+      (lsp-ui-sideline--code-actions actions bol eol)
+    (lsp-ui-modeline--code-actions actions)))
 
 (defun lsp-ui-sideline--calculate-tag()
   "Calculate the tag used to determine whether to update sideline information."
@@ -452,7 +470,7 @@ from the language server."
                      :range (lsp--region-to-range bol eol)
                      :context (list :diagnostics (lsp-cur-line-diagnostics)))
              (lsp--text-document-code-action-params))
-           (lambda (actions) (lsp-ui-sideline--code-actions actions bol eol))
+           (lambda (actions) (lsp-ui--code-actions actions bol eol))
            :mode 'alive
            :cancel-token :lsp-ui-code-actions))
         ;; Go through all symbols and request hover information.  Note that the symbols are
@@ -575,7 +593,7 @@ This does not toggle display of flycheck diagnostics or code actions."
       (kill-local-variable 'flycheck-display-errors-function)))))
 
 (defun lsp-ui-sideline-enable (enable)
-  "Enable/disable `lsp-ui-sideline-mode'."
+  "If ENABLE is non-nil, enable `lsp-ui-sideline-mode`, otherwise disable it."
   (lsp-ui-sideline-mode (if enable 1 -1))
   (if enable
       (add-hook 'before-revert-hook 'lsp-ui-sideline--delete-ov nil t)
