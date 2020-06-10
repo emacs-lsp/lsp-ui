@@ -50,6 +50,14 @@ changes current line otherwise the information will be updated
 when user changes current point
 - `lsp-ui-sideline-delay` seconds to wait before showing sideline
 
+## lsp-ui-modeline:
+
+Instead of showing code actions on sideline, you can change it to show in a less introsive way on `modeline`:
+
+``` elisp
+(setq lsp-ui-code-actions-type 'modeline)
+```
+
 ## lsp-ui-peek:
 
 Add [peek](https://code.visualstudio.com/docs/editor/editingevolved#_peek) feature
