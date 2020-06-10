@@ -76,7 +76,7 @@
   :type 'boolean
   :group 'lsp-ui-sideline)
 
-(defcustom lsp-ui-code-actions-type 'modeline
+(defcustom lsp-ui-code-actions-type 'sideline
   "The UI type of code actions."
   :type '(choice (const modeline)
                  (const sideline))
