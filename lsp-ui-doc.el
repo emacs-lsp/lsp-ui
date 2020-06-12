@@ -290,15 +290,15 @@ MarkedString | MarkedString[] | MarkupContent (as defined in the LSP).
 We don't extract the string that `lps-line' is already displaying."
   (cond
    ((stringp contents) (lsp-ui-doc--extract-marked-string contents)) ;; MarkedString
-   ((sequencep contents) ;; MarkedString[]
+   ((vectorp contents) ;; MarkedString[]
     (mapconcat 'lsp-ui-doc--extract-marked-string
                (lsp-ui-doc--filter-marked-string (seq-filter #'identity contents))
                "\n\n"
                ;; (propertize "\n\n" 'face '(:height 0.4))
                ))
    ;; when we get markdown contents, render using emacs gfm-view-mode / markdown-mode
-   ((string= (lsp:markup-content-kind contents) "markdown") ;; Markdown MarkupContent
-    (lsp-ui-doc--extract-marked-string (lsp:markup-content-value contents) "markdown"))
+   ((string= (lsp:markup-content-kind contents) lsp/markup-kind-markdown) ;; Markdown MarkupContent
+    (lsp-ui-doc--extract-marked-string (lsp:markup-content-value contents) lsp/markup-kind-markdown))
    ((lsp:markup-content-kind contents) (lsp:markup-content-value contents)) ;; Plaintext MarkupContent
    ((lsp-marked-string? contents) ;; MarkedString
     (lsp-ui-doc--extract-marked-string (lsp:marked-string-value contents)

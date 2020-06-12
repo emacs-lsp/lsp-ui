@@ -222,7 +222,7 @@ function signature)."
   (when contents
     (cond
      ((stringp contents) contents)
-     ((sequencep contents) ;; MarkedString[]
+     ((vectorp contents) ;; MarkedString[]
       (seq-find (lambda (it) (and (lsp-marked-string? it)
                                   (lsp-get-renderer (lsp:marked-string-language it))))
                 contents))
@@ -386,9 +386,9 @@ Push sideline overlays on `lsp-ui-sideline--ovs'."
 (defun lsp-ui-sideline--code-actions (actions bol eol)
   "Show code ACTIONS."
   (when lsp-ui-sideline-actions-kind-regex
-    (setq actions (seq-filter (-lambda ((&hash "kind"))
-                                (or (not kind)
-                                    (s-match lsp-ui-sideline-actions-kind-regex kind)))
+    (setq actions (seq-filter (-lambda ((&CodeAction :kind?))
+                                (or (not kind?)
+                                    (s-match lsp-ui-sideline-actions-kind-regex kind?)))
                               actions)))
   (setq lsp-ui-sideline--code-actions actions)
   (dolist (ov lsp-ui-sideline--ovs)
