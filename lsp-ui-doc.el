@@ -30,6 +30,7 @@
 
 ;;; Code:
 
+(require 'lsp-protocol)
 (require 'lsp-mode)
 (require 'dash)
 (require 'dash-functional)
@@ -261,9 +262,11 @@ Because some variables are buffer local.")
   (string-trim-right
    (let* ((string (if (stringp marked-string)
                       marked-string
-                    (gethash "value" marked-string)))
-          (with-lang (hash-table-p marked-string))
-          (language (or (and with-lang (or (gethash "language" marked-string) (gethash "kind" marked-string)))
+                    (lsp:markup-content-value marked-string)))
+          (with-lang (lsp-marked-string? marked-string))
+          (language (or (and with-lang
+                             (or (lsp:marked-string-language marked-string)
+                                 (lsp:markup-content-kind marked-string)))
                         language)))
      (cond
       (lsp-ui-doc-use-webkit
@@ -273,8 +276,8 @@ Because some variables are buffer local.")
       (t (lsp--render-element (lsp-ui-doc--inline-formatted-string string)))))))
 
 (defun lsp-ui-doc--filter-marked-string (list-marked-string)
-  (let ((groups (--separate (and (hash-table-p it)
-                                 (lsp-get-renderer (gethash "language" it)))
+  (let ((groups (--separate (and (lsp-marked-string? it)
+                                 (lsp-get-renderer (lsp:marked-string-language it)))
                             (append list-marked-string nil))))
     (if lsp-ui-doc-include-signature
         list-marked-string
@@ -294,12 +297,12 @@ We don't extract the string that `lps-line' is already displaying."
                ;; (propertize "\n\n" 'face '(:height 0.4))
                ))
    ;; when we get markdown contents, render using emacs gfm-view-mode / markdown-mode
-   ((string= (gethash "kind" contents) "markdown") ;; Markdown MarkupContent
-    (lsp-ui-doc--extract-marked-string (gethash "value" contents) "markdown"))
-   ((gethash "kind" contents) (gethash "value" contents)) ;; Plaintext MarkupContent
-   ((gethash "language" contents) ;; MarkedString
-    (lsp-ui-doc--extract-marked-string (gethash "value" contents)
-                                       (gethash "language" contents)))))
+   ((string= (lsp:markup-content-kind contents) "markdown") ;; Markdown MarkupContent
+    (lsp-ui-doc--extract-marked-string (lsp:markup-content-value contents) "markdown"))
+   ((lsp:markup-content-kind contents) (lsp:markup-content-value contents)) ;; Plaintext MarkupContent
+   ((lsp-marked-string? contents) ;; MarkedString
+    (lsp-ui-doc--extract-marked-string (lsp:marked-string-value contents)
+                                       (lsp:marked-string-language contents)))))
 
 (defun lsp-ui-doc--webkit-run-xwidget ()
   "Launch embedded WebKit instance."
@@ -700,7 +703,7 @@ HEIGHT is the documentation number of lines."
                         :cancel-token :lsp-ui-doc-hover)))))))
       (lsp-ui-doc--hide-frame))))
 
-(defun lsp-ui-doc--callback (hover bounds buffer)
+(lsp-defun lsp-ui-doc--callback ((hover &as &Hover? :contents) bounds buffer)
   "Process the received documentation.
 HOVER is the doc returned by the LS.
 BOUNDS are points of the symbol that have been requested.
@@ -712,7 +715,7 @@ BUFFER is the buffer where the request has been made."
         (setq lsp-ui-doc--bounds bounds)
         (lsp-ui-doc--display
          (thing-at-point 'symbol t)
-         (-some->> (gethash "contents" hover)
+         (-some->> contents
            lsp-ui-doc--extract
            (replace-regexp-in-string "\r" ""))))
     (lsp-ui-doc--hide-frame)))
