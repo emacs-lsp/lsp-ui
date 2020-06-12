@@ -34,6 +34,7 @@
 
 ;;; Code:
 
+(require 'lsp-protocol)
 (require 'lsp-mode)
 (require 'xref)
 (require 'dash)
