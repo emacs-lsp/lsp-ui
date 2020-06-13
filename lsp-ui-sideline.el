@@ -226,7 +226,7 @@ function signature)."
       (seq-find (lambda (it) (and (lsp-marked-string? it)
                                   (lsp-get-renderer (lsp:marked-string-language it))))
                 contents))
-     ((lsp:markup-content-kind contents) contents) ;; MarkupContent
+     ((lsp-markup-content? contents) contents) ;; MarkupContent
      ((lsp:marked-string-language contents) contents))))
 
 (defun lsp-ui-sideline--format-info (marked-string)
