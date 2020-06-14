@@ -299,7 +299,7 @@ We don't extract the string that `lps-line' is already displaying."
    ;; when we get markdown contents, render using emacs gfm-view-mode / markdown-mode
    ((string= (lsp-markup-content? contents) lsp/markup-kind-markdown) ;; Markdown MarkupContent
     (lsp-ui-doc--extract-marked-string (lsp:markup-content-value contents) lsp/markup-kind-markdown))
-   ((lsp:markup-content-kind contents) (lsp:markup-content-value contents)) ;; Plaintext MarkupContent
+   ((lsp-markup-content? contents) (lsp:markup-content-value contents)) ;; Plaintext MarkupContent
    ((lsp-marked-string? contents) ;; MarkedString
     (lsp-ui-doc--extract-marked-string (lsp:marked-string-value contents)
                                        (lsp:marked-string-language contents)))))

@@ -227,7 +227,7 @@ function signature)."
                                   (lsp-get-renderer (lsp:marked-string-language it))))
                 contents))
      ((lsp-markup-content? contents) contents) ;; MarkupContent
-     ((lsp:marked-string-language contents) contents))))
+     ((lsp-marked-string? contents) contents))))
 
 (defun lsp-ui-sideline--format-info (marked-string)
   "Format MARKED-STRING.
