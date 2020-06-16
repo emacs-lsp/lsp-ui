@@ -289,7 +289,6 @@ CONTENTS can be differents type of values:
 MarkedString | MarkedString[] | MarkupContent (as defined in the LSP).
 We don't extract the string that `lps-line' is already displaying."
   (cond
-   ((stringp contents) (lsp-ui-doc--extract-marked-string contents)) ;; MarkedString
    ((vectorp contents) ;; MarkedString[]
     (mapconcat 'lsp-ui-doc--extract-marked-string
                (lsp-ui-doc--filter-marked-string (seq-filter #'identity contents))
@@ -297,12 +296,17 @@ We don't extract the string that `lps-line' is already displaying."
                ;; (propertize "\n\n" 'face '(:height 0.4))
                ))
    ;; when we get markdown contents, render using emacs gfm-view-mode / markdown-mode
-   ((string= (lsp-markup-content? contents) lsp/markup-kind-markdown) ;; Markdown MarkupContent
-    (lsp-ui-doc--extract-marked-string (lsp:markup-content-value contents) lsp/markup-kind-markdown))
-   ((lsp-markup-content? contents) (lsp:markup-content-value contents)) ;; Plaintext MarkupContent
-   ((lsp-marked-string? contents) ;; MarkedString
+   ((and (lsp-marked-string? contents)
+         (lsp:marked-string-language contents))
     (lsp-ui-doc--extract-marked-string (lsp:marked-string-value contents)
-                                       (lsp:marked-string-language contents)))))
+                                       (lsp:marked-string-language contents)))
+   ((lsp-marked-string? contents) (lsp-ui-doc--extract-marked-string contents))
+   ((and (lsp-markup-content? contents)
+         (string= (lsp:markup-content-kind contents) lsp/markup-kind-markdown))
+    (lsp-ui-doc--extract-marked-string (lsp:markup-content-value contents) lsp/markup-kind-markdown))
+   ((and (lsp-markup-content? contents)
+         (string= (lsp:markup-content-kind contents) lsp/markup-kind-plain-text))
+    (lsp:markup-content-value contents))))
 
 (defun lsp-ui-doc--webkit-run-xwidget ()
   "Launch embedded WebKit instance."
