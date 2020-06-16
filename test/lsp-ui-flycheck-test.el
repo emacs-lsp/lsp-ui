@@ -33,7 +33,7 @@
            (buf (get-buffer-create "test-buffer"))
            (dir (lsp-ui-test-create-project-buffer buf string))
            (file (concat dir "src/main.rs"))
-           (diagnostics "clippy: this comparison involving the minimum or maximum element for this type contains a case that is always true or always false"))
+           (diagnostics "this comparison involving the minimum or maximum element for this type contains a case that is always true or always false"))
       (sit-for 3)
       (with-current-buffer buf
         (flycheck-buffer)

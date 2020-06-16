@@ -25,7 +25,7 @@
         (let* ((ov1 (nth 0 lsp-ui-sideline--ovs))
                (ov2 (nth 1 lsp-ui-sideline--ovs))
                (msg1 " `#[warn(unused_variables)]` on by default [unused_variables]")
-               (msg2 " rustc: unused variable: `bar`"))
+               (msg2 " unused variable: `bar`"))
           (should (string= (substring-no-properties (overlay-get ov1 'after-string)) msg1))
           (should (string= (substring-no-properties (overlay-get ov2 'after-string)) msg2))
 
