@@ -33,18 +33,20 @@
 
 ;;; Code:
 
+(require 'dash)
+(require 'lsp-protocol)
+
+(require 'lsp-ui-sideline)
+(require 'lsp-ui-peek)
+(require 'lsp-ui-imenu)
+(require 'lsp-ui-doc)
+
 (defgroup lsp-ui nil
   "‘lsp-ui’ contains a series of useful UI integrations for ‘lsp-mode’."
   :group 'tools
   :group 'convenience
   :link '(custom-manual "(lsp-ui) Top")
   :link '(info-link "(lsp-ui) Customizing"))
-
-(require 'lsp-ui-sideline)
-(require 'lsp-ui-peek)
-(require 'lsp-ui-imenu)
-(require 'lsp-ui-doc)
-(require 'dash)
 
 (with-eval-after-load 'flycheck
   (require 'lsp-ui-flycheck))
@@ -119,15 +121,13 @@ Both should have the form (FILENAME LINE COLUMN)."
       (< (caddr x) (caddr y)))))
 
 (defun lsp-ui--reference-triples (extra)
-  "Return references as a list of (FILENAME LINE COLUMN) triples."
+  "Return references as a list of (FILENAME LINE COLUMN) triples given EXTRA."
   (let ((refs (lsp-request "textDocument/references"
                            (append (lsp--text-document-position-params) extra))))
     (sort
      (mapcar
-      (lambda (ref)
-        (-let* (((&hash "uri" uri "range" range) ref)
-                ((&hash "line" line "character" col) (gethash "start" range)))
-          (list (lsp--uri-to-path uri) line col)))
+      (-lambda ((&Location :uri :range (&Range :start (&Position :line :character))))
+        (list (lsp--uri-to-path uri) line character))
       refs)
      #'lsp-ui--location<)))
 

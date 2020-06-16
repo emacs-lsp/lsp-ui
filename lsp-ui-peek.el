@@ -34,6 +34,7 @@
 
 ;;; Code:
 
+(require 'lsp-protocol)
 (require 'lsp-mode)
 (require 'xref)
 (require 'dash)
@@ -566,7 +567,8 @@ XREFS is a list of references/definitions."
 
 (defun lsp-ui-peek--find-xrefs (input method param)
   "Find INPUT references.
-KIND is ‘references’, ‘definitions’ or a custom kind."
+METHOD is ‘references’, ‘definitions’, `implementation` or a custom kind.
+PARAM is the request params."
   (setq lsp-ui-peek--method method)
   (let ((xrefs (lsp-ui-peek--get-references method param)))
     (unless xrefs
@@ -578,11 +580,12 @@ KIND is ‘references’, ‘definitions’ or a custom kind."
              (not (cdr xrefs))
              (= (length (plist-get (car xrefs) :xrefs)) 1))
         (let ((x (car (plist-get (car xrefs) :xrefs))))
-          (-if-let (uri (gethash "uri" x))
-              (-let (((&hash "start" (&hash "line" "character")) (gethash "range" x)))
+          (-if-let (uri (lsp:location-uri x))
+              (-let (((&Range :start (&Position :line :character)) (lsp:location-range x)))
                 (lsp-ui-peek--goto-xref `(:file ,(lsp--uri-to-path uri) :line ,line :column ,character)))
-            (-let (((&hash "start" (&hash "line" "character")) (or (gethash "targetSelectionRange" x) (gethash "targetRange" x))))
-              (lsp-ui-peek--goto-xref `(:file ,(lsp--uri-to-path (gethash "targetUri" x)) :line ,line :column ,character)))))
+            (-let (((&Range :start (&Position :line :character)) (or (lsp:location-link-target-selection-range x)
+                                                                     (lsp:location-link-target-range x))))
+              (lsp-ui-peek--goto-xref `(:file ,(lsp--uri-to-path (lsp:location-link-target-uri x)) :line ,line :column ,character)))))
       (lsp-ui-peek-mode)
       (lsp-ui-peek--show xrefs))))
 
@@ -610,7 +613,7 @@ The symbols are found matching PATTERN."
   (interactive (list (read-string "workspace/symbol: "
                                   nil 'xref--read-pattern-history)))
   (lsp-ui-peek--find-xrefs pattern "workspace/symbol"
-                           (append extra (list :query pattern))))
+                           (append extra (lsp-make-workspace-symbol-params :query pattern))))
 
 (defun lsp-ui-peek-find-custom (method &optional extra)
   "Find custom references.
@@ -639,21 +642,23 @@ START and END are delimiters."
         `(,line . ,(concat before line after))))))
 
 (defun lsp-ui-peek--xref-make-item (filename loc)
-  "Return an item from a LOCATION in FILENAME.
+  "Return an item from FILENAME given a LOC.
 LOCATION can be either a LSP Location or SymbolInformation."
   ;; TODO: Read more informations from SymbolInformation.
   ;;       For now, only the location is used.
-  (-let* ((loc (or (gethash "location" loc) loc))
-          (range (or (gethash "range" loc) (gethash "targetSelectionRange" loc) (gethash "targetRange" loc)))
-          ((&hash "start" pos-start "end" pos-end) range)
-          ((&hash "line" start-line "character" start-col) pos-start)
-          ((&hash "line" end-line "character" end-col) pos-end)
+  (-let* ((loc (or (lsp:symbol-information-location loc) loc))
+          (range (or (lsp:location-range loc)
+                     (lsp:location-link-target-selection-range loc)
+                     (lsp:location-link-target-range loc)))
+          ((&Range :start pos-start :end pos-end) range)
+          ((&Position :line start-line :character start-col) pos-start)
+          ((&Position :line end-line :character end-col) pos-end)
           ((line . chunk) (lsp-ui-peek--extract-chunk-from-buffer pos-start start-col
                                                                   (when (= start-line end-line) end-col))))
     (list :summary (or line filename)
           :chunk (or chunk filename)
           :file filename
-          :line (gethash "line" pos-start)
+          :line start-line
           :column start-col)))
 
 (defun lsp-ui-peek--fontify-buffer (filename)
@@ -697,7 +702,11 @@ references.  The function returns a list of `ls-xref-item'."
   "Get all references/definitions for the symbol under point.
 Returns item(s)."
   (-when-let* ((locs (lsp-request method params))
-               (locs (if (listp locs) locs (if (vectorp locs) (append locs nil) (list locs)))))
+               (locs (if (listp locs)
+                         locs
+                       (if (vectorp locs)
+                           (append locs nil)
+                         (list locs)))))
     (-filter
      (-lambda ((&plist :file))
        (or (f-file? file)
@@ -705,11 +714,11 @@ Returns item(s)."
             (lsp-log "The following file %s is missing, ignoring from the results."
                      file))))
      (mapcar #'lsp-ui-peek--get-xrefs-list
-             (if (gethash "uri" (car locs))
+             (if (lsp:location-uri (car locs))
                  ;; Location[]
-                 (--group-by (lsp--uri-to-path (gethash "uri" it)) locs)
+                 (--group-by (lsp--uri-to-path (lsp:location-uri it)) locs)
                ;; LocationLink[]
-               (--group-by (lsp--uri-to-path (gethash "targetUri" it)) locs))))))
+               (--group-by (lsp--uri-to-path (lsp:location-link-target-uri it)) locs))))))
 
 (defvar lsp-ui-mode-map)
 

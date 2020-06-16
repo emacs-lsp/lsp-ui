@@ -27,10 +27,12 @@
 
 ;;; Code:
 
-(require 'lsp-mode)
 (require 'flycheck)
 (require 'pcase)
 (require 'dash)
+
+(require 'lsp-protocol)
+(require 'lsp-mode)
 
 (defgroup lsp-ui-flycheck nil
   "The LSP extension to display syntax checking."
@@ -39,8 +41,6 @@
   :group 'lsp-ui
   :link '(custom-manual "(lsp-ui-flycheck) Top")
   :link '(info-link "(lsp-ui-flycheck) Customizing"))
-
-
 
 (defcustom lsp-ui-flycheck-list-position 'bottom
   "Position where `lsp-ui-flycheck-list' will show diagnostics for the whole workspace."
@@ -72,15 +72,17 @@ Use `lsp-diagnostics' to receive diagnostics from your LSP server."
                                       'face 'dired-directory)
                           (propertize "\n" 'face '(:height 0.2)))))
                (dolist (diag diagnostic)
-                 (let* ((message (or (lsp-diagnostic-message diag) "???"))
-                        (severity (or (lsp-diagnostic-severity diag) 1))
-                        (line (1+ (lsp-diagnostic-line diag)))
-                        (face (cond ((= severity 1) 'error)
-                                    ((= severity 2) 'warning)
-                                    (t 'success)))
-                        (text (concat (propertize (number-to-string line) 'face face)
-                                      ": "
-                                      (car (split-string message "\n")))))
+                 (-let* (((&Diagnostic :message :severity? :source?
+                                       :range (&Range :start (&Position :line start-line))) diag)
+                         (formatted-message (or (if source? (format "%s: %s" source? message) message) "???"))
+                         (severity (or severity? 1))
+                         (line (1+ start-line))
+                         (face (cond ((= severity 1) 'error)
+                                     ((= severity 2) 'warning)
+                                     (t 'success)))
+                         (text (concat (propertize (number-to-string line) 'face face)
+                                       ": "
+                                       (car (split-string formatted-message "\n")))))
                    (add-text-properties 0 (length text) `(diag ,diag file ,file window ,window) text)
                    (insert (concat text "\n")))))
              (lsp-diagnostics)))
@@ -98,7 +100,7 @@ Use `lsp-diagnostics' to receive diagnostics from your LSP server."
         (window (selected-window)))
     (with-current-buffer buffer
       (lsp-ui-flycheck-list--update window workspace))
-    (add-hook 'lsp-after-diagnostics-hook 'lsp-ui-flycheck-list--refresh nil t)
+    (add-hook 'lsp-diagnostics-updated-hook 'lsp-ui-flycheck-list--refresh nil t)
     (setq lsp-ui-flycheck-list--buffer buffer)
     (let ((win (display-buffer-in-side-window
                 buffer `((side . ,lsp-ui-flycheck-list-position) (slot . 5) (window-width . 0.20)))))
@@ -118,10 +120,10 @@ Use `lsp-diagnostics' to receive diagnostics from your LSP server."
 
 (defun lsp-ui-flycheck-list--open ()
   (-when-let* ((diag (get-text-property (point) 'diag))
+               ((&Diagnostic :range (&Range :start (&Position :line start-line
+                                                              :character start-column))) diag)
                (file (get-text-property (point) 'file))
                (window (get-text-property (point) 'window))
-               (line (lsp-diagnostic-line diag))
-               (column (lsp-diagnostic-column diag))
                (marker (with-current-buffer
                            (or (get-file-buffer file)
                                (find-file-noselect file))
@@ -129,8 +131,8 @@ Use `lsp-diagnostics' to receive diagnostics from your LSP server."
                            (widen)
                            (save-excursion
                              (goto-char 1)
-                             (forward-line line)
-                             (forward-char column)
+                             (forward-line start-line)
+                             (forward-char start-column)
                              (point-marker))))))
     (set-window-buffer window (marker-buffer marker) t)
     (with-selected-window window
