@@ -221,13 +221,13 @@ We prioritize string with a language (which is probably a type or a
 function signature)."
   (when contents
     (cond
-     ((stringp contents) contents)
-     ((vectorp contents) ;; MarkedString[]
+     ((lsp-marked-string? contents) contents)
+     ((vectorp contents)
       (seq-find (lambda (it) (and (lsp-marked-string? it)
                                   (lsp-get-renderer (lsp:marked-string-language it))))
                 contents))
-     ((lsp-markup-content? contents) contents) ;; MarkupContent
-     ((lsp-marked-string? contents) contents))))
+     ((lsp-markup-content? contents) contents))))
+
 
 (defun lsp-ui-sideline--format-info (marked-string)
   "Format MARKED-STRING.
