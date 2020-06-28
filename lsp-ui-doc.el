@@ -607,8 +607,7 @@ HEIGHT is the documentation number of lines."
     (lsp-ui-doc--render-buffer)
     (if (lsp-ui-doc--inline-p)
         (lsp-ui-doc--inline)
-      (when (or (not lsp-ui-doc-use-webkit)
-                (not (lsp-ui-doc--get-frame)))
+      (unless lsp-ui-doc-use-webkit
         (lsp-ui-doc--set-frame (lsp-ui-doc--make-frame)))
       (unless (frame-visible-p (lsp-ui-doc--get-frame))
         (make-frame-visible (lsp-ui-doc--get-frame))))))
@@ -624,7 +623,6 @@ The structure of INFO is defined in the documentation of `posframe-show'."
 
 (defun lsp-ui-doc--make-frame ()
   "Create the child frame and return it."
-  (lsp-ui-doc--delete-frame)
   (let* ((before-make-frame-hook nil)
         (buffer-name (lsp-ui-doc--make-buffer-name))
         (buffer (get-buffer-create buffer-name))
