@@ -241,7 +241,7 @@ Because some variables are buffer local.")
 
 (defun lsp-ui-doc--inline-wrapped-line (string)
   "Wraps a line of text for inline display."
-  (let ((doc-max-width (lsp-ui-doc--inline-window-width)))
+  (let ((doc-max-width (+ (window-hscroll) (lsp-ui-doc--inline-window-width))))
     (cond ((string-empty-p string) "")
           ((< (length string) doc-max-width) string)
           (t (concat (substring string 0 (- doc-max-width 4))
@@ -543,7 +543,7 @@ FN is the function to call on click."
      1))
 
 (defun lsp-ui-doc--inline-zip (s1 s2)
-  (let* ((width (lsp-ui-doc--inline-window-width))
+  (let* ((width (+ (window-hscroll) (lsp-ui-doc--inline-window-width)))
          (max-s1 (- width lsp-ui-doc--inline-width 2)))
     (truncate-string-to-width
      (concat (truncate-string-to-width s1 max-s1 nil ?\s) s2)
