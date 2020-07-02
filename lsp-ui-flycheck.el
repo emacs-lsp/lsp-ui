@@ -168,15 +168,6 @@ Use `lsp-diagnostics' to receive diagnostics from your LSP server."
   (setq mode-line-format nil)
   (add-hook 'post-command-hook 'lsp-ui-flycheck-list--post-command nil t))
 
-(define-obsolete-function-alias 'lsp-ui-flycheck-add-mode
-  'lsp-flycheck-add-mode "lsp-mode 6.3")
-
-(define-obsolete-function-alias 'lsp-ui-flycheck-enable
-  'lsp-flycheck-enable  "lsp-mode 6.3")
-
-(define-obsolete-variable-alias 'lsp-ui-flycheck-live-reporting
-  'lsp-flycheck-live-reporting  "lsp-mode 6.3")
-
 (declare-function lsp-ui--workspace-path "lsp-ui" (path))
 
 (provide 'lsp-ui-flycheck)
