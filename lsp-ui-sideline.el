@@ -234,7 +234,7 @@ function signature)."
 If the string has a language, we fontify it with the function provided
 by `lsp-mode'.
 MARKED-STRING is the string returned by `lsp-ui-sideline--extract-info'."
-  (when (and marked-string (lsp-marked-string? marked-string))
+  (when (and marked-string (or (lsp-marked-string? marked-string) (lsp-markup-content? marked-string)))
     (setq marked-string (lsp--render-element marked-string))
     (add-face-text-property 0 (length marked-string) 'lsp-ui-sideline-symbol-info nil marked-string)
     (add-face-text-property 0 (length marked-string) 'default t marked-string)
