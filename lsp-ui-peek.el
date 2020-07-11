@@ -161,6 +161,9 @@ will cause performances issues.")
 (defvar-local lsp-ui-peek--method nil)
 (defvar-local lsp-ui-peek--deactivate-keymap-fn nil)
 
+(defvar lsp--peek-save-major-mode nil
+  "Stores the major mode for lsp ui peek.")
+
 (defvar lsp-ui-peek--jumps (make-hash-table)
   "Hashtable which stores all jumps on a per window basis.")
 
@@ -353,9 +356,6 @@ XREFS is a list of references/definitions."
           (header2 (format " %s %s" lsp-ui-peek--size-list
                            (string-remove-prefix "workspace/" (string-remove-prefix "textDocument/" lsp-ui-peek--method))))
           (ref-view (--> chunk
-                         (if (eq lsp-ui-peek-fontify 'on-demand)
-                             (lsp-ui-peek--render major-mode it)
-                           chunk)
                          (subst-char-in-string ?\t ?\s it)
                          (concat header it)
                          (split-string it "\n")))
@@ -638,11 +638,22 @@ START and END are delimiters."
       (let* ((before (buffer-substring (line-beginning-position line-start) (line-beginning-position)))
              (line (buffer-substring (line-beginning-position) (line-end-position)))
              (after (buffer-substring (line-end-position) (line-end-position line-end)))
-             (len (length line)))
-        (add-face-text-property (min start len)
-                                (if (null end) len (min end len))
-                                'lsp-ui-peek-highlight t line)
-        `(,line . ,(concat before line after))))))
+             (len (length line))
+             (chunk (concat before line after))
+             (start-in-chunk (length before)))
+
+        (when (eq lsp-ui-peek-fontify 'on-demand)
+          (setq chunk (lsp-ui-peek--render lsp--peek-save-major-mode chunk)))
+
+        (remove-text-properties (+ (min start len) start-in-chunk)
+                                (+ (if (null end) len (min end len)) start-in-chunk) '(face nil)
+                                chunk)
+
+        (add-face-text-property (+ (min start len) start-in-chunk)
+                                (+ (if (null end) len (min end len)) start-in-chunk)
+                                'lsp-ui-peek-highlight t chunk)
+
+        `(,(substring chunk start-in-chunk (+ start-in-chunk len)) . ,chunk)))))
 
 (defun lsp-ui-peek--xref-make-item (filename loc)
   "Return an item from FILENAME given a LOC.
@@ -683,6 +694,7 @@ references.  The function returns a list of `ls-xref-item'."
   (let* ((filename (car file))
          (visiting (find-buffer-visiting filename))
          (fn (lambda (loc) (lsp-ui-peek--xref-make-item filename loc))))
+    (setq lsp--peek-save-major-mode major-mode)
     (cond
      (visiting
       (with-temp-buffer
