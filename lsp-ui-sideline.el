@@ -258,7 +258,7 @@ CURRENT is non-nil when the point is on the symbol."
     (add-face-text-property 0 len 'lsp-ui-sideline-global nil str)
     (concat
      (propertize " " 'display `(space :align-to (- right-fringe ,(lsp-ui-sideline--align len margin))))
-     str)))
+     (propertize str 'display '(height 1)))))
 
 (defun lsp-ui-sideline--check-duplicate (symbol info)
   "Check if there's already a SYMBOL containing INFO, unless `lsp-ui-sideline-ignore-duplicate'
@@ -367,7 +367,7 @@ Push sideline overlays on `lsp-ui-sideline--ovs'."
                                  (add-face-text-property 0 len face nil message)
                                  message))
                  (string (concat (propertize " " 'display `(space :align-to (- right-fringe ,(lsp-ui-sideline--align len margin))))
-                                 message))
+                                 (propertize message 'display '(height 1))))
                  (pos-ov (lsp-ui-sideline--find-line len bol eol nil offset))
                  (ov (and pos-ov (make-overlay (car pos-ov) (car pos-ov)))))
             (when pos-ov
@@ -412,7 +412,7 @@ Push sideline overlays on `lsp-ui-sideline--ovs'."
                           (add-text-properties 0 len `(keymap ,keymap mouse-face highlight) title)
                           title))
             (string (concat (propertize " " 'display `(space :align-to (- right-fringe ,(lsp-ui-sideline--align len margin))))
-                            title))
+                            (propertize title 'display '(height 1))))
             (pos-ov (lsp-ui-sideline--find-line (1+ (length title)) bol eol t))
             (ov (and pos-ov (make-overlay (car pos-ov) (car pos-ov)))))
       (when pos-ov
