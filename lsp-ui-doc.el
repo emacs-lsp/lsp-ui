@@ -184,6 +184,8 @@ Because some variables are buffer local.")
 (defvar-local lsp-ui-doc--bounds nil)
 (defvar-local lsp-ui-doc--timer nil)
 
+(defvar-local lsp-ui-doc--inline-width nil)
+
 (defconst lsp-ui-doc--buffer-prefix " *lsp-ui-doc-")
 
 (defmacro lsp-ui-doc--with-buffer (&rest body)
@@ -506,8 +508,6 @@ FN is the function to call on click."
       (setq start (text-property-not-all 0 (length string) 'invisible nil string)))
     string))
 
-(defvar-local lsp-ui-doc--inline-width nil)
-
 (defun lsp-ui-doc--inline-window-width nil
   (- (min (window-text-width)
           (window-body-width))
@@ -620,6 +620,8 @@ The structure of INFO is defined in the documentation of `posframe-show'."
          (height (frame-pixel-height frame)))
     (posframe-poshandler-point-bottom-left-corner info (- height))))
 
+(defvar-local lsp-ui-doc--original-buffer-with-frame nil)
+
 (defun lsp-ui-doc--make-frame ()
   "Create the child frame and return it."
   (lsp-ui-doc--delete-frame)
@@ -648,6 +650,7 @@ The structure of INFO is defined in the documentation of `posframe-show'."
                                :background-color (face-background 'lsp-ui-doc-background nil t)
                                :override-parameters params))
          (window (frame-root-window frame)))
+    (setq lsp-ui-doc--original-buffer-with-frame (current-buffer))
     (with-current-buffer buffer
       (lsp-ui-doc-frame-mode 1)
       (visual-line-mode 1))
@@ -746,7 +749,14 @@ before, or if the new window is the minibuffer."
 (advice-add #'select-window :around #'lsp-ui-doc-hide-frame-on-window-change)
 
 (advice-add 'load-theme :before (lambda (&rest _) (lsp-ui-doc--delete-frame)))
-(add-hook 'window-configuration-change-hook #'lsp-ui-doc--hide-frame)
+
+(defun lsp-ui-doc--hide-checking-buffer ()
+  "Check if buffer has changed before hide hook."
+  (when (or (null lsp-ui-doc--original-buffer-with-frame)
+            (not (eq (current-buffer) lsp-ui-doc--original-buffer-with-frame)))
+    (lsp-ui-doc--hide-frame)))
+
+(add-hook 'window-configuration-change-hook #'lsp-ui-doc--hide-checking-buffer)
 
 (advice-add #'keyboard-quit :before #'lsp-ui-doc--hide-frame)
 
