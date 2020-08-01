@@ -150,6 +150,8 @@ Only the `background' is used in this face."
     (horizontal-scroll-bars . nil)
     (mouse-wheel-frame . nil)
     (no-accept-focus . nil)
+    (focus-follows-mouse . nil)
+    (mouse-autoselect-window . nil)
     (inhibit-double-buffering . t)
     (cursor-type . box)
     (drag-internal-border . t))
