@@ -5,6 +5,7 @@
              (file-name-as-directory (f-parent (f-parent (f-this-file)))))
 
 (require 'lsp-mode)
+(require 'lsp-modeline)
 (require 'lsp-rust)
 (require 'lsp-ui)
 (require 'flycheck)
