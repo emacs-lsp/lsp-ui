@@ -621,7 +621,7 @@ The structure of INFO is defined in the documentation of `posframe-show'."
          (height (frame-pixel-height frame)))
     (posframe-poshandler-point-bottom-left-corner info (- height))))
 
-(defvar-local lsp-ui-doc--original-buffer-with-frame nil)
+(defvar lsp-ui-doc--original-buffer-with-frame nil)
 
 (defun lsp-ui-doc--make-frame ()
   "Create the child frame and return it."
