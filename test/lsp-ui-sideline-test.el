@@ -1,5 +1,7 @@
 ;; -*- lexical-binding: t -*-
 
+(require 'lsp-modeline)
+
 (ert-deftest lsp-ui-test-sideline-overlays ()
   "Basic test if overlays are stored in `lsp-ui-sideline--ovs' and set in buffer after call to
 `lsp-ui-sideline-toggle-symbols-info'"

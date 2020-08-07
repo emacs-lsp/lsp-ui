@@ -1,5 +1,7 @@
 ;; -*- lexical-binding: t -*-
 
+(require 'lsp-modeline)
+
 (ert-deftest lsp-ui-test-flycheck-list--update ()
   "Test if `lsp-ui-flycheck-list--update' populates buffer *lsp-diagnostics*."
   (let ((rustic-lsp-setup-p t)
