@@ -300,6 +300,10 @@ We don't extract the string that `lps-line' is already displaying."
          (lsp:marked-string-language contents))
     (lsp-ui-doc--extract-marked-string (lsp:marked-string-value contents)
                                        (lsp:marked-string-language contents)))
+   ;; The specification for MarkedString also includes raw strings of
+   ;; markdown, which is not reflected by `lsp-marked-string?'
+   ((stringp contents)
+    (lsp-ui-doc--extract-marked-string contents lsp/markup-kind-markdown))
    ((lsp-marked-string? contents) (lsp-ui-doc--extract-marked-string contents))
    ((and (lsp-markup-content? contents)
          (string= (lsp:markup-content-kind contents) lsp/markup-kind-markdown))
