@@ -756,10 +756,11 @@ before, or if the new window is the minibuffer."
                              (equal (window-buffer initial-window) doc-buffer)))
               (lsp-ui-doc--hide-frame))))))))
 
-(advice-add #'select-window :around #'lsp-ui-doc-hide-frame-on-window-change)
+(unless (boundp 'window-selection-change-functions)
+  (advice-add #'select-window :around #'lsp-ui-doc-hide-frame-on-window-change)
+  (add-hook 'window-configuration-change-hook #'lsp-ui-doc--hide-frame))
 
 (advice-add 'load-theme :before (lambda (&rest _) (lsp-ui-doc--delete-frame)))
-(add-hook 'window-configuration-change-hook #'lsp-ui-doc--hide-frame)
 
 (advice-add #'keyboard-quit :before #'lsp-ui-doc--hide-frame)
 
@@ -786,10 +787,14 @@ before, or if the new window is the minibuffer."
         ;; ‘frameset-filter-alist’ for explanation.
         (cl-callf copy-tree frameset-filter-alist)
         (push '(lsp-ui-doc-frame . :never) frameset-filter-alist)))
+    (when (boundp 'window-selection-change-functions)
+      (add-hook 'window-selection-change-functions 'lsp-ui-doc--hide-frame nil t))
     (add-hook 'post-command-hook 'lsp-ui-doc--make-request nil t)
     (add-hook 'delete-frame-functions 'lsp-ui-doc--on-delete nil t))
    (t
     (lsp-ui-doc-hide)
+    (when (boundp 'window-selection-change-functions)
+      (remove-hook 'window-selection-change-functions 'lsp-ui-doc--hide-frame t))
     (remove-hook 'post-command-hook 'lsp-ui-doc--make-request t)
     (remove-hook 'delete-frame-functions 'lsp-ui-doc--on-delete t))))
 
