@@ -453,8 +453,10 @@ FRAME just below the symbol at point."
           (window (frame-root-window frame))
           ((width . height) (window-text-pixel-size window nil nil 10000 10000 t))
           (width (+ width (* (frame-char-width frame) 1))) ;; margins
-          (char-h (frame-char-height))
+          (char-h (frame-char-height frame))
+          (char-w (frame-char-width frame))
           (height (min (- (* lsp-ui-doc-max-height char-h) (/ char-h 2)) height))
+          (width (min width (* lsp-ui-doc-max-width char-w)))
           (frame-right (pcase lsp-ui-doc-alignment
                          ('frame (frame-pixel-width))
                          ('window right)))
