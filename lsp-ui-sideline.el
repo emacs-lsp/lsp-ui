@@ -36,6 +36,7 @@
 (require 'dash)
 (require 'seq)
 (require 'subr-x)
+(require 'face-remap)
 
 (defgroup lsp-ui-sideline nil
   "Display information for the current line."
@@ -244,6 +245,15 @@ MARKED-STRING is the string returned by `lsp-ui-sideline--extract-info'."
   (+ (apply '+ lengths)
      (if (display-graphic-p) 1 2)))
 
+(defun lsp-ui-sideline--compute-height nil
+  "Return a fixed size for text in sideline."
+  (if (null text-scale-mode-remapping)
+      '(height 1)
+    ;; Readjust height when text-scale-mode is used
+    (list 'height
+          (/ 1 (or (plist-get (cdr text-scale-mode-remapping) :height)
+                   1)))))
+
 (defun lsp-ui-sideline--make-display-string (info symbol current)
   "Make final string to display in buffer.
 INFO is the information to display.
@@ -258,7 +268,7 @@ CURRENT is non-nil when the point is on the symbol."
     (add-face-text-property 0 len 'lsp-ui-sideline-global nil str)
     (concat
      (propertize " " 'display `(space :align-to (- right-fringe ,(lsp-ui-sideline--align len margin))))
-     (propertize str 'display '(height 1)))))
+     (propertize str 'display (lsp-ui-sideline--compute-height)))))
 
 (defun lsp-ui-sideline--check-duplicate (symbol info)
   "Check if there's already a SYMBOL containing INFO, unless `lsp-ui-sideline-ignore-duplicate'
@@ -367,7 +377,7 @@ Push sideline overlays on `lsp-ui-sideline--ovs'."
                                  (add-face-text-property 0 len face nil message)
                                  message))
                  (string (concat (propertize " " 'display `(space :align-to (- right-fringe ,(lsp-ui-sideline--align len margin))))
-                                 (propertize message 'display '(height 1))))
+                                 (propertize message 'display (lsp-ui-sideline--compute-height))))
                  (pos-ov (lsp-ui-sideline--find-line len bol eol nil offset))
                  (ov (and pos-ov (make-overlay (car pos-ov) (car pos-ov)))))
             (when pos-ov
@@ -412,7 +422,7 @@ Push sideline overlays on `lsp-ui-sideline--ovs'."
                           (add-text-properties 0 len `(keymap ,keymap mouse-face highlight) title)
                           title))
             (string (concat (propertize " " 'display `(space :align-to (- right-fringe ,(lsp-ui-sideline--align len margin))))
-                            (propertize title 'display '(height 1))))
+                            (propertize title 'display (lsp-ui-sideline--compute-height))))
             (pos-ov (lsp-ui-sideline--find-line (1+ (length title)) bol eol t))
             (ov (and pos-ov (make-overlay (car pos-ov) (car pos-ov)))))
       (when pos-ov
