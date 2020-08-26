@@ -287,7 +287,10 @@ is set to t."
               1)
          (and (boundp 'fringe-mode) (equal fringe-mode 0) 1)
          0)
-     (if (bound-and-true-p display-line-numbers-mode)
+     (if (and (bound-and-true-p display-line-numbers-mode)
+              (< emacs-major-version 27))
+         ;; This was necessary with emacs < 27, recent versions take
+         ;; into account the display-line width with :align-to
          (+ 2 (line-number-display-width))
        0)
      (if (or
@@ -298,7 +301,13 @@ is set to t."
 
 (defun lsp-ui-sideline--window-width ()
   (- (min (window-text-width) (window-body-width))
-     (lsp-ui-sideline--margin-width)))
+     (lsp-ui-sideline--margin-width)
+     (or (and (bound-and-true-p display-line-numbers-mode)
+              (>= emacs-major-version 27)
+              ;; We still need this number when calculating available space
+              ;; even with emacs >= 27
+              (+ (line-number-display-width) 2))
+         0)))
 
 (defun lsp-ui-sideline--push-info (symbol tag bounds info bol eol)
   (when (and (= tag (lsp-ui-sideline--calculate-tag))
