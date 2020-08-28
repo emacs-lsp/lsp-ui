@@ -84,6 +84,7 @@
   "How to align the doc.
 This only takes effect when `lsp-ui-doc-position' is 'top or 'bottom."
   :type '(choice (const :tag "Frame" frame)
+                 (const :tag "Other (left or right) side of frame" frame-left-or-right-other)
                  (const :tag "Window" window))
   :group 'lsp-ui-doc)
 
@@ -458,21 +459,34 @@ FRAME just below the symbol at point."
           (height (min (- (* lsp-ui-doc-max-height char-h) (/ char-h 2)) height))
           (width (min width (* lsp-ui-doc-max-width char-w)))
           (frame-right (pcase lsp-ui-doc-alignment
-                         ('frame (frame-pixel-width))
-                         ('window right)))
-          (frame-resize-pixelwise t))
+                         ('window right)
+                         (_ (frame-pixel-width))))
+          (frame-resize-pixelwise t)
+          ((window-left-edge window-top-edge window-right-edge _) (window-absolute-pixel-edges))
+          (window-left-right-center (/ (+ window-left-edge window-right-edge) 2))
+          ((frame-left-edge frame-top-edge frame-right-edge _) (frame-edges))
+          (frame-left-right-center (/ (+ frame-left-edge frame-right-edge) 2)))
     (set-frame-size frame width height t)
     (set-frame-parameter frame 'lsp-ui-doc--window-origin (selected-window))
     (set-frame-parameter frame 'lsp-ui-doc--buffer-origin (current-buffer))
     (if (eq lsp-ui-doc-position 'at-point)
         (lsp-ui-doc--mv-at-point frame width height left top)
       (set-frame-position frame
-                          (max (- frame-right width 10 (frame-char-width)) 10)
+                          (if (and (eq lsp-ui-doc-alignment 'frame-left-or-right-other)
+                                   (> window-left-right-center frame-left-right-center))
+                              10
+                            (max (- frame-right width 10 (frame-char-width)) 10))
                           (pcase lsp-ui-doc-position
-                            ('top (+ top 10))
-                            ('bottom (- (lsp-ui-doc--line-height 'mode-line)
-                                        height
-                                        10)))))))
+                            ('top (pcase lsp-ui-doc-alignment
+                                    ('window (+ top 10))
+                                    (_ 10)))
+                            ('bottom (pcase lsp-ui-doc-alignment
+                                       ('window (- (+ (lsp-ui-doc--line-height 'mode-line) (- window-top-edge frame-top-edge))
+                                                   height
+                                                   10))
+                                       (_ (- (frame-pixel-height)
+                                             height
+                                             10)))))))))
 
 (defun lsp-ui-doc--visit-file (filename)
   "Visit FILENAME in the parent frame."
