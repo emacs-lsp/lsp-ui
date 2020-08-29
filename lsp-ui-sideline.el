@@ -77,10 +77,10 @@
   :group 'lsp-ui-sideline)
 
 (defcustom lsp-ui-sideline-update-mode 'point
-  "Define the mode for updating sideline information.
+  "Define the mode for updating sideline actions.
 
-When set to `line' the information will be updated when user
-changes current line otherwise the information will be updated
+When set to `line' the actions will be updated when user
+changes current line otherwise the actions will be updated
 when user changes current point."
   :type '(choice (const line)
                  (const point))
@@ -222,7 +222,8 @@ if OFFSET is non-nil, it starts search OFFSET lines from user point line."
 (defun lsp-ui-sideline--delete-ov ()
   "Delete overlays."
   (seq-do 'delete-overlay lsp-ui-sideline--ovs)
-  (setq lsp-ui-sideline--ovs nil))
+  (setq lsp-ui-sideline--tag nil
+        lsp-ui-sideline--ovs nil))
 
 (defun lsp-ui-sideline--extract-info (contents)
   "Extract the line to print from CONTENTS.
@@ -325,7 +326,7 @@ is set to t."
          0)))
 
 (defun lsp-ui-sideline--push-info (symbol tag bounds info bol eol)
-  (when (and (= tag (lsp-ui-sideline--calculate-tag))
+  (when (and (equal tag (lsp-ui-sideline--calculate-tag))
              (not (lsp-ui-sideline--stop-p)))
     (let* ((info (concat (-some->> (lsp:hover-contents info)
                            lsp-ui-sideline--extract-info
@@ -384,7 +385,8 @@ is set to t."
 Loop over flycheck errors with `flycheck-overlay-errors-in'.
 Find appropriate position for sideline overlays with `lsp-ui-sideline--find-line'.
 Push sideline overlays on `lsp-ui-sideline--ovs'."
-  (when (bound-and-true-p flycheck-mode)
+  (when (and (bound-and-true-p flycheck-mode)
+             (bound-and-true-p lsp-ui-sideline-mode))
     (dolist (e (flycheck-overlay-errors-in bol (1+ eol)))
       (let* ((lines (--> (flycheck-error-format-message-and-id e)
                          (split-string it "\n")
@@ -477,34 +479,33 @@ Push sideline overlays on `lsp-ui-sideline--ovs'."
         (overlay-put ov 'position (car pos-ov))
         (push ov lsp-ui-sideline--ovs)))))
 
-(defun lsp-ui-sideline--calculate-tag()
+(defun lsp-ui-sideline--calculate-tag nil
   "Calculate the tag used to determine whether to update sideline information."
-  (if (equal lsp-ui-sideline-update-mode 'line)
-      (line-number-at-pos)
-    (point)))
+  (cons (line-number-at-pos) (point)))
 
 (defun lsp-ui-sideline--run ()
   "Show information (flycheck + lsp).
 It loops on the symbols of the current line and requests information
 from the language server."
-  (lsp-ui-sideline--delete-ov)
   (when buffer-file-name
-    (let ((eol (line-end-position))
-          (bol (line-beginning-position))
-          (tag (lsp-ui-sideline--calculate-tag))
-          (line-widen (save-restriction (widen) (line-number-at-pos)))
-          (doc-id (lsp--text-document-identifier)))
+    (let* ((eol (line-end-position))
+           (bol (line-beginning-position))
+           (tag (lsp-ui-sideline--calculate-tag))
+           (line (car tag))
+           (line-widen (if (buffer-narrowed-p) (save-restriction (widen) (line-number-at-pos)) line))
+           (line-changed (not (equal line (car lsp-ui-sideline--tag))))
+           (doc-id (lsp--text-document-identifier)))
       (save-excursion
         (setq lsp-ui-sideline--occupied-lines nil
               lsp-ui-sideline--tag tag
               lsp-ui-sideline--last-width (window-text-width))
-        (when lsp-ui-sideline-show-diagnostics
+        (when (and line-changed lsp-ui-sideline-show-diagnostics)
           (lsp-ui-sideline--diagnostics bol eol))
         (when (and lsp-ui-sideline-show-code-actions (or (lsp--capability "codeActionProvider")
                                                          (lsp--registered-capability "textDocument/codeAction")))
           (lsp-request-async
            "textDocument/codeAction"
-           (if (equal lsp-ui-sideline-update-mode 'line)
+           (if (eq lsp-ui-sideline-update-mode 'line)
                (list :textDocument doc-id
                      :range (lsp--region-to-range bol eol)
                      :context (list :diagnostics (lsp-cur-line-diagnostics)))
@@ -517,7 +518,7 @@ from the language server."
         ;; current symbol.  By going from the end of the line towards the front, point will be placed
         ;; at the beginning of each symbol.  As the requests are first collected in a list before
         ;; being processed they are still sent in order from left to right.
-        (when (and lsp-ui-sideline-show-hover (lsp--capability "hoverProvider"))
+        (when (and lsp-ui-sideline-show-hover line-changed (lsp--capability "hoverProvider"))
           (let ((symbols))
             (goto-char eol)
             (while (and (> (point) bol)
@@ -560,18 +561,17 @@ from the language server."
   "Disable the sideline before company's overlay appears.
 COMMAND is `company-pseudo-tooltip-frontend' parameter."
   (when (memq command '(post-command update))
-    (lsp-ui-sideline--delete-ov)
-    (setq lsp-ui-sideline--tag nil)))
+    (lsp-ui-sideline--delete-ov)))
 
 (defun lsp-ui-sideline ()
   "Show information for the current line."
   (if (lsp-ui-sideline--stop-p)
-      (progn (setq lsp-ui-sideline--tag nil)
-             (lsp-ui-sideline--delete-ov))
-    (if (and (equal (lsp-ui-sideline--calculate-tag) lsp-ui-sideline--tag)
-             (equal (window-text-width) lsp-ui-sideline--last-width))
-        (lsp-ui-sideline--highlight-current (point))
       (lsp-ui-sideline--delete-ov)
+    (let ((current-line (line-number-at-pos)))
+      (if (and (equal current-line (car lsp-ui-sideline--tag))
+               (equal (window-text-width) lsp-ui-sideline--last-width))
+          (lsp-ui-sideline--highlight-current (point))
+        (lsp-ui-sideline--delete-ov))
       (when lsp-ui-sideline--timer
         (cancel-timer lsp-ui-sideline--timer))
       (let ((buf (current-buffer)))
@@ -595,15 +595,13 @@ This does not toggle display of flycheck diagnostics or code actions."
 (defun lsp-ui-sideline--diagnostics-changed ()
   "Handler for flycheck notifications."
   (lsp-ui-sideline--delete-ov)
-  (setq lsp-ui-sideline--tag nil)
   (lsp-ui-sideline))
 
 (defun lsp-ui-sideline--erase (&rest _)
   "Remove all sideline overlays and delete last tag."
   (when (bound-and-true-p lsp-ui-sideline-mode)
     (ignore-errors
-      (lsp-ui-sideline--delete-ov)
-      (setq lsp-ui-sideline--tag nil))))
+      (lsp-ui-sideline--delete-ov))))
 
 (defvar lsp-ui-sideline-cmd-erase
   '(kill-region))
@@ -622,7 +620,6 @@ This does not toggle display of flycheck diagnostics or code actions."
     (when lsp-ui-sideline-show-diagnostics
       (setq-local flycheck-display-errors-function nil)))
    (t
-    (setq lsp-ui-sideline--tag nil)
     (advice-remove 'company-pseudo-tooltip-frontend 'lsp-ui-sideline--hide-before-company)
     (lsp-ui-sideline--delete-ov)
     (remove-hook 'flycheck-after-syntax-check-hook  'lsp-ui-sideline--diagnostics-changed t)
