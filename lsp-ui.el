@@ -35,6 +35,7 @@
 
 (require 'dash)
 (require 'lsp-protocol)
+(require 'find-func)
 
 (defconst lsp-ui-resources-dir
   (--> (find-library-name "lsp-ui")
