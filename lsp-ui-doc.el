@@ -420,8 +420,8 @@ We don't extract the string that `lps-line' is already displaying."
         (lsp-ui-doc--with-buffer
          (fill-region (point-min) (point-max)))))))
 
-(defun lsp-ui-doc--mv-at-point (frame width height start-x start-y)
-  "Move FRAME to be where the point is.
+(defun lsp-ui-doc--mv-at-point (width height start-x start-y)
+  "Return position of FRAME to be where the point is.
 WIDTH is the child frame width.
 HEIGHT is the child frame height.
 START-X is the position x of the current window.
@@ -445,7 +445,7 @@ FRAME just below the symbol at point."
                                (- y height))
                           (+ y char-height))
                       (if (fboundp 'window-tab-line-height) (window-tab-line-height) 0))))
-    (set-frame-position frame (+ start-x frame-x) (+ start-y frame-y))))
+    (cons (+ start-x frame-x) (+ start-y frame-y))))
 
 (defun lsp-ui-doc--move-frame (frame)
   "Place our FRAME on screen."
@@ -460,19 +460,29 @@ FRAME just below the symbol at point."
           (frame-right (pcase lsp-ui-doc-alignment
                          ('frame (frame-pixel-width))
                          ('window right)))
-          (frame-resize-pixelwise t))
-    (set-frame-size frame width height t)
-    (set-frame-parameter frame 'lsp-ui-doc--window-origin (selected-window))
-    (set-frame-parameter frame 'lsp-ui-doc--buffer-origin (current-buffer))
-    (if (eq lsp-ui-doc-position 'at-point)
-        (lsp-ui-doc--mv-at-point frame width height left top)
-      (set-frame-position frame
-                          (max (- frame-right width 10 (frame-char-width)) 10)
-                          (pcase lsp-ui-doc-position
-                            ('top (+ top 10))
-                            ('bottom (- (lsp-ui-doc--line-height 'mode-line)
-                                        height
-                                        10)))))))
+          ((left . top) (if (eq lsp-ui-doc-position 'at-point)
+                            (lsp-ui-doc--mv-at-point width height left top)
+                          (cons (max (- frame-right width 10 (frame-char-width)) 10)
+                                (pcase lsp-ui-doc-position
+                                  ('top (+ top 10))
+                                  ('bottom (- (lsp-ui-doc--line-height 'mode-line)
+                                              height
+                                              10))))))
+          (frame-resize-pixelwise t)
+          (move-frame-functions nil)
+          (window-size-change-functions nil)
+          (inhibit-redisplay t))
+    (modify-frame-parameters
+     frame
+     `((width . (text-pixels . ,width))
+       (height . (text-pixels . ,height))
+       (user-size . t)
+       (left . (+ ,left))
+       (top . (+ ,top))
+       (user-position . t)
+       (lsp-ui-doc--window-origin . ,(selected-window))
+       (lsp-ui-doc--buffer-origin . ,(current-buffer))
+       (right-fringe . 0)))))
 
 (defun lsp-ui-doc--visit-file (filename)
   "Visit FILENAME in the parent frame."
@@ -522,6 +532,10 @@ FN is the function to call on click."
      (lsp-ui-doc--make-clickable-link))
    (setq-local face-remapping-alist `((header-line lsp-ui-doc-header)))
    (setq-local window-min-height 1)
+   (setq-local window-configuration-change-hook nil)
+   (setq-local window-state-change-functions nil)
+   (setq-local window-state-change-hook nil)
+   (setq-local window-size-change-functions nil)
    (setq header-line-format (when lsp-ui-doc-header (concat " " symbol))
          mode-line-format nil
          cursor-type nil)))
