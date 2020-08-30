@@ -163,6 +163,8 @@ It is used to know when the window has changed of width.")
 This face have a low priority over the others."
   :group 'lsp-ui-sideline)
 
+(defvar lsp-ui-resources-dir)
+
 (defun lsp-ui-sideline--first-line-p (pos)
   "Return non-nil if POS is on the first line."
   (save-excursion
@@ -402,6 +404,22 @@ Push sideline overlays on `lsp-ui-sideline--ovs'."
     (user-error "No code actions on the current line"))
   (lsp-execute-code-action (lsp--select-action lsp-ui-sideline--code-actions)))
 
+(defun lsp-ui-sideline--scale-lightbulb nil
+  (--> (frame-char-height)
+       ;; 128 is the height in pixel of lightbulb.png
+       (/ (float it) 128)))
+
+(defvar lsp-ui-sideline--image-lightbulb
+  (and lsp-ui-resources-dir
+       (image-type-available-p 'png)
+       `(image :type png :file ,(expand-file-name "lightbulb.png" lsp-ui-resources-dir) :ascent center)))
+
+(defun lsp-ui-sideline--code-actions-image nil
+  (when lsp-ui-sideline--image-lightbulb
+    (concat
+     (propertize " " 'display (append lsp-ui-sideline--image-lightbulb `(:scale ,(lsp-ui-sideline--scale-lightbulb))))
+     (propertize " " 'display '(space :width 0.3)))))
+
 (defun lsp-ui-sideline--code-actions (actions bol eol)
   "Show code ACTIONS."
   (when lsp-ui-sideline-actions-kind-regex
@@ -418,7 +436,9 @@ Push sideline overlays on `lsp-ui-sideline--ovs'."
   (seq-doseq (action actions)
     (-let* ((title (->> (lsp:code-action-title action)
                         (replace-regexp-in-string "[\n\t ]+" " ")
-                        (concat lsp-ui-sideline-code-actions-prefix)))
+                        (concat (unless lsp-ui-sideline--image-lightbulb
+                                  lsp-ui-sideline-code-actions-prefix))))
+            (image (lsp-ui-sideline--code-actions-image))
             (margin (lsp-ui-sideline--margin-width))
             (keymap (let ((map (make-sparse-keymap)))
                       (define-key map [down-mouse-1] (lambda () (interactive)
@@ -430,9 +450,10 @@ Push sideline overlays on `lsp-ui-sideline--ovs'."
                           (add-face-text-property 0 len 'lsp-ui-sideline-code-action nil title)
                           (add-text-properties 0 len `(keymap ,keymap mouse-face highlight) title)
                           title))
-            (string (concat (propertize " " 'display `(space :align-to (- right-fringe ,(lsp-ui-sideline--align len margin))))
+            (string (concat (propertize " " 'display `(space :align-to (- right-fringe ,(lsp-ui-sideline--align (+ len (length image)) margin))))
+                            image
                             (propertize title 'display (lsp-ui-sideline--compute-height))))
-            (pos-ov (lsp-ui-sideline--find-line (1+ (length title)) bol eol t))
+            (pos-ov (lsp-ui-sideline--find-line (+ 1 (length title) (length image)) bol eol t))
             (ov (and pos-ov (make-overlay (car pos-ov) (car pos-ov)))))
       (when pos-ov
         (overlay-put ov 'after-string string)
