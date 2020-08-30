@@ -363,7 +363,7 @@ We don't extract the string that `lps-line' is already displaying."
   (-when-let* ((xw (lsp-ui-doc--webkit-get-xwidget)))
     (xwidget-webkit-execute-script-rv xw script)))
 
-(defun lsp-ui-doc--hide-frame (&optional win)
+(defun lsp-ui-doc--hide-frame (&optional _win)
   "Hide the frame."
   (setq lsp-ui-doc--bounds nil)
   (when (overlayp lsp-ui-doc--inline-ov)

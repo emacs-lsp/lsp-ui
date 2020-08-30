@@ -410,7 +410,7 @@ Push sideline overlays on `lsp-ui-sideline--ovs'."
        (/ (float it) 128)))
 
 (defvar lsp-ui-sideline--image-lightbulb
-  (and lsp-ui-resources-dir
+  (and (bound-and-true-p lsp-ui-resources-dir)
        (image-type-available-p 'png)
        `(image :type png :file ,(expand-file-name "lightbulb.png" lsp-ui-resources-dir) :ascent center)))
 
