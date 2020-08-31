@@ -449,7 +449,7 @@ FRAME just below the symbol at point."
 
 (defun lsp-ui-doc--move-frame (frame)
   "Place our FRAME on screen."
-  (-let* (((left top right _bottom) (window-edges nil nil nil t))
+  (-let* (((left top right _bottom) (window-edges nil t nil t))
           (window (frame-root-window frame))
           ((width . height) (window-text-pixel-size window nil nil 10000 10000 t))
           (width (+ width (* (frame-char-width frame) 1))) ;; margins
