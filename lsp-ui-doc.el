@@ -430,7 +430,7 @@ The algorithm prefers to position FRAME just above the
 symbol at point, to not obstruct the view of the code that follows.
 If there's no space above in the current window, it places
 FRAME just below the symbol at point."
-  (-let* (((x . y) (--> (bounds-of-thing-at-point 'symbol)
+  (-let* (((x . y) (--> (or lsp-ui-doc--bounds (bounds-of-thing-at-point 'symbol))
                         (posn-x-y (posn-at-point (car it)))))
           (frame-relative-symbol-x (+ start-x x))
           (frame-relative-symbol-y (+ start-y y))
@@ -731,22 +731,31 @@ HEIGHT is the documentation number of lines."
                         :cancel-token :lsp-ui-doc-hover)))))))
       (lsp-ui-doc--hide-frame))))
 
+(defun lsp-ui-doc--extract-bounds (hover)
+  (-when-let* ((hover hover)
+               (data (lsp-get hover :range))
+               (start (-some-> (lsp:range-start data) lsp--position-to-point))
+               (end (-some-> (lsp:range-end data) lsp--position-to-point)))
+    (cons start end)))
+
 (lsp-defun lsp-ui-doc--callback ((hover &as &Hover? :contents) bounds buffer)
   "Process the received documentation.
 HOVER is the doc returned by the LS.
 BOUNDS are points of the symbol that have been requested.
 BUFFER is the buffer where the request has been made."
-  (if (and hover
-           (>= (point) (car bounds)) (<= (point) (cdr bounds))
-           (eq buffer (current-buffer)))
-      (progn
-        (setq lsp-ui-doc--bounds bounds)
-        (lsp-ui-doc--display
-         (thing-at-point 'symbol t)
-         (-some->> contents
-           lsp-ui-doc--extract
-           (replace-regexp-in-string "\r" ""))))
-    (lsp-ui-doc--hide-frame)))
+  (let ((bounds (or (lsp-ui-doc--extract-bounds hover) bounds)))
+    (if (and hover
+             (>= (point) (car bounds))
+             (<= (point) (cdr bounds))
+             (eq buffer (current-buffer)))
+        (progn
+          (setq lsp-ui-doc--bounds bounds)
+          (lsp-ui-doc--display
+           (thing-at-point 'symbol t)
+           (-some->> contents
+             lsp-ui-doc--extract
+             (replace-regexp-in-string "\r" ""))))
+      (lsp-ui-doc--hide-frame))))
 
 (defun lsp-ui-doc--delete-frame ()
   "Delete the child frame if it exists."
