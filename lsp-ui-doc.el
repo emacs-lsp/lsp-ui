@@ -758,7 +758,10 @@ HEIGHT is the documentation number of lines."
 HOVER is the doc returned by the LS.
 BOUNDS are points of the symbol that have been requested.
 BUFFER is the buffer where the request has been made."
-  (let ((bounds (or (lsp-ui-doc--extract-bounds hover) bounds)))
+  (let ((bounds (or (lsp-ui-doc--extract-bounds hover)
+                    bounds
+                    (bounds-of-thing-at-point 'symbol)
+                    (cons (point) (1+ (point))))))
     (if (and hover
              (>= (point) (car bounds))
              (<= (point) (cdr bounds))
