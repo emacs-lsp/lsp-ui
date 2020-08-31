@@ -533,8 +533,9 @@ FN is the function to call on click."
    (setq-local face-remapping-alist `((header-line lsp-ui-doc-header)))
    (setq-local window-min-height 1)
    (setq-local window-configuration-change-hook nil)
-   (setq-local window-state-change-functions nil)
-   (setq-local window-state-change-hook nil)
+   (when (boundp 'window-state-change-functions)
+     (setq-local window-state-change-functions nil)
+     (setq-local window-state-change-hook nil))
    (setq-local window-size-change-functions nil)
    (setq header-line-format (when lsp-ui-doc-header (concat " " symbol))
          mode-line-format nil
