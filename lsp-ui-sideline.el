@@ -424,7 +424,9 @@ Push sideline overlays on `lsp-ui-sideline--ovs'."
 (defun lsp-ui-sideline--code-actions-make-image nil
   (let ((is-default (equal lsp-ui-sideline-actions-icon lsp-ui-sideline-actions-icon-default)))
     (--> `(image :type png :file ,lsp-ui-sideline-actions-icon :ascent center)
-         (append it `(:scale ,(->> (if is-default 128 (cdr (image-size it t)))
+         (append it `(:scale ,(->> (cond (is-default 128)
+                                         ((fboundp 'image-size) (cdr (image-size it t)))
+                                         (t (error "Function image-size undefined.  Use default icon")))
                                    (lsp-ui-sideline--scale-lightbulb)))))))
 
 (defun lsp-ui-sideline--code-actions-image nil
