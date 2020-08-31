@@ -197,6 +197,10 @@ Because some variables are buffer local.")
 
 (defvar-local lsp-ui-doc--bounds nil)
 (defvar-local lsp-ui-doc--timer nil)
+(defvar-local lsp-ui-doc--from-mouse nil
+  "Non nil when the doc was triggered by a mouse event.")
+(defvar-local lsp-ui-doc--from-mouse-current nil
+  "Non nil when the current call is triggered by a mouse event")
 
 (defconst lsp-ui-doc--buffer-prefix " *lsp-ui-doc-")
 
@@ -476,6 +480,9 @@ FRAME just below the symbol at point."
           (move-frame-functions nil)
           (window-size-change-functions nil)
           (inhibit-redisplay t))
+    ;; Make frame invisible before moving/resizing it to avoid flickering
+    (when (frame-visible-p frame)
+      (make-frame-invisible frame))
     (modify-frame-parameters
      frame
      `((width . (text-pixels . ,width))
@@ -665,7 +672,8 @@ HEIGHT is the documentation number of lines."
         (lsp-ui-doc--resize-buffer)
         (lsp-ui-doc--move-frame (lsp-ui-doc--get-frame)))
       (unless (frame-visible-p (lsp-ui-doc--get-frame))
-        (make-frame-visible (lsp-ui-doc--get-frame))))))
+        (make-frame-visible (lsp-ui-doc--get-frame))))
+    (setq lsp-ui-doc--from-mouse lsp-ui-doc--from-mouse-current)))
 
 (defun lsp-ui-doc--make-frame ()
   "Create the child frame and return it."
@@ -710,8 +718,11 @@ HEIGHT is the documentation number of lines."
 
 (defun lsp-ui-doc--make-request nil
   "Request the documentation to the LS."
+  ;; (message "THIS=%s LAST=%s" this-command last-command)
   (when (and (not (eq this-command 'lsp-ui-doc-hide))
              (not (eq this-command 'keyboard-quit))
+             (not (eq this-command 'lsp-ui-doc--handle-mouse-movement))
+             (not (eq this-command 'ignore))
              (not (bound-and-true-p lsp-ui-peek-mode))
              (lsp--capability "hoverProvider"))
     (-if-let (bounds (or (and (symbol-at-point) (bounds-of-thing-at-point 'symbol))
@@ -775,8 +786,8 @@ BUFFER is the buffer where the request has been made."
 
 (defun lsp-ui-doc-hide-frame-on-window-change (fun window &optional no-record)
   "Delete the child frame if currently selected window changes.
-Does nothing if the newly-selected window is the same window as
-before, or if the new window is the minibuffer."
+  Does nothing if the newly-selected window is the same window as
+  before, or if the new window is the minibuffer."
   (let ((initial-window (selected-window)))
     (prog1 (funcall fun window no-record)
       (unless no-record
@@ -834,9 +845,49 @@ before, or if the new window is the minibuffer."
            ;; too far
            (lsp-ui-doc--hide-frame)))))
 
+(defvar-local lsp-ui-doc--timer-mouse-movement nil)
+(defvar-local lsp-ui-doc--last-event nil)
+
+(defun lsp-ui-doc--mouse-display nil
+  (when lsp-ui-doc--last-event
+    (save-excursion
+      (goto-char lsp-ui-doc--last-event)
+      (if (or (= (point) (point-max))
+              (equal " " (buffer-substring-no-properties (point) (1+ (point))))
+              (eolp))
+          nil ;; TODO: Improve detection of empty space
+        ;;(lsp-ui-doc--hide-frame)
+        (lsp-request-async
+         "textDocument/hover"
+         (lsp--text-document-position-params)
+         (lambda (hover)
+           (save-excursion
+             (goto-char lsp-ui-doc--last-event)
+             (let ((lsp-ui-doc-position 'at-point)
+                   (lsp-ui-doc--from-mouse-current t))
+               (lsp-ui-doc--callback hover nil (current-buffer)))))
+         :mode 'tick
+         :cancel-token :lsp-ui-doc-hover)))))
+
+(defun lsp-ui-doc--handle-mouse-movement (event)
+  (interactive "e")
+  (and (timerp lsp-ui-doc--timer-mouse-movement)
+       (cancel-timer lsp-ui-doc--timer-mouse-movement))
+  (let ((point (posn-point (cadr event))))
+    (and lsp-ui-doc--from-mouse
+         lsp-ui-doc--bounds
+         (or (< point (car lsp-ui-doc--bounds))
+             (> point (cdr lsp-ui-doc--bounds)))
+         (lsp-ui-doc--hide-frame)
+         (setq lsp-ui-doc--from-mouse nil))
+    (setq lsp-ui-doc--last-event point
+          lsp-ui-doc--timer-mouse-movement
+          (run-with-idle-timer 0.5 nil 'lsp-ui-doc--mouse-display))))
+
 (define-minor-mode lsp-ui-doc-mode
   "Minor mode for showing hover information in child frame."
   :init-value nil
+  :keymap `((,(kbd "<mouse-movement>") . lsp-ui-doc--handle-mouse-movement))
   :group lsp-ui-doc
   (cond
    (lsp-ui-doc-mode
@@ -854,6 +905,7 @@ before, or if the new window is the minibuffer."
       (add-hook 'window-state-change-functions 'lsp-ui-doc--on-state-changed))
     (add-hook 'post-command-hook 'lsp-ui-doc--make-request nil t)
     (add-hook 'window-scroll-functions 'lsp-ui-doc--handle-scroll nil t)
+    (setq-local track-mouse t)
     (add-hook 'delete-frame-functions 'lsp-ui-doc--on-delete nil t))
    (t
     (lsp-ui-doc-hide)
