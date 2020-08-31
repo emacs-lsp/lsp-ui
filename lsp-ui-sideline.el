@@ -297,6 +297,11 @@ is set to t."
               1)
          (and (boundp 'fringe-mode) (equal fringe-mode 0) 1)
          0)
+     (let ((win-fringes (window-fringes)))
+       (if (or (equal (car win-fringes) 0)
+               (equal (cadr win-fringes) 0))
+           2
+         0))
      (if (and (bound-and-true-p display-line-numbers-mode)
               (< emacs-major-version 27))
          ;; This was necessary with emacs < 27, recent versions take
