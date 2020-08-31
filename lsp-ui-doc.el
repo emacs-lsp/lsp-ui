@@ -769,10 +769,7 @@ HEIGHT is the documentation number of lines."
 HOVER is the doc returned by the LS.
 BOUNDS are points of the symbol that have been requested.
 BUFFER is the buffer where the request has been made."
-  (let ((bounds (or (lsp-ui-doc--extract-bounds hover)
-                    bounds
-                    (bounds-of-thing-at-point 'symbol)
-                    (cons (point) (1+ (point))))))
+  (let ((bounds (or (lsp-ui-doc--extract-bounds hover) bounds)))
     (if (and hover
              (>= (point) (car bounds))
              (<= (point) (cdr bounds))
@@ -866,22 +863,20 @@ BUFFER is the buffer where the request has been made."
   (when lsp-ui-doc--last-event
     (save-excursion
       (goto-char lsp-ui-doc--last-event)
-      (if (or (= (point) (point-max))
-              (equal " " (buffer-substring-no-properties (point) (1+ (point))))
-              (eolp))
-          nil ;; TODO: Improve detection of empty space
-        ;;(lsp-ui-doc--hide-frame)
-        (lsp-request-async
-         "textDocument/hover"
-         (lsp--text-document-position-params)
-         (lambda (hover)
-           (save-excursion
-             (goto-char lsp-ui-doc--last-event)
-             (let ((lsp-ui-doc-position 'at-point)
-                   (lsp-ui-doc--from-mouse-current t))
-               (lsp-ui-doc--callback hover nil (current-buffer)))))
-         :mode 'tick
-         :cancel-token :lsp-ui-doc-hover)))))
+      (-when-let* ((bounds (or (and (symbol-at-point) (bounds-of-thing-at-point 'symbol))
+                               (and (looking-at "[[:graph:]]") (cons (point) (1+ (point)))))))
+        (unless (equal bounds lsp-ui-doc--bounds)
+          (lsp-request-async
+           "textDocument/hover"
+           (lsp--text-document-position-params)
+           (lambda (hover)
+             (save-excursion
+               (goto-char lsp-ui-doc--last-event)
+               (let ((lsp-ui-doc-position 'at-point)
+                     (lsp-ui-doc--from-mouse-current t))
+                 (lsp-ui-doc--callback hover bounds (current-buffer)))))
+           :mode 'tick
+           :cancel-token :lsp-ui-doc-hover))))))
 
 (defun lsp-ui-doc--handle-mouse-movement (event)
   (interactive "e")
