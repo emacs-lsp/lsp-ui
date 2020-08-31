@@ -804,6 +804,13 @@ before, or if the new window is the minibuffer."
     (and (buffer-live-p it) it)
     (kill-buffer it)))
 
+(defun lsp-ui-doc--handle-scroll (_win _new-start)
+  (let ((frame (lsp-ui-doc--get-frame)))
+    (and frame
+         (eq lsp-ui-doc-position 'at-point)
+         (frame-visible-p frame)
+         (lsp-ui-doc--move-frame frame))))
+
 (define-minor-mode lsp-ui-doc-mode
   "Minor mode for showing hover information in child frame."
   :init-value nil
@@ -823,11 +830,13 @@ before, or if the new window is the minibuffer."
     (when (boundp 'window-state-change-functions)
       (add-hook 'window-state-change-functions 'lsp-ui-doc--on-state-changed))
     (add-hook 'post-command-hook 'lsp-ui-doc--make-request nil t)
+    (add-hook 'window-scroll-functions 'lsp-ui-doc--handle-scroll nil t)
     (add-hook 'delete-frame-functions 'lsp-ui-doc--on-delete nil t))
    (t
     (lsp-ui-doc-hide)
     (when (boundp 'window-state-change-functions)
       (remove-hook 'window-state-change-functions 'lsp-ui-doc--on-state-changed))
+    (remove-hook 'window-scroll-functions 'lsp-ui-doc--handle-scroll t)
     (remove-hook 'post-command-hook 'lsp-ui-doc--make-request t)
     (remove-hook 'delete-frame-functions 'lsp-ui-doc--on-delete t))))
 
