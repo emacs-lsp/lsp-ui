@@ -138,6 +138,11 @@ Only the `background' is used in this face."
   "Face used on the header."
   :group 'lsp-ui-doc)
 
+(defface lsp-ui-doc-highlight-hover
+  '((t :inherit region))
+  "Face used to highlight the hover symbol/region when using mouse."
+  :group 'lsp-ui-doc)
+
 (defface lsp-ui-doc-url
   '((t :inherit link))
   "Face used on links."
@@ -194,6 +199,9 @@ Because some variables are buffer local.")
 
 (defvar-local lsp-ui-doc--inline-ov nil
   "Overlay used to display the documentation in the buffer.")
+
+(defvar-local lsp-ui-doc--highlight-ov nil
+  "Overlay used to highlight the hover symbol.")
 
 (defvar-local lsp-ui-doc--bounds nil)
 (defvar-local lsp-ui-doc--timer nil)
@@ -374,6 +382,8 @@ We don't extract the string that `lps-line' is already displaying."
   (setq lsp-ui-doc--bounds nil)
   (when (overlayp lsp-ui-doc--inline-ov)
     (delete-overlay lsp-ui-doc--inline-ov))
+  (when (overlayp lsp-ui-doc--highlight-ov)
+    (delete-overlay lsp-ui-doc--highlight-ov))
   (when (lsp-ui-doc--get-frame)
     (unless lsp-ui-doc-use-webkit
       (lsp-ui-doc--with-buffer
@@ -657,12 +667,21 @@ HEIGHT is the documentation number of lines."
       (not (display-graphic-p))
       (not (fboundp 'display-buffer-in-child-frame))))
 
+(defun lsp-ui-doc--highlight-hover nil
+  (when lsp-ui-doc--from-mouse-current
+    (-let* (((start . end) lsp-ui-doc--bounds)
+            (ov (if (overlayp lsp-ui-doc--highlight-ov) lsp-ui-doc--highlight-ov
+                  (setq lsp-ui-doc--highlight-ov (make-overlay start end)))))
+      (move-overlay ov start end)
+      (overlay-put ov 'face 'lsp-ui-doc-highlight-hover))))
+
 (defun lsp-ui-doc--display (symbol string)
   "Display the documentation."
   (when (and lsp-ui-doc-use-webkit (not (featurep 'xwidget-internal)))
     (setq lsp-ui-doc-use-webkit nil))
   (if (or (null string) (string-empty-p string))
       (lsp-ui-doc--hide-frame)
+    (lsp-ui-doc--highlight-hover)
     (lsp-ui-doc--render-buffer string symbol)
     (if (lsp-ui-doc--inline-p)
         (lsp-ui-doc--inline)
