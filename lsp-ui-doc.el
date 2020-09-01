@@ -820,7 +820,13 @@ before, or if the new window is the minibuffer."
     (and frame
          (eq lsp-ui-doc-position 'at-point)
          (frame-visible-p frame)
-         (lsp-ui-doc--move-frame frame))))
+         (if (and lsp-ui-doc--bounds
+                  (>= (point) (car lsp-ui-doc--bounds))
+                  (<= (point) (cdr lsp-ui-doc--bounds)))
+             (lsp-ui-doc--move-frame frame)
+           ;; The point might have changed if the window was scrolled
+           ;; too far
+           (lsp-ui-doc--hide-frame)))))
 
 (define-minor-mode lsp-ui-doc-mode
   "Minor mode for showing hover information in child frame."
