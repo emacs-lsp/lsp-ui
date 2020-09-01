@@ -885,6 +885,7 @@ BUFFER is the buffer where the request has been made."
   (let ((point (posn-point (cadr event))))
     (and lsp-ui-doc--from-mouse
          lsp-ui-doc--bounds
+         point
          (or (< point (car lsp-ui-doc--bounds))
              (> point (cdr lsp-ui-doc--bounds)))
          (lsp-ui-doc--hide-frame)
