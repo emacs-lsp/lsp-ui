@@ -384,7 +384,8 @@ We don't extract the string that `lps-line' is already displaying."
 
 (defun lsp-ui-doc--hide-frame (&optional _win)
   "Hide the frame."
-  (setq lsp-ui-doc--bounds nil)
+  (setq lsp-ui-doc--bounds nil
+        lsp-ui-doc--from-mouse nil)
   (when (overlayp lsp-ui-doc--inline-ov)
     (delete-overlay lsp-ui-doc--inline-ov))
   (when (overlayp lsp-ui-doc--highlight-ov)
@@ -753,9 +754,9 @@ HEIGHT is the documentation number of lines."
 
 (defun lsp-ui-doc--make-request nil
   "Request the documentation to the LS."
-  ;; (message "THIS=%s LAST=%s" this-command last-command)
-  (unless track-mouse
-    (setq-local track-mouse t))
+  (and (not track-mouse)
+       lsp-ui-doc-show-with-mouse
+       (setq-local track-mouse t))
   (when (and (not (eq this-command 'lsp-ui-doc-hide))
              (not (eq this-command 'keyboard-quit))
              (not (eq this-command 'lsp-ui-doc--handle-mouse-movement))
@@ -914,8 +915,7 @@ BUFFER is the buffer where the request has been made."
          point
          (or (< point (car lsp-ui-doc--bounds))
              (> point (cdr lsp-ui-doc--bounds)))
-         (lsp-ui-doc--hide-frame)
-         (setq lsp-ui-doc--from-mouse nil))
+         (lsp-ui-doc--hide-frame))
     (setq lsp-ui-doc--last-event point
           lsp-ui-doc--timer-mouse-movement
           (run-with-idle-timer 0.5 nil 'lsp-ui-doc--mouse-display))))
