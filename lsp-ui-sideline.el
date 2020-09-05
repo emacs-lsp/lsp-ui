@@ -565,19 +565,21 @@ from the language server."
               ;; Skip strings and comments
               (when (and symbol (not in-string) outside-comment)
                 (push (list symbol bounds (list :line (1- line-widen) :character (- (point) bol))) symbols))))
-          (let ((last-symbol (1- (length symbols)))
-                list-infos)
-            (--each-indexed symbols
-              (-let (((symbol bounds position) it)
-                     (index it-index))
-                (lsp-request-async
-                 "textDocument/hover"
-                 (lsp-make-hover-params :text-document doc-id :position position)
-                 (lambda (info)
-                   (and info (push (list symbol bounds info) list-infos))
-                   (when (= index last-symbol)
-                     (lsp-ui-sideline--display-all-info list-infos tag bol eol)))
-                 :mode 'tick)))))))))
+          (if (null symbols)
+              (lsp-ui-sideline--delete-kind 'info)
+            (let ((last-symbol (1- (length symbols)))
+                  list-infos)
+              (--each-indexed symbols
+                (-let (((symbol bounds position) it)
+                       (index it-index))
+                  (lsp-request-async
+                   "textDocument/hover"
+                   (lsp-make-hover-params :text-document doc-id :position position)
+                   (lambda (info)
+                     (and info (push (list symbol bounds info) list-infos))
+                     (when (= index last-symbol)
+                       (lsp-ui-sideline--display-all-info list-infos tag bol eol)))
+                   :mode 'tick))))))))))
 
 (defun lsp-ui-sideline--stop-p ()
   "Return non-nil if the sideline should not be display."
