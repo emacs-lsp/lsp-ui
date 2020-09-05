@@ -2,6 +2,7 @@ lsp-ui
 ======
 
 [![MELPA](https://melpa.org/packages/lsp-ui-badge.svg)](https://melpa.org/#/lsp-ui)
+[![MELPA Stable](https://stable.melpa.org/packages/lsp-ui-badge.svg)](https://stable.melpa.org/#/lsp-ui)
 [![](https://badges.gitter.im/emacs-lsp/lsp-mode.svg)](https://gitter.im/emacs-lsp/lsp-mode)
 [![Build Status](https://github.com/emacs-lsp/lsp-ui/workflows/CI/badge.svg?branch=master)](https://github.com/emacs-lsp/lsp-ui/actions)
 
