@@ -240,7 +240,7 @@ Because some variables are buffer local.")
 (defvar markdown-fontify-code-block-default-mode)
 
 (defun lsp-ui-doc--inline-wrapped-line (string)
-  "Wraps a line of text for inline display."
+  "Wraps a line of text (STRING) for inline display."
   (let ((doc-max-width (lsp-ui-doc--inline-window-width)))
     (cond ((string-empty-p string) "")
           ((< (length string) doc-max-width) string)
@@ -258,7 +258,7 @@ Because some variables are buffer local.")
              "\n"))
 
 (defun lsp-ui-doc--extract-marked-string (marked-string &optional language)
-  "Render the MARKED-STRING."
+  "Render the MARKED-STRING with LANGUAGE."
   (string-trim-right
    (let* ((string (if (stringp marked-string)
                       marked-string
@@ -276,6 +276,7 @@ Because some variables are buffer local.")
       (t (lsp--render-element (lsp-ui-doc--inline-formatted-string string)))))))
 
 (defun lsp-ui-doc--filter-marked-string (list-marked-string)
+  "Filter the LIST-MARKED-STRING."
   (let ((groups (--separate (and (lsp-marked-string? it)
                                  (lsp-get-renderer (lsp:marked-string-language it)))
                             (append list-marked-string nil))))
@@ -396,12 +397,14 @@ We don't extract the string that `lps-line' is already displaying."
    0))
 
 (defun lsp-ui-doc--sideline-pos-y ()
+  "Mark as unused function."
   (-> (when (bound-and-true-p lsp-ui-sideline--occupied-lines)
         (-min lsp-ui-sideline--occupied-lines))
       (line-number-at-pos)
       (lsp-ui-doc--line-height)))
 
 (defun lsp-ui-doc--webkit-resize-callback (size)
+  "Callback when resizing using webkit depends on the SIZE."
   (let ((offset-width (round (aref size 0)))
         (offset-height (round (aref size 1))))
     (xwidget-resize (lsp-ui-doc--webkit-get-xwidget) offset-width offset-height))
@@ -491,7 +494,7 @@ FRAME just below the symbol at point."
 
 (defun lsp-ui-doc--put-click (start end fn)
   "Add text properties on text to make it clickable.
-The text delimiters are BOUNDS.
+The text delimiters bound from START to END.
 FN is the function to call on click."
   (let ((map (make-sparse-keymap)))
     (define-key map [down-mouse-1] fn)
@@ -514,7 +517,7 @@ FN is the function to call on click."
                                'browse-url-at-mouse)))))
 
 (defun lsp-ui-doc--render-buffer (string symbol)
-  "Set the buffer with STRING."
+  "Set the buffer with STRING and SYMBOL."
   (lsp-ui-doc--with-buffer
    (if lsp-ui-doc-use-webkit
        (progn
