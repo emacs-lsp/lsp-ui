@@ -108,6 +108,11 @@ Child frames requires GNU/Emacs version >= 26 and graphical frames."
   :type 'boolean
   :group 'lsp-ui-doc)
 
+(defcustom lsp-ui-doc-show-with-mouse t
+  "Move the mouse pointer over a symbol to show its documentation."
+  :type 'boolean
+  :group 'lsp-ui-doc)
+
 (defcustom lsp-ui-doc-use-webkit nil
   "Whether to display documentation in a WebKit widget in a child-frame.
 This requires GNU/Emacs version >= 26 and built with the `--with-xwidgets`
@@ -929,12 +934,13 @@ BUFFER is the buffer where the request has been made."
 If nil, do not prevent mouse on prefix keys.")
 
 (defun lsp-ui-doc--setup-mouse nil
-  (setq lsp-ui-doc--mouse-tracked-by-us (not track-mouse))
-  (setq-local track-mouse t)
-  (unless lsp-ui-doc--timer-mouse-idle
-    ;; Set only 1 timer for all buffers
-    (setq lsp-ui-doc--timer-mouse-idle
-          (run-with-idle-timer 0 t 'lsp-ui-doc--disable-mouse-on-prefix))))
+  (when lsp-ui-doc-show-with-mouse
+    (setq lsp-ui-doc--mouse-tracked-by-us (not track-mouse))
+    (setq-local track-mouse t)
+    (unless lsp-ui-doc--timer-mouse-idle
+      ;; Set only 1 timer for all buffers
+      (setq lsp-ui-doc--timer-mouse-idle
+            (run-with-idle-timer 0 t 'lsp-ui-doc--disable-mouse-on-prefix)))))
 
 (define-minor-mode lsp-ui-doc-mode
   "Minor mode for showing hover information in child frame."
