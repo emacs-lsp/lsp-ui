@@ -907,18 +907,19 @@ BUFFER is the buffer where the request has been made."
 
 (defun lsp-ui-doc--handle-mouse-movement (event)
   (interactive "e")
-  (and (timerp lsp-ui-doc--timer-mouse-movement)
-       (cancel-timer lsp-ui-doc--timer-mouse-movement))
-  (let ((point (posn-point (cadr event))))
-    (and lsp-ui-doc--from-mouse
-         lsp-ui-doc--bounds
-         point
-         (or (< point (car lsp-ui-doc--bounds))
-             (> point (cdr lsp-ui-doc--bounds)))
-         (lsp-ui-doc--hide-frame))
-    (setq lsp-ui-doc--last-event point
-          lsp-ui-doc--timer-mouse-movement
-          (run-with-idle-timer 0.5 nil 'lsp-ui-doc--mouse-display))))
+  (when lsp-ui-doc-show-with-mouse
+    (and (timerp lsp-ui-doc--timer-mouse-movement)
+         (cancel-timer lsp-ui-doc--timer-mouse-movement))
+    (let ((point (posn-point (cadr event))))
+      (and lsp-ui-doc--from-mouse
+           lsp-ui-doc--bounds
+           point
+           (or (< point (car lsp-ui-doc--bounds))
+               (> point (cdr lsp-ui-doc--bounds)))
+           (lsp-ui-doc--hide-frame))
+      (setq lsp-ui-doc--last-event point
+            lsp-ui-doc--timer-mouse-movement
+            (run-with-idle-timer 0.5 nil 'lsp-ui-doc--mouse-display)))))
 
 (defun lsp-ui-doc--disable-mouse-on-prefix nil
   (and (bound-and-true-p lsp-ui-doc-mode)
