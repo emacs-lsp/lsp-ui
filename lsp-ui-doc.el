@@ -749,6 +749,8 @@ HEIGHT is the documentation number of lines."
 (defun lsp-ui-doc--make-request nil
   "Request the documentation to the LS."
   ;; (message "THIS=%s LAST=%s" this-command last-command)
+  (unless track-mouse
+    (setq-local track-mouse t))
   (when (and (not (eq this-command 'lsp-ui-doc-hide))
              (not (eq this-command 'keyboard-quit))
              (not (eq this-command 'lsp-ui-doc--handle-mouse-movement))
@@ -913,6 +915,27 @@ BUFFER is the buffer where the request has been made."
           lsp-ui-doc--timer-mouse-movement
           (run-with-idle-timer 0.5 nil 'lsp-ui-doc--mouse-display))))
 
+(defun lsp-ui-doc--disable-mouse-on-prefix nil
+  (and (bound-and-true-p lsp-ui-doc-mode)
+       (bound-and-true-p lsp-ui-doc--mouse-tracked-by-us)
+       track-mouse
+       (> (length (this-single-command-keys)) 0)
+       (setq-local track-mouse nil)))
+
+(defvar lsp-ui-doc--timer-mouse-idle nil)
+
+(defvar-local lsp-ui-doc--mouse-tracked-by-us nil
+  "Nil if `track-mouse' was set by another package.
+If nil, do not prevent mouse on prefix keys.")
+
+(defun lsp-ui-doc--setup-mouse nil
+  (setq lsp-ui-doc--mouse-tracked-by-us (not track-mouse))
+  (setq-local track-mouse t)
+  (unless lsp-ui-doc--timer-mouse-idle
+    ;; Set only 1 timer for all buffers
+    (setq lsp-ui-doc--timer-mouse-idle
+          (run-with-idle-timer 0 t 'lsp-ui-doc--disable-mouse-on-prefix))))
+
 (define-minor-mode lsp-ui-doc-mode
   "Minor mode for showing hover information in child frame."
   :init-value nil
@@ -932,9 +955,9 @@ BUFFER is the buffer where the request has been made."
         (push '(lsp-ui-doc-frame . :never) frameset-filter-alist)))
     (when (boundp 'window-state-change-functions)
       (add-hook 'window-state-change-functions 'lsp-ui-doc--on-state-changed))
+    (lsp-ui-doc--setup-mouse)
     (add-hook 'post-command-hook 'lsp-ui-doc--make-request nil t)
     (add-hook 'window-scroll-functions 'lsp-ui-doc--handle-scroll nil t)
-    (setq-local track-mouse t)
     (add-hook 'delete-frame-functions 'lsp-ui-doc--on-delete nil t))
    (t
     (lsp-ui-doc-hide)
