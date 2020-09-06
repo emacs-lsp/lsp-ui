@@ -471,6 +471,13 @@ FRAME just below the symbol at point."
                       (if (fboundp 'window-tab-line-height) (window-tab-line-height) 0))))
     (cons (+ start-x frame-x) (+ start-y frame-y))))
 
+(defun lsp-ui-doc--size-and-pos-changed (frame left top width height)
+  (-let (((prev-left . prev-top) (frame-position frame)))
+    (not (and (= left prev-left)
+              (= top prev-top)
+              (= height (frame-text-height frame))
+              (= width (frame-text-width frame))))))
+
 (defun lsp-ui-doc--move-frame (frame)
   "Place our FRAME on screen."
   (-let* (((left top right _bottom) (window-edges nil t nil t))
@@ -496,9 +503,13 @@ FRAME just below the symbol at point."
           (move-frame-functions nil)
           (window-size-change-functions nil)
           (inhibit-redisplay t))
-    ;; Make frame invisible before moving/resizing it to avoid flickering
-    (when (frame-visible-p frame)
-      (make-frame-invisible frame))
+    ;; Make frame invisible before moving/resizing it to avoid flickering:
+    ;; We set the position and size in 1 call, modify-frame-parameters, but
+    ;; internally emacs makes 2 different calls, which can be visible
+    ;; to the user
+    (and (frame-visible-p frame)
+         (lsp-ui-doc--size-and-pos-changed frame left top width height)
+         (make-frame-invisible frame))
     (modify-frame-parameters
      frame
      `((width . (text-pixels . ,width))
@@ -509,7 +520,9 @@ FRAME just below the symbol at point."
        (user-position . t)
        (lsp-ui-doc--window-origin . ,(selected-window))
        (lsp-ui-doc--buffer-origin . ,(current-buffer))
-       (right-fringe . 0)))))
+       (right-fringe . 0)))
+    (unless (frame-visible-p frame)
+      (make-frame-visible frame))))
 
 (defun lsp-ui-doc--visit-file (filename)
   "Visit FILENAME in the parent frame."
@@ -695,9 +708,7 @@ HEIGHT is the documentation number of lines."
         (lsp-ui-doc--set-frame (lsp-ui-doc--make-frame)))
       (unless lsp-ui-doc-use-webkit
         (lsp-ui-doc--resize-buffer)
-        (lsp-ui-doc--move-frame (lsp-ui-doc--get-frame)))
-      (unless (frame-visible-p (lsp-ui-doc--get-frame))
-        (make-frame-visible (lsp-ui-doc--get-frame))))
+        (lsp-ui-doc--move-frame (lsp-ui-doc--get-frame))))
     (setq lsp-ui-doc--from-mouse lsp-ui-doc--from-mouse-current)))
 
 (defun lsp-ui-doc--make-frame ()
