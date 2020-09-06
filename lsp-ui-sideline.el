@@ -543,6 +543,9 @@ from the language server."
            (lsp--text-document-code-action-params))
          (lambda (actions) (lsp-ui-sideline--code-actions actions bol eol))
          :mode 'tick
+         :error-handler
+         (lambda (&rest)
+           (lsp-ui-sideline--delete-kind 'actions))
          :cancel-token :lsp-ui-code-actions))
       ;; Go through all symbols and request hover information.  Note that the symbols are
       ;; traversed backwards as `forward-symbol' with a positive argument will jump just past the
@@ -567,17 +570,23 @@ from the language server."
                 (push (list symbol bounds (list :line (1- line-widen) :character (- (point) bol))) symbols))))
           (if (null symbols)
               (lsp-ui-sideline--delete-kind 'info)
-            (let ((last-symbol (1- (length symbols)))
+            (let ((length-symbols (length symbols))
+                  (current-index 0)
                   list-infos)
-              (--each-indexed symbols
-                (-let (((symbol bounds position) it)
-                       (index it-index))
+              (--each symbols
+                (-let (((symbol bounds position) it))
                   (lsp-request-async
                    "textDocument/hover"
                    (lsp-make-hover-params :text-document doc-id :position position)
                    (lambda (info)
+                     (setq current-index (1+ current-index))
                      (and info (push (list symbol bounds info) list-infos))
-                     (when (= index last-symbol)
+                     (when (= current-index length-symbols)
+                       (lsp-ui-sideline--display-all-info list-infos tag bol eol)))
+                   :error-handler
+                   (lambda (&rest _)
+                     (setq current-index (1+ current-index))
+                     (when (= current-index length-symbols)
                        (lsp-ui-sideline--display-all-info list-infos tag bol eol)))
                    :mode 'tick))))))))))
 
