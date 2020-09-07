@@ -825,6 +825,7 @@ before, or if the new window is the minibuffer."
          (eq lsp-ui-doc-position 'at-point)
          (frame-visible-p frame)
          (if (and lsp-ui-doc--bounds
+                  (eq (window-buffer) (frame-parameter frame 'lsp-ui-doc--buffer-origin))
                   (>= (point) (car lsp-ui-doc--bounds))
                   (<= (point) (cdr lsp-ui-doc--bounds)))
              (lsp-ui-doc--move-frame frame)
