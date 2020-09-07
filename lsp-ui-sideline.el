@@ -544,7 +544,7 @@ from the language server."
          (lambda (actions) (lsp-ui-sideline--code-actions actions bol eol))
          :mode 'tick
          :error-handler
-         (lambda (&rest)
+         (lambda (&rest _)
            (lsp-ui-sideline--delete-kind 'actions))
          :cancel-token :lsp-ui-code-actions))
       ;; Go through all symbols and request hover information.  Note that the symbols are
