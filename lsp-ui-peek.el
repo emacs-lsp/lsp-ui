@@ -366,7 +366,9 @@ XREFS is a list of references/definitions."
                           (lsp-ui-peek--fill (1- lsp-ui-peek-peek-height))
                           (-concat (list header2)))))
     (setq lsp-ui-peek--last-xref (or xref lsp-ui-peek--last-xref))
-    (lsp-ui-peek--peek-new ref-view list-refs)))
+    (lsp-ui-peek--peek-new ref-view list-refs)
+    (and (fboundp 'lsp-ui-doc--hide-frame)
+         (lsp-ui-doc--hide-frame))))
 
 (defun lsp-ui-peek--toggle-text-prop (s)
   (let ((state (lsp-ui-peek--prop 'lsp-ui-peek-hidden s)))
