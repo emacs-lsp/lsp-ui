@@ -63,6 +63,16 @@
   :type 'boolean
   :group 'lsp-ui)
 
+(defcustom lsp-ui-doc-show-with-mouse t
+  "Move the mouse pointer over a symbol to show its documentation."
+  :type 'boolean
+  :group 'lsp-ui-doc)
+
+(defcustom lsp-ui-doc-show-with-cursor t
+  "Move the cursor over a symbol to show its documentation."
+  :type 'boolean
+  :group 'lsp-ui-doc)
+
 (defcustom lsp-ui-doc-header nil
   "Whether or not to enable the header which display the symbol string."
   :type 'boolean
@@ -73,8 +83,10 @@
   :type 'boolean
   :group 'lsp-ui-doc)
 
-(defcustom lsp-ui-doc-position 'at-point
-  "Where to display the doc."
+(defcustom lsp-ui-doc-position 'top
+  "Where to display the doc when moving the point cursor.
+This affect the position of the documentation when `lsp-ui-doc-show-with-cursor'
+is non-nil."
   :type '(choice (const :tag "Top" top)
                  (const :tag "Bottom" bottom)
                  (const :tag "At point" at-point))
@@ -105,11 +117,6 @@ This only takes effect when `lsp-ui-doc-position' is 'top or 'bottom."
 (defcustom lsp-ui-doc-use-childframe t
   "Whether to display documentation in a child-frame or the current frame.
 Child frames requires GNU/Emacs version >= 26 and graphical frames."
-  :type 'boolean
-  :group 'lsp-ui-doc)
-
-(defcustom lsp-ui-doc-show-with-mouse t
-  "Move the mouse pointer over a symbol to show its documentation."
   :type 'boolean
   :group 'lsp-ui-doc)
 
@@ -740,11 +747,9 @@ HEIGHT is the documentation number of lines."
       (define-key (current-global-map) [xwidget-event]
         (lambda ()
           (interactive)
-
           (let ((xwidget-event-type (nth 1 last-input-event)))
             ;; (when (eq xwidget-event-type 'load-changed)
             ;;   (lsp-ui-doc--move-frame (lsp-ui-doc--get-frame)))
-
             (when (eq xwidget-event-type 'javascript-callback)
               (let ((proc (nth 3 last-input-event))
                     (arg (nth 4 last-input-event)))
@@ -752,15 +757,16 @@ HEIGHT is the documentation number of lines."
       (lsp-ui-doc--webkit-run-xwidget))
     frame))
 
+(defconst lsp-ui-doc--ignore-commands
+  '(lsp-ui-doc-hide keyboard-quit lsp-ui-doc--handle-mouse-movement ignore))
+
 (defun lsp-ui-doc--make-request nil
   "Request the documentation to the LS."
   (and (not track-mouse)
        lsp-ui-doc-show-with-mouse
        (setq-local track-mouse t))
-  (when (and (not (eq this-command 'lsp-ui-doc-hide))
-             (not (eq this-command 'keyboard-quit))
-             (not (eq this-command 'lsp-ui-doc--handle-mouse-movement))
-             (not (eq this-command 'ignore))
+  (when (and lsp-ui-doc-show-with-cursor
+             (not (memq this-command lsp-ui-doc--ignore-commands))
              (not (bound-and-true-p lsp-ui-peek-mode))
              (lsp--capability "hoverProvider"))
     (-if-let (bounds (or (and (symbol-at-point) (bounds-of-thing-at-point 'symbol))
@@ -824,8 +830,8 @@ BUFFER is the buffer where the request has been made."
 
 (defun lsp-ui-doc-hide-frame-on-window-change (fun window &optional no-record)
   "Delete the child frame if currently selected window changes.
-  Does nothing if the newly-selected window is the same window as
-  before, or if the new window is the minibuffer."
+Does nothing if the newly-selected window is the same window as
+before, or if the new window is the minibuffer."
   (let ((initial-window (selected-window)))
     (prog1 (funcall fun window no-record)
       (unless no-record
@@ -1029,7 +1035,10 @@ It is supposed to be called from `lsp-ui--toggle'"
   "Unfocus from lsp-ui-doc-frame."
   (interactive)
   (when-let ((frame (frame-parent (lsp-ui-doc--get-frame))))
-    (select-frame-set-input-focus frame)))
+    (select-frame-set-input-focus frame))
+  (when lsp-ui-doc--from-mouse
+    (-some-> (lsp-ui-doc--get-frame)
+      (make-frame-invisible))))
 
 (provide 'lsp-ui-doc)
 ;;; lsp-ui-doc.el ends here
