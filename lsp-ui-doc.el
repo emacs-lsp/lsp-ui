@@ -527,6 +527,7 @@ FRAME just below the symbol at point."
        (user-position . t)
        (lsp-ui-doc--window-origin . ,(selected-window))
        (lsp-ui-doc--buffer-origin . ,(current-buffer))
+       (lsp-ui-doc--no-focus . t)
        (right-fringe . 0)))
     (unless (frame-visible-p frame)
       (make-frame-visible frame))))
@@ -560,34 +561,42 @@ FN is the function to call on click."
         (lsp-ui-doc--put-click (match-beginning 0) (match-end 0)
                                'browse-url-at-mouse)))))
 
+(defun lsp-ui-doc--buffer-pre-command (&rest _)
+  (when (and (not (eq this-command 'mwheel-scroll))
+             (frame-parameter nil 'lsp-ui-doc--no-focus))
+    (select-frame (frame-parent) t)))
+
 (defun lsp-ui-doc--render-buffer (string symbol)
   "Set the buffer with STRING and SYMBOL."
   (lsp-ui-doc--with-buffer
-    (if lsp-ui-doc-use-webkit
-        (progn
-          (lsp-ui-doc--webkit-execute-script
-           (format
-            "renderMarkdown('%s', '%s');"
-            symbol
-            (url-hexify-string string))
-           'lsp-ui-doc--webkit-resize-callback))
-      (erase-buffer)
-      (let ((inline-p (lsp-ui-doc--inline-p)))
-        (insert (concat (unless inline-p (propertize "\n" 'face '(:height 0.2)))
-                        (s-trim string)
-                        (unless inline-p (propertize "\n\n" 'face '(:height 0.3))))))
-      (lsp-ui-doc--make-clickable-link))
-    (setq-local face-remapping-alist `((header-line lsp-ui-doc-header)))
-    (setq-local window-min-height 1)
-    (setq-local window-configuration-change-hook nil)
-    (when (boundp 'window-state-change-functions)
-      (setq-local window-state-change-functions nil))
-    (when (boundp 'window-state-change-hook)
-      (setq-local window-state-change-hook nil))
-    (setq-local window-size-change-functions nil)
-    (setq header-line-format (when lsp-ui-doc-header (concat " " symbol))
-          mode-line-format nil
-          cursor-type nil)))
+   (if lsp-ui-doc-use-webkit
+       (progn
+         (lsp-ui-doc--webkit-execute-script
+          (format
+           "renderMarkdown('%s', '%s');"
+           symbol
+           (url-hexify-string string))
+          'lsp-ui-doc--webkit-resize-callback))
+     (erase-buffer)
+     (let ((inline-p (lsp-ui-doc--inline-p)))
+       (insert (concat (unless inline-p (propertize "\n" 'face '(:height 0.2)))
+                       (s-trim string)
+                       (unless inline-p (propertize "\n\n" 'face '(:height 0.3))))))
+     (lsp-ui-doc--make-clickable-link)
+     (add-text-properties 1 (point-max) '(pointer arrow)))
+   (lsp-ui-doc-frame-mode 1)
+   (setq-local face-remapping-alist `((header-line lsp-ui-doc-header)))
+   (setq-local window-min-height 1)
+   (setq-local window-configuration-change-hook nil)
+   (add-hook 'pre-command-hook 'lsp-ui-doc--buffer-pre-command nil t)
+   (when (boundp 'window-state-change-functions)
+     (setq-local window-state-change-functions nil))
+   (when (boundp 'window-state-change-hook)
+     (setq-local window-state-change-hook nil))
+   (setq-local window-size-change-functions nil)
+   (setq header-line-format (when lsp-ui-doc-header (concat " " symbol))
+         mode-line-format nil
+         cursor-type nil)))
 
 (defun lsp-ui-doc--inline-height ()
   (lsp-ui-doc--with-buffer
@@ -730,6 +739,8 @@ HEIGHT is the documentation number of lines."
                            (default-minibuffer-frame . ,(selected-frame))
                            (minibuffer . ,(minibuffer-window))
                            (left-fringe . ,(frame-char-width))
+                           (cursor-type . nil)
+                           (lsp-ui-doc--no-focus . t)
                            (background-color . ,(face-background 'lsp-ui-doc-background nil t)))))
          (window (display-buffer-in-child-frame
                   buffer
@@ -739,7 +750,7 @@ HEIGHT is the documentation number of lines."
       (lsp-ui-doc-frame-mode 1))
     (set-frame-parameter nil 'lsp-ui-doc-buffer buffer)
     (set-window-dedicated-p window t)
-    (redirect-frame-focus frame (frame-parent frame))
+    ;;(redirect-frame-focus frame (frame-parent frame))
     (set-face-background 'internal-border lsp-ui-doc-border frame)
     (set-face-background 'fringe nil frame)
     (run-hook-with-args 'lsp-ui-doc-frame-hook frame window)
@@ -758,7 +769,12 @@ HEIGHT is the documentation number of lines."
     frame))
 
 (defconst lsp-ui-doc--ignore-commands
-  '(lsp-ui-doc-hide keyboard-quit lsp-ui-doc--handle-mouse-movement ignore))
+  '(lsp-ui-doc-hide
+    lsp-ui-doc--handle-mouse-movement
+    keyboard-quit
+    ignore
+    handle-switch-frame
+    mwheel-scroll))
 
 (defun lsp-ui-doc--make-request nil
   "Request the documentation to the LS."
@@ -949,6 +965,9 @@ If nil, do not prevent mouse on prefix keys.")
       (setq lsp-ui-doc--timer-mouse-idle
             (run-with-idle-timer 0 t 'lsp-ui-doc--disable-mouse-on-prefix)))))
 
+(defun lsp-ui-doc--prevent-focus-doc (e)
+  (not (frame-parameter (cadr e) 'lsp-ui-doc--no-focus)))
+
 (define-minor-mode lsp-ui-doc-mode
   "Minor mode for showing hover information in child frame."
   :init-value nil
@@ -969,6 +988,7 @@ If nil, do not prevent mouse on prefix keys.")
     (when (boundp 'window-state-change-functions)
       (add-hook 'window-state-change-functions 'lsp-ui-doc--on-state-changed))
     (lsp-ui-doc--setup-mouse)
+    (advice-add 'handle-switch-frame :before-while 'lsp-ui-doc--prevent-focus-doc)
     (add-hook 'post-command-hook 'lsp-ui-doc--make-request nil t)
     (add-hook 'window-scroll-functions 'lsp-ui-doc--handle-scroll nil t)
     (add-hook 'delete-frame-functions 'lsp-ui-doc--on-delete nil t))
@@ -1027,6 +1047,7 @@ It is supposed to be called from `lsp-ui--toggle'"
   "Focus into lsp-ui-doc-frame."
   (interactive)
   (when (lsp-ui-doc--frame-visible-p)
+    (set-frame-parameter (lsp-ui-doc--get-frame) 'lsp-ui-doc--no-focus nil)
     (lsp-ui-doc--with-buffer
       (setq cursor-type t))
     (select-frame-set-input-focus (lsp-ui-doc--get-frame))))
@@ -1035,7 +1056,8 @@ It is supposed to be called from `lsp-ui--toggle'"
   "Unfocus from lsp-ui-doc-frame."
   (interactive)
   (when-let ((frame (frame-parent (lsp-ui-doc--get-frame))))
-    (select-frame-set-input-focus frame))
+    (select-frame-set-input-focus frame)
+    (set-frame-parameter frame 'lsp-ui-doc--no-focus t))
   (when lsp-ui-doc--from-mouse
     (-some-> (lsp-ui-doc--get-frame)
       (make-frame-invisible))))
