@@ -109,7 +109,7 @@ This only takes effect when `lsp-ui-doc-position' is 'top or 'bottom."
   :type 'integer
   :group 'lsp-ui-doc)
 
-(defcustom lsp-ui-doc-max-height 30
+(defcustom lsp-ui-doc-max-height 15
   "Maximum number of lines in the frame."
   :type 'integer
   :group 'lsp-ui-doc)
@@ -573,9 +573,9 @@ FN is the function to call on click."
                                'browse-url-at-mouse)))))
 
 (defun lsp-ui-doc--buffer-pre-command (&rest _)
-  (when (and (not (eq this-command 'mwheel-scroll))
-             (frame-parameter nil 'lsp-ui-doc--no-focus))
-    (select-frame (frame-parent) t)))
+  (and (not (eq this-command 'mwheel-scroll))
+       (frame-parameter nil 'lsp-ui-doc--no-focus)
+       (select-frame (frame-parent) t)))
 
 (defun lsp-ui-doc--render-buffer (string symbol)
   "Set the buffer with STRING and SYMBOL."
