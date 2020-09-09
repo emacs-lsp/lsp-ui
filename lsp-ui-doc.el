@@ -569,34 +569,34 @@ FN is the function to call on click."
 (defun lsp-ui-doc--render-buffer (string symbol)
   "Set the buffer with STRING and SYMBOL."
   (lsp-ui-doc--with-buffer
-   (if lsp-ui-doc-use-webkit
-       (progn
-         (lsp-ui-doc--webkit-execute-script
-          (format
-           "renderMarkdown('%s', '%s');"
-           symbol
-           (url-hexify-string string))
-          'lsp-ui-doc--webkit-resize-callback))
-     (erase-buffer)
-     (let ((inline-p (lsp-ui-doc--inline-p)))
-       (insert (concat (unless inline-p (propertize "\n" 'face '(:height 0.2)))
-                       (s-trim string)
-                       (unless inline-p (propertize "\n\n" 'face '(:height 0.3))))))
-     (lsp-ui-doc--make-clickable-link)
-     (add-text-properties 1 (point-max) '(pointer arrow)))
-   (lsp-ui-doc-frame-mode 1)
-   (setq-local face-remapping-alist `((header-line lsp-ui-doc-header)))
-   (setq-local window-min-height 1)
-   (setq-local window-configuration-change-hook nil)
-   (add-hook 'pre-command-hook 'lsp-ui-doc--buffer-pre-command nil t)
-   (when (boundp 'window-state-change-functions)
-     (setq-local window-state-change-functions nil))
-   (when (boundp 'window-state-change-hook)
-     (setq-local window-state-change-hook nil))
-   (setq-local window-size-change-functions nil)
-   (setq header-line-format (when lsp-ui-doc-header (concat " " symbol))
-         mode-line-format nil
-         cursor-type nil)))
+    (if lsp-ui-doc-use-webkit
+        (progn
+          (lsp-ui-doc--webkit-execute-script
+           (format
+            "renderMarkdown('%s', '%s');"
+            symbol
+            (url-hexify-string string))
+           'lsp-ui-doc--webkit-resize-callback))
+      (erase-buffer)
+      (let ((inline-p (lsp-ui-doc--inline-p)))
+        (insert (concat (unless inline-p (propertize "\n" 'face '(:height 0.2)))
+                        (s-trim string)
+                        (unless inline-p (propertize "\n\n" 'face '(:height 0.3))))))
+      (lsp-ui-doc--make-clickable-link)
+      (add-text-properties 1 (point-max) '(pointer arrow)))
+    (lsp-ui-doc-frame-mode 1)
+    (setq-local face-remapping-alist `((header-line lsp-ui-doc-header)))
+    (setq-local window-min-height 1)
+    (setq-local window-configuration-change-hook nil)
+    (add-hook 'pre-command-hook 'lsp-ui-doc--buffer-pre-command nil t)
+    (when (boundp 'window-state-change-functions)
+      (setq-local window-state-change-functions nil))
+    (when (boundp 'window-state-change-hook)
+      (setq-local window-state-change-hook nil))
+    (setq-local window-size-change-functions nil)
+    (setq header-line-format (when lsp-ui-doc-header (concat " " symbol))
+          mode-line-format nil
+          cursor-type nil)))
 
 (defun lsp-ui-doc--inline-height ()
   (lsp-ui-doc--with-buffer
