@@ -248,7 +248,7 @@ MARKED-STRING is the string returned by `lsp-ui-sideline--extract-info'."
     (add-face-text-property 0 (length marked-string) 'lsp-ui-sideline-symbol-info nil marked-string)
     (add-face-text-property 0 (length marked-string) 'default t marked-string)
     (->> (if (> (length marked-string) win-width)
-             (first (split-string marked-string "[\r\n]+"))
+             (car (split-string marked-string "[\r\n]+"))
            marked-string)
          (replace-regexp-in-string "[\n\r\t ]+" " "))))
 
