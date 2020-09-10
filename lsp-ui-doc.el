@@ -506,6 +506,17 @@ FN is the function to call on click."
                                         :color (face-foreground 'lsp-ui-doc-url))))
     (add-face-text-property start end 'lsp-ui-doc-url)))
 
+(defun lsp-ui-doc--open-markdown-link (&rest _)
+  (interactive "P")
+  (-when-let* ((valid (and (listp last-input-event)
+                           (eq (car last-input-event) 'mouse-2)))
+               (event (cadr last-input-event))
+               (point (posn-point event))
+               ;; Markdown-mode puts the url in 'help-echo
+               (url (get-text-property point 'help-echo)))
+    (and (string-match-p goto-address-url-regexp url)
+         (browse-url url))))
+
 (defun lsp-ui-doc--make-clickable-link ()
   "Find paths and urls in the buffer and make them clickable."
   (goto-char (point-min))
@@ -904,7 +915,8 @@ It is supposed to be called from `lsp-ui--toggle'"
   :init-value nil
   :lighter ""
   :group lsp-ui-doc
-  :keymap `(([?q] . lsp-ui-doc-unfocus-frame)))
+  :keymap `(([?q] . lsp-ui-doc-unfocus-frame)
+            ([remap markdown-follow-thing-at-point] . lsp-ui-doc--open-markdown-link)))
 
 (defun lsp-ui-doc-focus-frame ()
   "Focus into lsp-ui-doc-frame."
