@@ -1059,8 +1059,9 @@ It is supposed to be called from `lsp-ui--toggle'"
     (select-frame-set-input-focus frame)
     (set-frame-parameter frame 'lsp-ui-doc--no-focus t))
   (when lsp-ui-doc--from-mouse
-    (-some-> (lsp-ui-doc--get-frame)
-      (make-frame-invisible))))
+    (when-let* ((frame (lsp-ui-doc--get-frame)))
+      (set-frame-parameter frame 'lsp-ui-doc--no-focus t)
+      (make-frame-invisible frame))))
 
 (provide 'lsp-ui-doc)
 ;;; lsp-ui-doc.el ends here
