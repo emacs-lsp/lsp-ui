@@ -708,7 +708,8 @@ HEIGHT is the documentation number of lines."
             (ov (if (overlayp lsp-ui-doc--highlight-ov) lsp-ui-doc--highlight-ov
                   (setq lsp-ui-doc--highlight-ov (make-overlay start end)))))
       (move-overlay ov start end)
-      (overlay-put ov 'face 'lsp-ui-doc-highlight-hover))))
+      (overlay-put ov 'face 'lsp-ui-doc-highlight-hover)
+      (overlay-put ov 'window (selected-window)))))
 
 (defun lsp-ui-doc--display (symbol string)
   "Display the documentation."
@@ -932,16 +933,20 @@ before, or if the new window is the minibuffer."
   (when lsp-ui-doc-show-with-mouse
     (and (timerp lsp-ui-doc--timer-mouse-movement)
          (cancel-timer lsp-ui-doc--timer-mouse-movement))
-    (let ((point (posn-point (cadr event))))
+    (let* ((e (cadr event))
+           (point (posn-point e))
+           (same-win (eq (selected-window) (posn-window e))))
       (and lsp-ui-doc--from-mouse
            lsp-ui-doc--bounds
            point
            (or (< point (car lsp-ui-doc--bounds))
-               (> point (cdr lsp-ui-doc--bounds)))
+               (> point (cdr lsp-ui-doc--bounds))
+               (not same-win))
            (lsp-ui-doc--hide-frame))
-      (setq lsp-ui-doc--last-event point
-            lsp-ui-doc--timer-mouse-movement
-            (run-with-idle-timer 0.5 nil 'lsp-ui-doc--mouse-display)))))
+      (when same-win
+        (setq lsp-ui-doc--last-event point
+              lsp-ui-doc--timer-mouse-movement
+              (run-with-idle-timer 0.5 nil 'lsp-ui-doc--mouse-display))))))
 
 (defun lsp-ui-doc--disable-mouse-on-prefix nil
   (and (bound-and-true-p lsp-ui-doc-mode)
@@ -1055,11 +1060,9 @@ It is supposed to be called from `lsp-ui--toggle'"
 (defun lsp-ui-doc-unfocus-frame ()
   "Unfocus from lsp-ui-doc-frame."
   (interactive)
-  (when-let ((frame (frame-parent (lsp-ui-doc--get-frame))))
-    (select-frame-set-input-focus frame)
-    (set-frame-parameter frame 'lsp-ui-doc--no-focus t))
-  (when lsp-ui-doc--from-mouse
-    (when-let* ((frame (lsp-ui-doc--get-frame)))
+  (when-let* ((frame (lsp-ui-doc--get-frame)))
+    (-some-> (frame-parent frame) select-frame-set-input-focus)
+    (when lsp-ui-doc--from-mouse
       (set-frame-parameter frame 'lsp-ui-doc--no-focus t)
       (make-frame-invisible frame))))
 
