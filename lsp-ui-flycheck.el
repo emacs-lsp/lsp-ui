@@ -153,14 +153,13 @@ Use `lsp-diagnostics' to receive diagnostics from your LSP server."
   (interactive)
   (kill-buffer))
 
-(defvar lsp-ui-flycheck-list-mode-map nil
-  "Keymap for ‘lsp-ui-flycheck-list-mode’.")
-(unless lsp-ui-flycheck-list-mode-map
+(defvar lsp-ui-flycheck-list-mode-map
   (let ((map (make-sparse-keymap)))
     (define-key map (kbd "q") 'lsp-ui-flycheck-list--quit)
     (define-key map (kbd "<return>") 'lsp-ui-flycheck-list--view)
     (define-key map (kbd "<M-return>") 'lsp-ui-flycheck-list--visit)
-    (setq lsp-ui-flycheck-list-mode-map map)))
+    map)
+  "Keymap for ‘lsp-ui-flycheck-list-mode’.")
 
 (define-derived-mode lsp-ui-flycheck-list-mode special-mode "lsp-ui-flycheck-list"
   "Mode showing flycheck diagnostics for the whole workspace."

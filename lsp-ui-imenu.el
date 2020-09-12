@@ -323,9 +323,7 @@ Return the updated COLOR-INDEX."
       (recenter)
       (pulse-momentary-highlight-one-line (point) 'next-error))))
 
-(defvar lsp-ui-imenu-mode-map nil
-  "Keymap for ‘lsp-ui-peek-mode’.")
-(unless lsp-ui-imenu-mode-map
+(defvar lsp-ui-imenu-mode-map
   (let ((map (make-sparse-keymap)))
     (define-key map (kbd "q") 'lsp-ui-imenu--kill)
     (define-key map (kbd "<right>") 'lsp-ui-imenu--next-kind)
@@ -334,7 +332,8 @@ Return the updated COLOR-INDEX."
     (define-key map (kbd "<M-return>") 'lsp-ui-imenu--visit)
     (define-key map (kbd "RET") 'lsp-ui-imenu--view)
     (define-key map (kbd "M-RET") 'lsp-ui-imenu--visit)
-    (setq lsp-ui-imenu-mode-map map)))
+    map)
+  "Keymap for ‘lsp-ui-peek-mode’.")
 
 (define-derived-mode lsp-ui-imenu-mode special-mode "lsp-ui-imenu"
   "Mode showing imenu entries.")
