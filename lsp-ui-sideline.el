@@ -636,8 +636,7 @@ COMMAND is `company-pseudo-tooltip-frontend' parameter."
 This does not toggle display of flycheck diagnostics or code actions."
   (interactive)
   (when (bound-and-true-p lsp-ui-sideline-mode)
-    (setq lsp-ui-sideline-show-hover
-          (not lsp-ui-sideline-show-hover))
+    (setq lsp-ui-sideline-show-hover (not lsp-ui-sideline-show-hover))
     (lsp-ui-sideline--run)))
 
 (defun lsp-ui-sideline--diagnostics-changed ()
@@ -649,8 +648,7 @@ This does not toggle display of flycheck diagnostics or code actions."
 (defun lsp-ui-sideline--erase (&rest _)
   "Remove all sideline overlays and delete last tag."
   (when (bound-and-true-p lsp-ui-sideline-mode)
-    (ignore-errors
-      (lsp-ui-sideline--delete-ov))))
+    (ignore-errors (lsp-ui-sideline--delete-ov))))
 
 (define-minor-mode lsp-ui-sideline-mode
   "Minor mode for showing information for current line."
