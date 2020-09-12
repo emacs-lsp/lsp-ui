@@ -579,13 +579,13 @@ from the language server."
                    "textDocument/hover"
                    (lsp-make-hover-params :text-document doc-id :position position)
                    (lambda (info)
-                     (setq current-index (1+ current-index))
+                     (cl-incf current-index)
                      (and info (push (list symbol bounds info) list-infos))
                      (when (= current-index length-symbols)
                        (lsp-ui-sideline--display-all-info list-infos tag bol eol)))
                    :error-handler
                    (lambda (&rest _)
-                     (setq current-index (1+ current-index))
+                     (cl-incf current-index)
                      (when (= current-index length-symbols)
                        (lsp-ui-sideline--display-all-info list-infos tag bol eol)))
                    :mode 'tick))))))))))
