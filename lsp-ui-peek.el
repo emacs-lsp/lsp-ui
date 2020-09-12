@@ -528,9 +528,7 @@ XREFS is a list of references/definitions."
   (interactive)
   (lsp-ui-peek--goto-xref nil t))
 
-(defvar lsp-ui-peek-mode-map nil
-  "Keymap for ‘lsp-ui-peek-mode’.")
-(unless lsp-ui-peek-mode-map
+(defvar lsp-ui-peek-mode-map
   (let ((map (make-sparse-keymap)))
     (suppress-keymap map t)
     (define-key map "\e\e\e" 'lsp-ui-peek--abort)
@@ -549,7 +547,8 @@ XREFS is a list of references/definitions."
     (define-key map (kbd "q") 'lsp-ui-peek--abort)
     (define-key map (kbd "RET") 'lsp-ui-peek--goto-xref)
     (define-key map (kbd "M-RET") 'lsp-ui-peek--goto-xref-other-window)
-    (setq lsp-ui-peek-mode-map map)))
+    map)
+  "Keymap for ‘lsp-ui-peek-mode’.")
 
 (defun lsp-ui-peek--disable ()
   "Do not call this function, call `lsp-ui-peek--abort' instead."
@@ -558,6 +557,7 @@ XREFS is a list of references/definitions."
     (lsp-ui-peek--peek-hide)))
 
 (defun lsp-ui-peek--abort ()
+  "Abort peek."
   (interactive)
   ;; The timer fixes https://github.com/emacs-lsp/lsp-ui/issues/33
   (run-with-idle-timer 0 nil 'lsp-ui-peek--disable))
