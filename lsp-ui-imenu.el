@@ -130,15 +130,17 @@
                          text)
     text))
 
-(defvar-local lsp-ui-imenu-ov nil)
+(defvar-local lsp-ui-imenu-ov nil
+  "Variable that holds overlay for imenu.")
 
 (defun lsp-ui-imenu--make-ov nil
+  "Make imenu overlay."
   (or (and (overlayp lsp-ui-imenu-ov) lsp-ui-imenu-ov)
       (setq lsp-ui-imenu-ov (make-overlay 1 1))))
 
 (defun lsp-ui-imenu--post-command nil
-  (when (eobp)
-    (forward-line -1))
+  "Post command hook for imenu."
+  (when (eobp) (forward-line -1))
   (lsp-ui-imenu--move-to-name-beginning)
   (when (eq lsp-ui-imenu-kind-position 'left)
     (save-excursion
@@ -146,17 +148,16 @@
         (overlay-put lsp-ui-imenu-ov 'display nil))
       (redisplay)
       (goto-char (window-start))
-      (if (not (= (get-text-property (point) 'index) 0))
-          (let* ((ov (lsp-ui-imenu--make-ov))
-                 (padding (get-text-property (point) 'padding))
-                 (title (get-text-property (point) 'title))
-                 (text (buffer-substring (+ (line-beginning-position) padding) (line-end-position))))
-            (move-overlay ov (line-beginning-position) (line-end-position))
-            (overlay-put ov 'display `(string ,(concat (let ((n (- padding (length title))))
-                                                         (propertize (concat (make-string n ?\s) title)))
-                                                       text))))
-        (when (overlayp lsp-ui-imenu-ov)
-          (delete-overlay lsp-ui-imenu-ov))))))
+      (if (= (get-text-property (point) 'index) 0)
+          (when (overlayp lsp-ui-imenu-ov) (delete-overlay lsp-ui-imenu-ov))
+        (let* ((ov (lsp-ui-imenu--make-ov))
+               (padding (get-text-property (point) 'padding))
+               (title (get-text-property (point) 'title))
+               (text (buffer-substring (+ (line-beginning-position) padding) (line-end-position))))
+          (move-overlay ov (line-beginning-position) (line-end-position))
+          (overlay-put ov 'display `(string ,(concat (let ((n (- padding (length title))))
+                                                       (propertize (concat (make-string n ?\s) title)))
+                                                     text))))))))
 
 (defun lsp-ui-imenu--move-to-name-beginning ()
   (-when-let* ((padding (get-char-property (point) 'padding))
@@ -232,10 +233,14 @@ Return the updated COLOR-INDEX."
   color-index)
 
 (defun lsp-ui-imenu--get-padding (items)
-  (if (eq lsp-ui-imenu-kind-position 'top) 1
-    (--> (-filter 'imenu--subalist-p items)
-         (--map (length (car it)) it)
-         (-max (or it '(1))))))
+  "Get imenu padding determined by `lsp-ui-imenu-kind-position'.
+ITEMS are used when the kind position is 'left."
+  (cl-case lsp-ui-imenu-kind-position
+    ('top 1)
+    ('left (--> (-filter 'imenu--subalist-p items)
+                (--map (length (car it)) it)
+                (-max (or it '(1)))))
+    (t (user-error "Invalid value for imenu's kind position: %s" lsp-ui-imenu-kind-position))))
 
 (defun lsp-ui-imenu--put-bit (bits offset)
   (logior bits (lsh 1 offset)))
@@ -287,6 +292,7 @@ Return the updated COLOR-INDEX."
           (window-resize (selected-window) x t))))))
 
 (defun lsp-ui-imenu--kill nil
+  "Kill imenu window."
   (interactive)
   (kill-buffer-and-window))
 
@@ -299,10 +305,12 @@ Return the updated COLOR-INDEX."
       (forward-line direction))))
 
 (defun lsp-ui-imenu--next-kind nil
+  "Jump to next kind of imenu."
   (interactive)
   (lsp-ui-imenu--jump 1))
 
 (defun lsp-ui-imenu--prev-kind nil
+  "Jump to previous kind of imenu."
   (interactive)
   (lsp-ui-imenu--jump -1)
   (while (not (= (get-text-property (point) 'index) 0))
