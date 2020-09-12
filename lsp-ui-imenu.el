@@ -92,29 +92,22 @@
 
 (defun lsp-ui-imenu--get-bar (bars index depth for-title is-last)
   (cond
-   ((>= index lsp-ui-imenu--max-bars)
-    ;; Exceeding maximum bars
-    "   ")
-   ((not (aref bars index))
-    ;; No bar for this level
-    "   ")
-   ((and (= depth 1) (not for-title))
-    ;; For the first level, the title is rendered differently, so leaf items are
-    ;; decorated with the full height bar regardless if it's the last item or
-    ;; not.
-    " ┃ ")
-   ((< (1+ index) depth)
-    ;; Full height bar for levels other than the rightmost one.
-    " ┃ ")
-   (is-last
-    ;; The rightmost bar for the last item.
-    " ┗ " )
-   (for-title
-    ;; The rightmost bar for the title items other than the last one.
-    " ┣ ")
-   (t
-    ;; The rightmost bar for the leaf items other than the last one.
-    " ┃ ")))
+   ;; Exceeding maximum bars
+   ((>= index lsp-ui-imenu--max-bars) "   ")
+   ;; No bar for this level
+   ((not (aref bars index)) "   ")
+   ;; For the first level, the title is rendered differently, so leaf items are
+   ;; decorated with the full height bar regardless if it's the last item or
+   ;; not.
+   ((and (= depth 1) (not for-title)) " ┃ ")
+   ;; Full height bar for levels other than the rightmost one.
+   ((< (1+ index) depth) " ┃ ")
+   ;; The rightmost bar for the last item.
+   (is-last " ┗ " )
+   ;; The rightmost bar for the title items other than the last one.
+   (for-title " ┣ ")
+   ;; The rightmost bar for the leaf items other than the last one.
+   (t " ┃ ")))
 
 (defun lsp-ui-imenu--get-color (index)
   (nth (mod index (length lsp-ui-imenu-colors)) lsp-ui-imenu-colors))
