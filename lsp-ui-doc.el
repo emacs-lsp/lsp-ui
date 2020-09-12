@@ -109,7 +109,7 @@ This only takes effect when `lsp-ui-doc-position' is 'top or 'bottom."
   :type 'integer
   :group 'lsp-ui-doc)
 
-(defcustom lsp-ui-doc-max-height 15
+(defcustom lsp-ui-doc-max-height 13
   "Maximum number of lines in the frame."
   :type 'integer
   :group 'lsp-ui-doc)
