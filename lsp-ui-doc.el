@@ -1047,7 +1047,7 @@ If nil, do not prevent mouse on prefix keys.")
     (when (boundp 'window-state-change-functions)
       (add-hook 'window-state-change-functions 'lsp-ui-doc--on-state-changed))
     (lsp-ui-doc--setup-mouse)
-    (advice-add 'handle-switch-frame :before-while 'lsp-ui-doc--prevent-focus-doc)
+    ;;(advice-add 'handle-switch-frame :before-while 'lsp-ui-doc--prevent-focus-doc)
     (add-hook 'post-command-hook 'lsp-ui-doc--make-request nil t)
     (add-hook 'window-scroll-functions 'lsp-ui-doc--handle-scroll nil t)
     (add-hook 'delete-frame-functions 'lsp-ui-doc--on-delete nil t))
@@ -1115,8 +1115,8 @@ It is supposed to be called from `lsp-ui--toggle'"
 (defun lsp-ui-doc-unfocus-frame ()
   "Unfocus from lsp-ui-doc-frame."
   (interactive)
+  (-some-> (frame-parent) select-frame-set-input-focus)
   (when-let* ((frame (lsp-ui-doc--get-frame)))
-    (-some-> (frame-parent frame) select-frame-set-input-focus)
     (when lsp-ui-doc--from-mouse
       (set-frame-parameter frame 'lsp-ui-doc--no-focus t)
       (make-frame-invisible frame))))
