@@ -516,12 +516,13 @@ Push sideline overlays on `lsp-ui-sideline--ovs'."
 (defun lsp-ui-sideline--get-line (bol eol)
   (buffer-substring-no-properties bol eol))
 
-(defun lsp-ui-sideline--run (buffer &optional bol eol this-line)
+(defun lsp-ui-sideline--run (&optional buffer bol eol this-line)
   "Show information (flycheck + lsp).
 It loops on the symbols of the current line and requests information
 from the language server."
   (when buffer-file-name
-    (let* ((eol (or eol (line-end-position)))
+    (let* ((buffer (or buffer (current-buffer)))
+           (eol (or eol (line-end-position)))
            (bol (or bol (line-beginning-position)))
            (tag (lsp-ui-sideline--calculate-tag))
            (line (car tag))
