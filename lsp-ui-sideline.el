@@ -147,15 +147,20 @@ It is used to know when the window has changed of width.")
   :group 'lsp-ui-sideline)
 
 (defface lsp-ui-sideline-current-symbol
-  '((t :foreground "white"
-       :weight ultra-bold
-       :box (:line-width -1 :color "white")
-       :height 0.99))
+  '((default
+      :foreground "white"
+      :weight ultra-bold
+      :box (:line-width -1 :color "white")
+      :height 0.99)
+    (((background light))
+     :foreground "dim gray"
+     :box (:line-width -1 :color "dim gray")))
   "Face used to highlight the symbol on point."
   :group 'lsp-ui-sideline)
 
 (defface lsp-ui-sideline-code-action
-  '((t :foreground "yellow"))
+  '((((background light)) :foreground "DarkOrange")
+    (t :foreground "yellow"))
   "Face used to highlight code action text."
   :group 'lsp-ui-sideline)
 
