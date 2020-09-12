@@ -494,7 +494,6 @@ FRAME just below the symbol at point."
   "Place our FRAME on screen."
   (-let* (((left top right _bottom) (window-edges nil t nil t))
           (window (frame-root-window frame))
-          (buffer (window-buffer window))
           (char-h (frame-char-height frame))
           (char-w (frame-char-width frame))
           ((width . height) (window-text-pixel-size window nil nil 10000 10000 t))
@@ -519,6 +518,9 @@ FRAME just below the symbol at point."
           (window-state-change-functions nil)
           (window-configuration-change-hook nil)
           (inhibit-redisplay t))
+    ;; Dirty way to fix unused variable in emacs 26
+    (and window-state-change-functions
+         window-state-change-hook)
     ;; Make frame invisible before moving/resizing it to avoid flickering:
     ;; We set the position and size in 1 call, modify-frame-parameters, but
     ;; internally emacs makes 2 different calls, which can be visible
