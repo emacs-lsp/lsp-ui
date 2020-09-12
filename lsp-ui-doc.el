@@ -1137,19 +1137,24 @@ It is supposed to be called from `lsp-ui--toggle'"
 (defun lsp-ui-doc-focus-frame ()
   "Focus into lsp-ui-doc-frame."
   (interactive)
-  (when (lsp-ui-doc--frame-visible-p)
-    (set-frame-parameter (lsp-ui-doc--get-frame) 'lsp-ui-doc--no-focus nil)
+  (when-let* ((frame (lsp-ui-doc--get-frame))
+              (visible (lsp-ui-doc--frame-visible-p)))
+    (set-frame-parameter frame 'lsp-ui-doc--no-focus nil)
+    (set-frame-parameter frame 'cursor-type t)
     (lsp-ui-doc--with-buffer
-      (setq cursor-type t))
-    (select-frame-set-input-focus (lsp-ui-doc--get-frame))))
+      (setq cursor-type 'box))
+    (select-frame-set-input-focus frame)))
 
 (defun lsp-ui-doc-unfocus-frame ()
   "Unfocus from lsp-ui-doc-frame."
   (interactive)
   (-some-> (frame-parent) select-frame-set-input-focus)
   (when-let* ((frame (lsp-ui-doc--get-frame)))
+    (set-frame-parameter frame 'lsp-ui-doc--no-focus t)
+    (set-frame-parameter frame 'cursor-type nil)
+    (lsp-ui-doc--with-buffer
+      (setq cursor-type nil))
     (when lsp-ui-doc--from-mouse
-      (set-frame-parameter frame 'lsp-ui-doc--no-focus t)
       (make-frame-invisible frame))))
 
 (provide 'lsp-ui-doc)
