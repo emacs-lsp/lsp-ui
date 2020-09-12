@@ -292,7 +292,8 @@ Because some variables are buffer local.")
           (language (or (and with-lang
                              (or (lsp:marked-string-language marked-string)
                                  (lsp:markup-content-kind marked-string)))
-                        language)))
+                        language))
+          (markdown-hr-display-char nil))
      (cond
       (lsp-ui-doc-use-webkit
        (if (and language (not (string= "text" language)))
@@ -489,10 +490,11 @@ FRAME just below the symbol at point."
   "Place our FRAME on screen."
   (-let* (((left top right _bottom) (window-edges nil t nil t))
           (window (frame-root-window frame))
-          ((width . height) (window-text-pixel-size window nil nil 10000 10000 t))
-          (width (+ width (* (frame-char-width frame) 1))) ;; margins
+          (buffer (window-buffer window))
           (char-h (frame-char-height frame))
           (char-w (frame-char-width frame))
+          ((width . height) (window-text-pixel-size window nil nil 10000 10000 t))
+          (width (+ width (* char-w 1))) ;; margins
           (height (min (- (* lsp-ui-doc-max-height char-h) (/ char-h 2)) height))
           (width (min width (* lsp-ui-doc-max-width char-w)))
           (frame-right (pcase lsp-ui-doc-alignment
@@ -529,6 +531,8 @@ FRAME just below the symbol at point."
        (lsp-ui-doc--buffer-origin . ,(current-buffer))
        (lsp-ui-doc--no-focus . t)
        (right-fringe . 0)))
+    ;; Insert hr lines after width is computed
+    (lsp-ui-doc--handle-hr-lines buffer)
     (unless (frame-visible-p frame)
       (make-frame-visible frame))))
 
@@ -566,6 +570,42 @@ FN is the function to call on click."
        (frame-parameter nil 'lsp-ui-doc--no-focus)
        (select-frame (frame-parent) t)))
 
+(defun lsp-ui-doc--make-smaller-empty-lines nil
+  "Make empty lines half normal lines."
+  (goto-char 1)
+  (insert (propertize "\n" 'face '(:height 0.2) 'lsp-ui-doc-no-space t))
+  (while (not (eobp))
+    (when (and (eolp) (not (bobp)))
+      (kill-whole-line)
+      (insert (propertize " " 'face `(:height 0.5) 'lsp-ui-doc-no-space t)
+              (propertize "\n" 'face '(:height 0.5))))
+    (forward-line))
+  (insert (propertize "\n\n" 'face '(:height 0.3) 'lsp-ui-doc-no-space t)))
+
+(defun lsp-ui-doc--add-spaces nil
+  "Add space at the beginning of text, to simulate margin."
+  (goto-char 1)
+  (while (not (eobp))
+    (unless (or (eolp)
+                (get-text-property (point) 'lsp-ui-doc-no-space)
+                (get-text-property (point) 'markdown-hr))
+      (insert "   "))
+    (forward-line)))
+
+(defun lsp-ui-doc--handle-hr-lines (buffer)
+  (with-current-buffer buffer
+    (let (buffer-read-only bolp next)
+      (goto-char 1)
+      (while (setq next (next-single-property-change 1 'markdown-hr))
+        (when (and next (get-text-property next 'markdown-hr))
+          (goto-char next)
+          (setq bolp (bolp))
+          (kill-line 1)
+          (insert (and bolp (propertize "\n" 'face '(:height 0.5)))
+                  (propertize " "
+                              'display '(space :align-to right-fringe :height (1))
+                              'face '(:background "dark grey"))))))))
+
 (defun lsp-ui-doc--render-buffer (string symbol)
   "Set the buffer with STRING and SYMBOL."
   (lsp-ui-doc--with-buffer
@@ -578,10 +618,11 @@ FN is the function to call on click."
             (url-hexify-string string))
            'lsp-ui-doc--webkit-resize-callback))
       (erase-buffer)
-      (let ((inline-p (lsp-ui-doc--inline-p)))
-        (insert (concat (unless inline-p (propertize "\n" 'face '(:height 0.2)))
-                        (s-trim string)
-                        (unless inline-p (propertize "\n\n" 'face '(:height 0.3))))))
+      (insert (s-trim string))
+      (unless (lsp-ui-doc--inline-p)
+        (lsp-ui-doc--make-smaller-empty-lines)
+        (lsp-ui-doc--add-spaces))
+      (add-text-properties 1 (point) '(line-height 1))
       (lsp-ui-doc--make-clickable-link)
       (add-text-properties 1 (point-max) '(pointer arrow)))
     (lsp-ui-doc-frame-mode 1)
@@ -739,7 +780,7 @@ HEIGHT is the documentation number of lines."
                          `((name . "")
                            (default-minibuffer-frame . ,(selected-frame))
                            (minibuffer . ,(minibuffer-window))
-                           (left-fringe . ,(frame-char-width))
+                           (left-fringe . 0)
                            (cursor-type . nil)
                            (lsp-ui-doc--no-focus . t)
                            (background-color . ,(face-background 'lsp-ui-doc-background nil t)))))
