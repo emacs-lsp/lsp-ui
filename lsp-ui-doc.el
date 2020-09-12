@@ -954,7 +954,8 @@ before, or if the new window is the minibuffer."
   (when lsp-ui-doc--last-event
     (save-excursion
       (goto-char lsp-ui-doc--last-event)
-      (-when-let* ((bounds (or (and (symbol-at-point) (bounds-of-thing-at-point 'symbol))
+      (-when-let* ((valid (not (eolp)))
+                   (bounds (or (and (symbol-at-point) (bounds-of-thing-at-point 'symbol))
                                (and (looking-at "[[:graph:]]") (cons (point) (1+ (point)))))))
         (unless (equal bounds lsp-ui-doc--bounds)
           (lsp-request-async
@@ -982,7 +983,8 @@ before, or if the new window is the minibuffer."
            point
            (or (< point (car lsp-ui-doc--bounds))
                (> point (cdr lsp-ui-doc--bounds))
-               (not same-win))
+               (not same-win)
+               (equal (char-after point) ?\n))
            (lsp-ui-doc--hide-frame))
       (when same-win
         (setq lsp-ui-doc--last-event point
