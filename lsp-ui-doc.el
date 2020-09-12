@@ -228,10 +228,14 @@ Because some variables are buffer local.")
   "Execute BODY in the lsp-ui-doc buffer."
   (declare (indent 0) (debug t))
   `(let ((parent-vars (list :buffer (current-buffer)
-                            :window (get-buffer-window))))
+                            :window (get-buffer-window)))
+         (buffer-list-update-hook nil))
      (with-current-buffer (get-buffer-create (lsp-ui-doc--make-buffer-name))
        (setq lsp-ui-doc--parent-vars parent-vars)
-       (prog1 (let ((buffer-read-only nil))
+       (prog1 (let ((buffer-read-only nil)
+                    (inhibit-modification-hooks t)
+                    (inhibit-point-motion-hooks t)
+                    (inhibit-redisplay t))
                 ,@body)
          (setq buffer-read-only t)))))
 
@@ -511,6 +515,9 @@ FRAME just below the symbol at point."
           (frame-resize-pixelwise t)
           (move-frame-functions nil)
           (window-size-change-functions nil)
+          (window-state-change-hook nil)
+          (window-state-change-functions nil)
+          (window-configuration-change-hook nil)
           (inhibit-redisplay t))
     ;; Make frame invisible before moving/resizing it to avoid flickering:
     ;; We set the position and size in 1 call, modify-frame-parameters, but
@@ -532,7 +539,7 @@ FRAME just below the symbol at point."
        (lsp-ui-doc--no-focus . t)
        (right-fringe . 0)))
     ;; Insert hr lines after width is computed
-    (lsp-ui-doc--handle-hr-lines buffer)
+    (lsp-ui-doc--handle-hr-lines)
     (unless (frame-visible-p frame)
       (make-frame-visible frame))))
 
@@ -603,9 +610,9 @@ FN is the function to call on click."
       (insert "   "))
     (forward-line)))
 
-(defun lsp-ui-doc--handle-hr-lines (buffer)
-  (with-current-buffer buffer
-    (let (buffer-read-only bolp next)
+(defun lsp-ui-doc--handle-hr-lines nil
+  (lsp-ui-doc--with-buffer
+    (let (bolp next)
       (goto-char 1)
       (while (setq next (next-single-property-change 1 'markdown-hr))
         (when (and next (get-text-property next 'markdown-hr))
