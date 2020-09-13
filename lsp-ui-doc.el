@@ -986,7 +986,8 @@ before, or if the new window is the minibuffer."
 (defvar-local lsp-ui-doc--last-event nil)
 
 (defun lsp-ui-doc--mouse-display nil
-  (when lsp-ui-doc--last-event
+  (when (and lsp-ui-doc--last-event
+             (lsp-feature? "textDocument/hover"))
     (save-excursion
       (goto-char lsp-ui-doc--last-event)
       (-when-let* ((valid (not (eolp)))
