@@ -1007,6 +1007,7 @@ before, or if the new window is the minibuffer."
            :cancel-token :lsp-ui-doc-hover))))))
 
 (defun lsp-ui-doc--handle-mouse-movement (event)
+  "Show the documentation corresponding to the text under EVENT."
   (interactive "e")
   (when lsp-ui-doc-show-with-mouse
     (and (timerp lsp-ui-doc--timer-mouse-movement)
