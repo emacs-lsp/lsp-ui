@@ -541,7 +541,7 @@ FRAME just below the symbol at point."
        (lsp-ui-doc--no-focus . t)
        (right-fringe . 0)))
     ;; Insert hr lines after width is computed
-    (lsp-ui-doc--handle-hr-lines)
+    (lsp-ui-doc--fix-hr-props)
     (unless (frame-visible-p frame)
       (make-frame-visible frame))))
 
@@ -612,19 +612,33 @@ FN is the function to call on click."
       (insert "   "))
     (forward-line)))
 
-(defun lsp-ui-doc--handle-hr-lines nil
+(defun lsp-ui-doc--fix-hr-props nil
+  ;; We insert the right display prop after window-text-pixel-size
   (lsp-ui-doc--with-buffer
-    (let (bolp next)
-      (goto-char 1)
-      (while (setq next (next-single-property-change 1 'markdown-hr))
-        (when (and next (get-text-property next 'markdown-hr))
-          (goto-char next)
-          (setq bolp (bolp))
-          (kill-line 1)
-          (insert (and bolp (propertize "\n" 'face '(:height 0.5)))
-                  (propertize " "
-                              'display '(space :align-to right-fringe :height (1))
-                              'face '(:background "dark grey"))))))))
+    (let (next)
+      (while (setq next (next-single-property-change (or next 1) 'lsp-ui-doc--replace-hr))
+        (when (get-text-property next 'lsp-ui-doc--replace-hr)
+          (put-text-property next (1+ next) 'display '(space :align-to right-fringe :height (1))))))))
+
+(defun lsp-ui-doc--handle-hr-lines nil
+  (let (bolp next before after)
+    (goto-char 1)
+    (while (setq next (next-single-property-change (or next 1) 'markdown-hr))
+      (when (get-text-property next 'markdown-hr)
+        (goto-char next)
+        (setq bolp (bolp)
+              before (char-before))
+        (kill-line 1)
+        (setq after (char-after (1+ (point))))
+        (insert
+         (concat
+          (and bolp (not (equal before ?\n)) (propertize "\n" 'face '(:height 0.5)))
+          (propertize " "
+                      ;; :align-to is added with lsp-ui-doc--fix-hr-props
+                      'display '(space :height (1))
+                      'lsp-ui-doc--replace-hr t
+                      'face '(:background "dark grey"))
+          (and (not (equal after ?\n)) (propertize " \n" 'face '(:height 0.3)))))))))
 
 (defun lsp-ui-doc--render-buffer (string symbol)
   "Set the buffer with STRING and SYMBOL."
@@ -641,7 +655,8 @@ FN is the function to call on click."
       (insert (s-trim string))
       (unless (lsp-ui-doc--inline-p)
         (lsp-ui-doc--make-smaller-empty-lines)
-        (lsp-ui-doc--add-spaces))
+        (lsp-ui-doc--add-spaces)
+        (lsp-ui-doc--handle-hr-lines))
       (add-text-properties 1 (point) '(line-height 1))
       (lsp-ui-doc--make-clickable-link)
       (add-text-properties 1 (point-max) '(pointer arrow)))
