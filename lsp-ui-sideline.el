@@ -111,6 +111,11 @@ when user changes current point."
   :type '(choice file (const :tag "Disable" nil))
   :group 'lsp-ui-sideline)
 
+(defcustom lsp-ui-sideline-wait-for-all-symbols t
+  "Wait for all symbols before displaying info in sideline."
+  :type 'boolean
+  :group 'lsp-ui-sideline)
+
 (defcustom lsp-ui-sideline-actions-kind-regex "quickfix.*\\|refactor.*"
   "Regex for the code actions kinds to show in the sideline."
   :type 'string
@@ -591,12 +596,12 @@ from the language server."
                    (lambda (info)
                      (setq current-index (1+ current-index))
                      (and info (push (list symbol bounds info) list-infos))
-                     (when (= current-index length-symbols)
+                     (when (or (= current-index length-symbols) (not lsp-ui-sideline-wait-for-all-symbols))
                        (lsp-ui-sideline--display-all-info buffer list-infos tag bol eol)))
                    :error-handler
                    (lambda (&rest _)
                      (setq current-index (1+ current-index))
-                     (when (= current-index length-symbols)
+                     (when (or (= current-index length-symbols) (not lsp-ui-sideline-wait-for-all-symbols))
                        (lsp-ui-sideline--display-all-info buffer list-infos tag bol eol)))
                    :mode 'tick))))))))))
 
