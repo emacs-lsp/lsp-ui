@@ -403,6 +403,7 @@ Find appropriate position for sideline overlays with `lsp-ui-sideline--find-line
 Push sideline overlays on `lsp-ui-sideline--ovs'."
   (when (and (bound-and-true-p flycheck-mode)
              (bound-and-true-p lsp-ui-sideline-mode)
+             lsp-ui-sideline-show-diagnostics
              (eq (current-buffer) buffer))
     (lsp-ui-sideline--delete-kind 'diagnostics)
     (dolist (e (flycheck-overlay-errors-in bol (1+ eol)))
@@ -652,10 +653,11 @@ This does not toggle display of flycheck diagnostics or code actions."
 
 (defun lsp-ui-sideline--diagnostics-changed ()
   "Handler for flycheck notifications."
-  (let* ((buffer (current-buffer))
-         (eol (line-end-position))
-         (bol (line-beginning-position)))
-    (lsp-ui-sideline--diagnostics buffer bol eol)))
+  (when lsp-ui-sideline-show-diagnostics
+    (let* ((buffer (current-buffer))
+           (eol (line-end-position))
+           (bol (line-beginning-position)))
+      (lsp-ui-sideline--diagnostics buffer bol eol))))
 
 (defun lsp-ui-sideline--erase (&rest _)
   "Remove all sideline overlays and delete last tag."
