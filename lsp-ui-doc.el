@@ -565,14 +565,18 @@ FN is the function to call on click."
 
 (defun lsp-ui-doc--open-markdown-link (&rest _)
   (interactive "P")
-  (-when-let* ((valid (and (listp last-input-event)
-                           (eq (car last-input-event) 'mouse-2)))
-               (event (cadr last-input-event))
-               (point (posn-point event))
-               ;; Markdown-mode puts the url in 'help-echo
-               (url (get-text-property point 'help-echo)))
-    (and (string-match-p goto-address-url-regexp url)
-         (browse-url url))))
+  (let ((buffer-list-update-hook nil))
+    (-when-let* ((valid (and (listp last-input-event)
+                             (eq (car last-input-event) 'mouse-2)))
+                 (event (cadr last-input-event))
+                 (win (posn-window event))
+                 (buffer (window-buffer win))
+                 (point (posn-point event)))
+      (with-current-buffer buffer
+        ;; Markdown-mode puts the url in 'help-echo
+        (-some--> (get-text-property point 'help-echo)
+          (and (string-match-p goto-address-url-regexp it)
+               (browse-url it)))))))
 
 (defun lsp-ui-doc--make-clickable-link ()
   "Find paths and urls in the buffer and make them clickable."
@@ -1127,7 +1131,8 @@ It is supposed to be called from `lsp-ui--toggle'"
   :lighter ""
   :group lsp-ui-doc
   :keymap `(([?q] . lsp-ui-doc-unfocus-frame)
-            ([remap markdown-follow-thing-at-point] . lsp-ui-doc--open-markdown-link)))
+            ([remap markdown-follow-thing-at-point] . lsp-ui-doc--open-markdown-link)
+            ([remap mouse-drag-region] . ignore)))
 
 (defun lsp-ui-doc-focus-frame ()
   "Focus into lsp-ui-doc-frame."
