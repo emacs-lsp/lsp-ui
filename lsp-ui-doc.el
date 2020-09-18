@@ -601,7 +601,8 @@ FN is the function to call on click."
   (insert (propertize "\n" 'face '(:height 0.2)))
   (while (not (eobp))
     (when (and (eolp) (not (bobp)))
-      (kill-whole-line)
+      (save-excursion
+        (delete-region (point) (progn (forward-visible-line 1) (point))))
       (when (or (and (not (get-text-property (point) 'markdown-heading))
                      (not (get-text-property (max (- (point) 2) 1) 'markdown-heading)))
                 (get-text-property (point) 'markdown-hr))
@@ -629,7 +630,12 @@ FN is the function to call on click."
         (goto-char next)
         (setq bolp (bolp)
               before (char-before))
-        (kill-line 1)
+        (delete-region (point) (save-excursion
+                                 (forward-visible-line 1)
+                                 (if (eobp)
+                                     (signal 'end-of-buffer nil))
+                                 (end-of-visible-line)
+                                 (point)))
         (setq after (char-after (1+ (point))))
         (insert
          (concat
