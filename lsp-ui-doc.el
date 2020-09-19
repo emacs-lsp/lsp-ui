@@ -632,9 +632,6 @@ FN is the function to call on click."
               before (char-before))
         (delete-region (point) (save-excursion
                                  (forward-visible-line 1)
-                                 (if (eobp)
-                                     (signal 'end-of-buffer nil))
-                                 (end-of-visible-line)
                                  (point)))
         (setq after (char-after (1+ (point))))
         (insert
