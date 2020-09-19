@@ -477,7 +477,8 @@ XREFS is a list of references/definitions."
     (delete-overlay lsp-ui-peek--overlay))
   (setq lsp-ui-peek--overlay nil
         lsp-ui-peek--last-xref nil)
-  (set-window-start (get-buffer-window) lsp-ui-peek--win-start))
+  (when lsp-ui-peek--win-start
+    (set-window-start (get-buffer-window) lsp-ui-peek--win-start)))
 
 (defun lsp-ui-peek--deactivate-keymap ()
   "Deactivate keymap."
