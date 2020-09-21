@@ -65,6 +65,11 @@
   :type 'number
   :group 'lsp-ui-menu)
 
+(defcustom lsp-ui-menu-auto-refresh t
+  "Automatically refresh imenu when certain conditions meet."
+  :type 'boolean
+  :group 'lsp-ui-menu)
+
 (defcustom lsp-ui-imenu--custom-mode-line-format nil
   "Custom mode line format to be used in `lsp-ui-menu-mode'."
   :type 'sexp
