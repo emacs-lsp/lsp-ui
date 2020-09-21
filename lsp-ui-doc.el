@@ -505,9 +505,9 @@ FRAME just below the symbol at point."
                          ('window right)))
           ((left . top) (if (eq lsp-ui-doc-position 'at-point)
                             (lsp-ui-doc--mv-at-point width height left top)
-                          (cons (max (- frame-right width 10 (frame-char-width)) 10)
+                          (cons (max (- frame-right width char-w) 10)
                                 (pcase lsp-ui-doc-position
-                                  ('top (+ top 10))
+                                  ('top (+ top char-w))
                                   ('bottom (- (lsp-ui-doc--line-height 'mode-line)
                                               height
                                               10))))))
@@ -539,9 +539,10 @@ FRAME just below the symbol at point."
        (lsp-ui-doc--window-origin . ,(selected-window))
        (lsp-ui-doc--buffer-origin . ,(current-buffer))
        (lsp-ui-doc--no-focus . t)
-       (right-fringe . 0)))
+       (right-fringe . 0)
+       (left-fringe . 0)))
     ;; Insert hr lines after width is computed
-    (lsp-ui-doc--handle-hr-lines)
+    (lsp-ui-doc--fix-hr-props)
     (unless (frame-visible-p frame)
       (make-frame-visible frame))))
 
@@ -565,14 +566,18 @@ FN is the function to call on click."
 
 (defun lsp-ui-doc--open-markdown-link (&rest _)
   (interactive "P")
-  (-when-let* ((valid (and (listp last-input-event)
-                           (eq (car last-input-event) 'mouse-2)))
-               (event (cadr last-input-event))
-               (point (posn-point event))
-               ;; Markdown-mode puts the url in 'help-echo
-               (url (get-text-property point 'help-echo)))
-    (and (string-match-p goto-address-url-regexp url)
-         (browse-url url))))
+  (let ((buffer-list-update-hook nil))
+    (-when-let* ((valid (and (listp last-input-event)
+                             (eq (car last-input-event) 'mouse-2)))
+                 (event (cadr last-input-event))
+                 (win (posn-window event))
+                 (buffer (window-buffer win))
+                 (point (posn-point event)))
+      (with-current-buffer buffer
+        ;; Markdown-mode puts the url in 'help-echo
+        (-some--> (get-text-property point 'help-echo)
+          (and (string-match-p goto-address-url-regexp it)
+               (browse-url it)))))))
 
 (defun lsp-ui-doc--make-clickable-link ()
   "Find paths and urls in the buffer and make them clickable."
@@ -593,38 +598,53 @@ FN is the function to call on click."
 (defun lsp-ui-doc--make-smaller-empty-lines nil
   "Make empty lines half normal lines."
   (goto-char 1)
-  (insert (propertize "\n" 'face '(:height 0.2) 'lsp-ui-doc-no-space t))
+  (insert (propertize "\n" 'face '(:height 0.2)))
   (while (not (eobp))
     (when (and (eolp) (not (bobp)))
-      (kill-whole-line)
-      (insert (propertize " " 'face `(:height 0.5) 'lsp-ui-doc-no-space t)
-              (propertize "\n" 'face '(:height 0.5))))
-    (forward-line))
-  (insert (propertize "\n\n" 'face '(:height 0.3) 'lsp-ui-doc-no-space t)))
-
-(defun lsp-ui-doc--add-spaces nil
-  "Add space at the beginning of text, to simulate margin."
-  (goto-char 1)
-  (while (not (eobp))
-    (unless (or (eolp)
-                (get-text-property (point) 'lsp-ui-doc-no-space)
+      (save-excursion
+        (delete-region (point) (progn (forward-visible-line 1) (point))))
+      (when (or (and (not (get-text-property (point) 'markdown-heading))
+                     (not (get-text-property (max (- (point) 2) 1) 'markdown-heading)))
                 (get-text-property (point) 'markdown-hr))
-      (insert "   "))
-    (forward-line)))
+        (insert (propertize " " 'face `(:height 0.2))
+                (propertize "\n" 'face '(:height 0.2)))))
+    (forward-line))
+  (insert (propertize "\n\n" 'face '(:height 0.3))))
+
+(defun lsp-ui-doc--fix-hr-props nil
+  ;; We insert the right display prop after window-text-pixel-size
+  (lsp-ui-doc--with-buffer
+    (let (next)
+      (while (setq next (next-single-property-change (or next 1) 'lsp-ui-doc--replace-hr))
+        (when (get-text-property next 'lsp-ui-doc--replace-hr)
+          (put-text-property next (1+ next) 'display
+                             '(space :align-to (- right-fringe 1) :height (1)))
+          (put-text-property (1+ next) (+ next 2) 'display
+                             '(space :align-to right-fringe :height (1))))))))
 
 (defun lsp-ui-doc--handle-hr-lines nil
-  (lsp-ui-doc--with-buffer
-    (let (bolp next)
-      (goto-char 1)
-      (while (setq next (next-single-property-change 1 'markdown-hr))
-        (when (and next (get-text-property next 'markdown-hr))
-          (goto-char next)
-          (setq bolp (bolp))
-          (kill-line 1)
-          (insert (and bolp (propertize "\n" 'face '(:height 0.5)))
-                  (propertize " "
-                              'display '(space :align-to right-fringe :height (1))
-                              'face '(:background "dark grey"))))))))
+  (let (bolp next before after)
+    (goto-char 1)
+    (while (setq next (next-single-property-change (or next 1) 'markdown-hr))
+      (when (get-text-property next 'markdown-hr)
+        (goto-char next)
+        (setq bolp (bolp)
+              before (char-before))
+        (delete-region (point) (save-excursion
+                                 (forward-visible-line 1)
+                                 (point)))
+        (setq after (char-after (1+ (point))))
+        (insert
+         (concat
+          (and bolp (not (equal before ?\n)) (propertize "\n" 'face '(:height 0.5)))
+          (propertize " "
+                      ;; :align-to is added with lsp-ui-doc--fix-hr-props
+                      'display '(space :height (1))
+                      'lsp-ui-doc--replace-hr t
+                      'face '(:background "dark grey"))
+          ;; :align-to is added here too
+          (propertize " " 'display '(space :height (1)))
+          (and (not (equal after ?\n)) (propertize " \n" 'face '(:height 0.2)))))))))
 
 (defun lsp-ui-doc--render-buffer (string symbol)
   "Set the buffer with STRING and SYMBOL."
@@ -641,11 +661,13 @@ FN is the function to call on click."
       (insert (s-trim string))
       (unless (lsp-ui-doc--inline-p)
         (lsp-ui-doc--make-smaller-empty-lines)
-        (lsp-ui-doc--add-spaces))
+        (lsp-ui-doc--handle-hr-lines))
       (add-text-properties 1 (point) '(line-height 1))
       (lsp-ui-doc--make-clickable-link)
       (add-text-properties 1 (point-max) '(pointer arrow)))
     (lsp-ui-doc-frame-mode 1)
+    (setq wrap-prefix '(space :height (1) :width 1)
+          line-prefix '(space :height (1) :width 1))
     (setq-local face-remapping-alist `((header-line lsp-ui-doc-header)))
     (setq-local window-min-height 1)
     (setq-local window-configuration-change-hook nil)
@@ -801,6 +823,7 @@ HEIGHT is the documentation number of lines."
                            (default-minibuffer-frame . ,(selected-frame))
                            (minibuffer . ,(minibuffer-window))
                            (left-fringe . 0)
+                           (right-fringe . 0)
                            (cursor-type . nil)
                            (lsp-ui-doc--no-focus . t)
                            (background-color . ,(face-background 'lsp-ui-doc-background nil t)))))
@@ -971,7 +994,8 @@ before, or if the new window is the minibuffer."
 (defvar-local lsp-ui-doc--last-event nil)
 
 (defun lsp-ui-doc--mouse-display nil
-  (when lsp-ui-doc--last-event
+  (when (and lsp-ui-doc--last-event
+             (lsp-feature? "textDocument/hover"))
     (save-excursion
       (goto-char lsp-ui-doc--last-event)
       (-when-let* ((valid (not (eolp)))
@@ -991,6 +1015,7 @@ before, or if the new window is the minibuffer."
            :cancel-token :lsp-ui-doc-hover))))))
 
 (defun lsp-ui-doc--handle-mouse-movement (event)
+  "Show the documentation corresponding to the text under EVENT."
   (interactive "e")
   (when lsp-ui-doc-show-with-mouse
     (and (timerp lsp-ui-doc--timer-mouse-movement)
@@ -1110,24 +1135,30 @@ It is supposed to be called from `lsp-ui--toggle'"
   :lighter ""
   :group lsp-ui-doc
   :keymap `(([?q] . lsp-ui-doc-unfocus-frame)
-            ([remap markdown-follow-thing-at-point] . lsp-ui-doc--open-markdown-link)))
+            ([remap markdown-follow-thing-at-point] . lsp-ui-doc--open-markdown-link)
+            ([remap mouse-drag-region] . ignore)))
 
 (defun lsp-ui-doc-focus-frame ()
   "Focus into lsp-ui-doc-frame."
   (interactive)
-  (when (lsp-ui-doc--frame-visible-p)
-    (set-frame-parameter (lsp-ui-doc--get-frame) 'lsp-ui-doc--no-focus nil)
+  (when-let* ((frame (lsp-ui-doc--get-frame))
+              (visible (lsp-ui-doc--frame-visible-p)))
+    (set-frame-parameter frame 'lsp-ui-doc--no-focus nil)
+    (set-frame-parameter frame 'cursor-type t)
     (lsp-ui-doc--with-buffer
-      (setq cursor-type t))
-    (select-frame-set-input-focus (lsp-ui-doc--get-frame))))
+      (setq cursor-type 'box))
+    (select-frame-set-input-focus frame)))
 
 (defun lsp-ui-doc-unfocus-frame ()
   "Unfocus from lsp-ui-doc-frame."
   (interactive)
   (-some-> (frame-parent) select-frame-set-input-focus)
   (when-let* ((frame (lsp-ui-doc--get-frame)))
+    (set-frame-parameter frame 'lsp-ui-doc--no-focus t)
+    (set-frame-parameter frame 'cursor-type nil)
+    (lsp-ui-doc--with-buffer
+      (setq cursor-type nil))
     (when lsp-ui-doc--from-mouse
-      (set-frame-parameter frame 'lsp-ui-doc--no-focus t)
       (make-frame-invisible frame))))
 
 (provide 'lsp-ui-doc)

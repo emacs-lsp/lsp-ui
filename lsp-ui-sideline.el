@@ -111,6 +111,11 @@ when user changes current point."
   :type '(choice file (const :tag "Disable" nil))
   :group 'lsp-ui-sideline)
 
+(defcustom lsp-ui-sideline-wait-for-all-symbols t
+  "Wait for all symbols before displaying info in sideline."
+  :type 'boolean
+  :group 'lsp-ui-sideline)
+
 (defcustom lsp-ui-sideline-actions-kind-regex "quickfix.*\\|refactor.*"
   "Regex for the code actions kinds to show in the sideline."
   :type 'string
@@ -147,15 +152,20 @@ It is used to know when the window has changed of width.")
   :group 'lsp-ui-sideline)
 
 (defface lsp-ui-sideline-current-symbol
-  '((t :foreground "white"
-       :weight ultra-bold
-       :box (:line-width -1 :color "white")
-       :height 0.99))
+  '((default
+      :foreground "white"
+      :weight ultra-bold
+      :box (:line-width -1 :color "white")
+      :height 0.99)
+    (((background light))
+     :foreground "dim gray"
+     :box (:line-width -1 :color "dim gray")))
   "Face used to highlight the symbol on point."
   :group 'lsp-ui-sideline)
 
 (defface lsp-ui-sideline-code-action
-  '((t :foreground "yellow"))
+  '((((background light)) :foreground "DarkOrange")
+    (t :foreground "yellow"))
   "Face used to highlight code action text."
   :group 'lsp-ui-sideline)
 
@@ -325,8 +335,9 @@ is set to t."
               (+ (line-number-display-width) 2))
          0)))
 
-(defun lsp-ui-sideline--display-all-info (list-infos tag bol eol)
-  (when (and (equal tag (lsp-ui-sideline--calculate-tag))
+(defun lsp-ui-sideline--display-all-info (buffer list-infos tag bol eol)
+  (when (and (eq (current-buffer) buffer)
+             (equal tag (lsp-ui-sideline--calculate-tag))
              (not (lsp-ui-sideline--stop-p)))
     (let ((inhibit-modification-hooks t)
           (win-width (window-body-width))
@@ -390,13 +401,15 @@ is set to t."
                      (split-string (buffer-string) "\n")))))
              lines))
 
-(defun lsp-ui-sideline--diagnostics (bol eol)
+(defun lsp-ui-sideline--diagnostics (buffer bol eol)
   "Show diagnostics belonging to the current line.
 Loop over flycheck errors with `flycheck-overlay-errors-in'.
 Find appropriate position for sideline overlays with `lsp-ui-sideline--find-line'.
 Push sideline overlays on `lsp-ui-sideline--ovs'."
   (when (and (bound-and-true-p flycheck-mode)
-             (bound-and-true-p lsp-ui-sideline-mode))
+             (bound-and-true-p lsp-ui-sideline-mode)
+             lsp-ui-sideline-show-diagnostics
+             (eq (current-buffer) buffer))
     (lsp-ui-sideline--delete-kind 'diagnostics)
     (dolist (e (flycheck-overlay-errors-in bol (1+ eol)))
       (let* ((lines (--> (flycheck-error-format-message-and-id e)
@@ -509,12 +522,13 @@ Push sideline overlays on `lsp-ui-sideline--ovs'."
 (defun lsp-ui-sideline--get-line (bol eol)
   (buffer-substring-no-properties bol eol))
 
-(defun lsp-ui-sideline--run (&optional bol eol this-line)
+(defun lsp-ui-sideline--run (&optional buffer bol eol this-line)
   "Show information (flycheck + lsp).
 It loops on the symbols of the current line and requests information
 from the language server."
   (when buffer-file-name
-    (let* ((eol (or eol (line-end-position)))
+    (let* ((buffer (or buffer (current-buffer)))
+           (eol (or eol (line-end-position)))
            (bol (or bol (line-beginning-position)))
            (tag (lsp-ui-sideline--calculate-tag))
            (line (car tag))
@@ -530,7 +544,7 @@ from the language server."
       (setq lsp-ui-sideline--tag tag
             lsp-ui-sideline--last-width (window-text-width))
       (when (and line-changed lsp-ui-sideline-show-diagnostics)
-        (lsp-ui-sideline--diagnostics bol eol))
+        (lsp-ui-sideline--diagnostics buffer bol eol))
       (when (and lsp-ui-sideline-show-code-actions
                  (or (lsp--capability "codeActionProvider")
                      (lsp--registered-capability "textDocument/codeAction")))
@@ -541,7 +555,9 @@ from the language server."
                    :range (lsp--region-to-range bol eol)
                    :context (list :diagnostics (lsp-cur-line-diagnostics)))
            (lsp--text-document-code-action-params))
-         (lambda (actions) (lsp-ui-sideline--code-actions actions bol eol))
+         (lambda (actions)
+           (when (eq (current-buffer) buffer)
+             (lsp-ui-sideline--code-actions actions bol eol)))
          :mode 'tick
          :error-handler
          (lambda (&rest _)
@@ -581,13 +597,13 @@ from the language server."
                    (lambda (info)
                      (cl-incf current-index)
                      (and info (push (list symbol bounds info) list-infos))
-                     (when (= current-index length-symbols)
-                       (lsp-ui-sideline--display-all-info list-infos tag bol eol)))
+                     (when (or (= current-index length-symbols) (not lsp-ui-sideline-wait-for-all-symbols))
+                       (lsp-ui-sideline--display-all-info buffer list-infos tag bol eol)))
                    :error-handler
                    (lambda (&rest _)
                      (cl-incf current-index)
-                     (when (= current-index length-symbols)
-                       (lsp-ui-sideline--display-all-info list-infos tag bol eol)))
+                     (when (or (= current-index length-symbols) (not lsp-ui-sideline-wait-for-all-symbols))
+                       (lsp-ui-sideline--display-all-info buffer list-infos tag bol eol)))
                    :mode 'tick))))))))))
 
 (defun lsp-ui-sideline--stop-p ()
@@ -629,7 +645,7 @@ COMMAND is `company-pseudo-tooltip-frontend' parameter."
                ;; run lsp-ui only if current-buffer is the same.
                (and (eq buffer (current-buffer))
                     (= point (point))
-                    (lsp-ui-sideline--run bol eol this-line))))))))
+                    (lsp-ui-sideline--run buffer bol eol this-line))))))))
 
 (defun lsp-ui-sideline-toggle-symbols-info ()
   "Toggle display of symbols information.
@@ -637,13 +653,15 @@ This does not toggle display of flycheck diagnostics or code actions."
   (interactive)
   (when (bound-and-true-p lsp-ui-sideline-mode)
     (setq lsp-ui-sideline-show-hover (not lsp-ui-sideline-show-hover))
-    (lsp-ui-sideline--run)))
+    (lsp-ui-sideline--run (current-buffer))))
 
 (defun lsp-ui-sideline--diagnostics-changed ()
   "Handler for flycheck notifications."
-  (let* ((eol (line-end-position))
-         (bol (line-beginning-position)))
-    (lsp-ui-sideline--diagnostics bol eol)))
+  (when lsp-ui-sideline-show-diagnostics
+    (let* ((buffer (current-buffer))
+           (eol (line-end-position))
+           (bol (line-beginning-position)))
+      (lsp-ui-sideline--diagnostics buffer bol eol))))
 
 (defun lsp-ui-sideline--erase (&rest _)
   "Remove all sideline overlays and delete last tag."
