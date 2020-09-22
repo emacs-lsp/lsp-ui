@@ -58,17 +58,17 @@
 (defcustom lsp-ui-imenu-colors '("deep sky blue" "green3")
   "Color list to cycle through for entry groups."
   :type '(repeat color)
-  :group 'lsp-ui-menu)
+  :group 'lsp-ui-imenu)
 
 (defcustom lsp-ui-imenu-window-width 0
   "When not 0, don't fit window to buffer and use value as window-width."
   :type 'number
-  :group 'lsp-ui-menu)
+  :group 'lsp-ui-imenu)
 
 (defcustom lsp-ui-imenu-auto-refresh t
   "Automatically refresh imenu when certain conditions meet."
   :type 'boolean
-  :group 'lsp-ui-menu)
+  :group 'lsp-ui-imenu)
 
 (defcustom lsp-ui-imenu--custom-mode-line-format nil
   "Custom mode line format to be used in `lsp-ui-menu-mode'."
