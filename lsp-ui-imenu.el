@@ -342,19 +342,22 @@ Return the updated COLOR-INDEX."
 (defun lsp-ui-imenu--refresh ()
   "Safe refresh imenu content."
   (interactive)
-  (when (get-buffer lsp-ui-imenu-buffer-name)
-    (save-selected-window
-      (select-window (get-buffer-window lsp-ui-imenu--origin))
-      (let ((lsp-ui-imenu-auto-refresh t))  ; Force refresh, ignore custom variable.
-        (lsp-ui-imenu)))))
+  (let ((imenu-buffer (get-buffer lsp-ui-imenu-buffer-name)))
+    (when imenu-buffer
+      (save-selected-window
+        (if (equal (current-buffer) imenu-buffer)
+            (select-window (get-buffer-window lsp-ui-imenu--origin))
+          (setq lsp-ui-imenu--origin (current-buffer)))
+        ;; Force refresh, ignore custom variable.
+        (let ((lsp-ui-imenu-auto-refresh t)) (lsp-ui-imenu))))))
 
 (defun lsp-ui-imenu-buffer--enable ()
   "Enable `lsp-ui-imenu-buffer'."
-  (add-hook 'after-save-hook #'lsp-ui-imenu--refresh nil t))
+  (add-hook 'before-save-hook #'lsp-ui-imenu--refresh nil t))
 
 (defun lsp-ui-imenu-buffer--disable ()
   "Disable `lsp-ui-imenu-buffer'."
-  (remove-hook 'after-save-hook #'lsp-ui-imenu--refresh t))
+  (remove-hook 'before-save-hook #'lsp-ui-imenu--refresh t))
 
 (define-minor-mode lsp-ui-imenu-buffer-mode
   "Minor mode 'lsp-ui-imenu-buffer-mode'."
