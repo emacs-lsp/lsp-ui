@@ -326,6 +326,7 @@ Return the updated COLOR-INDEX."
 (defvar lsp-ui-imenu-mode-map
   (let ((map (make-sparse-keymap)))
     (define-key map (kbd "q") 'lsp-ui-imenu--kill)
+    (define-key map (kbd "r") 'lsp-ui-imenu--refresh)
     (define-key map (kbd "<right>") 'lsp-ui-imenu--next-kind)
     (define-key map (kbd "<left>") 'lsp-ui-imenu--prev-kind)
     (define-key map (kbd "<return>") 'lsp-ui-imenu--view)
@@ -340,8 +341,10 @@ Return the updated COLOR-INDEX."
 
 (defun lsp-ui-imenu--refresh ()
   "Safe refresh imenu content."
+  (interactive)
   (when (get-buffer lsp-ui-imenu-buffer-name)
     (save-selected-window
+      (select-window (get-buffer-window lsp-ui-imenu--origin))
       (let ((lsp-ui-imenu-auto-refresh t))  ; Force refresh, ignore custom variable.
         (lsp-ui-imenu)))))
 
