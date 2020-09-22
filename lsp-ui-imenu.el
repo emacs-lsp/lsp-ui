@@ -35,6 +35,7 @@
 
 (require 'lsp-mode)
 (require 'dash)
+(require 'lsp-ui-util)
 
 (defgroup lsp-ui-imenu nil
   "Display imenu entries."
@@ -70,6 +71,11 @@
   :type 'boolean
   :group 'lsp-ui-imenu)
 
+(defcustom lsp-ui-imenu-refresh-delay 1.0
+  "Delay time to refresh imenu."
+  :type 'float
+  :group 'lsp-ui-imenu)
+
 (defcustom lsp-ui-imenu--custom-mode-line-format nil
   "Custom mode line format to be used in `lsp-ui-menu-mode'."
   :type 'sexp
@@ -80,6 +86,9 @@
 (declare-function imenu--make-index-alist 'imenu)
 (declare-function imenu--subalist-p 'imenu)
 (defvar imenu--index-alist)
+
+(defvar lsp-ui-imenu--refresh-timer nil
+  "Auto refresh timer for imenu.")
 
 (defun lsp-ui-imenu--pad (s len bars depth color-index for-title is-last)
   (let ((n (- len (length s))))
@@ -287,6 +296,7 @@ Return the updated COLOR-INDEX."
             (window-resize (selected-window) x t)))))))
 
 (defun lsp-ui-imenu--kill nil
+  "Kill imenu window."
   (interactive)
   (kill-buffer-and-window))
 
@@ -351,13 +361,19 @@ Return the updated COLOR-INDEX."
         ;; Force refresh, ignore custom variable.
         (let ((lsp-ui-imenu-auto-refresh t)) (lsp-ui-imenu))))))
 
+(defun lsp-ui-imenu--start-refresh (&rest _)
+  "Starts the auto refresh timer."
+  (lsp-ui-util-safe-kill-timer lsp-ui-imenu--refresh-timer)
+  (setq lsp-ui-imenu--refresh-timer
+        (run-with-idle-timer lsp-ui-imenu-refresh-delay nil #'lsp-ui-imenu--refresh)))
+
 (defun lsp-ui-imenu-buffer--enable ()
   "Enable `lsp-ui-imenu-buffer'."
-  (add-hook 'before-save-hook #'lsp-ui-imenu--refresh nil t))
+  (add-hook 'after-change-functions #'lsp-ui-imenu--start-refresh nil t))
 
 (defun lsp-ui-imenu-buffer--disable ()
   "Disable `lsp-ui-imenu-buffer'."
-  (remove-hook 'before-save-hook #'lsp-ui-imenu--refresh t))
+  (remove-hook 'after-change-functions #'lsp-ui-imenu--start-refresh t))
 
 (define-minor-mode lsp-ui-imenu-buffer-mode
   "Minor mode 'lsp-ui-imenu-buffer-mode'."
