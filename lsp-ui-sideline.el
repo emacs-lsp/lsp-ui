@@ -164,8 +164,8 @@ It is used to know when the window has changed of width.")
   :group 'lsp-ui-sideline)
 
 (defface lsp-ui-sideline-code-action
-  '((((background light)) :foreground "DarkOrange")
-    (t :foreground "yellow"))
+  '((default :foreground "yellow")
+    (((background light)) :foreground "DarkOrange"))
   "Face used to highlight code action text."
   :group 'lsp-ui-sideline)
 
