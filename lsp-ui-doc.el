@@ -670,6 +670,7 @@ FN is the function to call on click."
           line-prefix '(space :height (1) :width 1))
     (setq-local face-remapping-alist `((header-line lsp-ui-doc-header)))
     (setq-local window-min-height 1)
+    (setq-local show-trailing-whitespace nil)
     (setq-local window-configuration-change-hook nil)
     (add-hook 'pre-command-hook 'lsp-ui-doc--buffer-pre-command nil t)
     (when (boundp 'window-state-change-functions)
