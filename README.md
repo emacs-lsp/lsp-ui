@@ -108,7 +108,7 @@ Customization:
 
 - `lsp-ui-imenu-window-width` set window width
 - `lsp-ui-imenu--custom-mode-line-format` mode line format
-- `lsp-ui-menu-auto-refresh` auto refresh when necessary
+- `lsp-ui-imenu-auto-refresh` auto refresh when necessary
 
 
 ## Contributing
