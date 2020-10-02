@@ -32,7 +32,7 @@
 
 ;;; Code:
 
-(defun lsp-ui-util-safe-kill-timer (timer)
+(defun lsp-ui-util--safe-kill-timer (timer)
   "Safely kill the TIMER."
   (when (timerp tmr) (cancel-timer timer)))
 
