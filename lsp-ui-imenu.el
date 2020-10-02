@@ -258,10 +258,8 @@ Return the updated COLOR-INDEX."
 (defvar lsp-ui-imenu-buffer-name "*lsp-ui-imenu*"
   "Buffer name for imenu buffers.")
 
-(defun lsp-ui-imenu nil
-  "Open ui-imenu in side window."
-  (interactive)
-  (lsp-ui-imenu-buffer-mode 1)
+(defun lsp-ui-imenu--refresh-content ()
+  "Refresh imenu content menu"
   (let ((imenu-auto-rescan lsp-ui-imenu-auto-refresh))
     (setq lsp-ui-imenu--origin (current-buffer))
     (imenu--make-index-alist)
@@ -285,7 +283,17 @@ Return the updated COLOR-INDEX."
           (when lsp-ui-imenu--custom-mode-line-format
             (setq mode-line-format lsp-ui-imenu--custom-mode-line-format))
           (goto-char (point-min))
-          (add-hook 'post-command-hook 'lsp-ui-imenu--post-command nil t)))
+          (add-hook 'post-command-hook 'lsp-ui-imenu--post-command nil t))))))
+
+(defun lsp-ui-imenu nil
+  "Open ui-imenu in side window."
+  (interactive)
+  (lsp-ui-imenu-buffer-mode 1)
+  (let ((imenu-auto-rescan lsp-ui-imenu-auto-refresh))
+    (setq lsp-ui-imenu--origin (current-buffer))
+    (imenu--make-index-alist)
+    (let ((imenu-buffer (get-buffer-create lsp-ui-imenu-buffer-name)))
+      (lsp-ui-imenu--refresh-content)
       (let ((win (display-buffer-in-side-window imenu-buffer '((side . right)))))
         (set-window-margins win 1)
         (select-window win)
@@ -364,7 +372,7 @@ Return the updated COLOR-INDEX."
             (select-window (get-buffer-window lsp-ui-imenu--origin))
           (setq lsp-ui-imenu--origin (current-buffer)))
         ;; Force refresh, ignore custom variable.
-        (let ((lsp-ui-imenu-auto-refresh t)) (lsp-ui-imenu))))))
+        (let ((lsp-ui-imenu-auto-refresh t)) (lsp-ui-imenu--refresh-content))))))
 
 (defun lsp-ui-imenu--start-refresh (&rest _)
   "Starts the auto refresh timer."
