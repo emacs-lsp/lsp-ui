@@ -368,7 +368,7 @@ Return the updated COLOR-INDEX."
 
 (defun lsp-ui-imenu--start-refresh (&rest _)
   "Starts the auto refresh timer."
-  (lsp-ui-util-safe-kill-timer lsp-ui-imenu--refresh-timer)
+  (lsp-ui-util--safe-kill-timer lsp-ui-imenu--refresh-timer)
   (setq lsp-ui-imenu--refresh-timer
         (run-with-idle-timer lsp-ui-imenu-auto-refresh-delay nil #'lsp-ui-imenu--refresh)))
 

@@ -34,7 +34,7 @@
 
 (defun lsp-ui-util--safe-kill-timer (timer)
   "Safely kill the TIMER."
-  (when (timerp tmr) (cancel-timer timer)))
+  (when (timerp timer) (cancel-timer timer)))
 
 (provide 'lsp-ui-util)
 ;;; lsp-ui-util.el ends here
