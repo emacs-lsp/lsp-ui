@@ -364,6 +364,7 @@ is set to t."
           (overlay-put ov 'bounds bounds)
           (overlay-put ov 'current current)
           (overlay-put ov 'after-string final-string)
+          (overlay-put ov 'before-string " ")
           (overlay-put ov 'window (get-buffer-window))
           (overlay-put ov 'kind 'info)
           (overlay-put ov 'position (car pos-ov))
@@ -434,6 +435,7 @@ Push sideline overlays on `lsp-ui-sideline--ovs'."
               (setq offset (1+ (car (cdr pos-ov))))
               (overlay-put ov 'after-string string)
               (overlay-put ov 'kind 'diagnostics)
+              (overlay-put ov 'before-string " ")
               (overlay-put ov 'position (car pos-ov))
               (push ov lsp-ui-sideline--ovs))))))))
 
@@ -497,6 +499,7 @@ Push sideline overlays on `lsp-ui-sideline--ovs'."
               (ov (and pos-ov (make-overlay (car pos-ov) (car pos-ov)))))
         (when pos-ov
           (overlay-put ov 'after-string string)
+          (overlay-put ov 'before-string " ")
           (overlay-put ov 'kind 'actions)
           (overlay-put ov 'position (car pos-ov))
           (push ov lsp-ui-sideline--ovs))))))
