@@ -32,9 +32,9 @@
 
 ;;; Code:
 
-(defun lsp-ui-util-safe-kill-timer (tmr)
-  "Safely kill the TMR."
-  (when (timerp tmr) (cancel-timer tmr)))
+(defun lsp-ui-util-safe-kill-timer (timer)
+  "Safely kill the TIMER."
+  (when (timerp tmr) (cancel-timer timer)))
 
 (provide 'lsp-ui-util)
 ;;; lsp-ui-util.el ends here
