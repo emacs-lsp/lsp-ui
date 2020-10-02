@@ -83,7 +83,7 @@
   :type 'boolean
   :group 'lsp-ui-doc)
 
-(defcustom lsp-ui-doc-position 'at-point
+(defcustom lsp-ui-doc-position 'top
   "Where to display the doc when moving the point cursor.
 This affect the position of the documentation when `lsp-ui-doc-show-with-cursor'
 is non-nil."
