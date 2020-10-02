@@ -76,7 +76,7 @@
   :type 'float
   :group 'lsp-ui-imenu)
 
-(defcustom lsp-ui-imenu-refresh-after-change-p nil
+(defcustom lsp-ui-imenu-refresh-after-change nil
   "Trigger refresh imenu after changes."
   :type 'boolean
   :group 'lsp-ui-imenu)
@@ -374,13 +374,13 @@ Return the updated COLOR-INDEX."
 
 (defun lsp-ui-imenu-buffer--enable ()
   "Enable `lsp-ui-imenu-buffer'."
-  (when lsp-ui-imenu-refresh-after-change-p
+  (when lsp-ui-imenu-refresh-after-change
     (add-hook 'after-change-functions #'lsp-ui-imenu--start-refresh nil t))
   (add-hook 'after-save-hook #'lsp-ui-imenu--start-refresh nil t))
 
 (defun lsp-ui-imenu-buffer--disable ()
   "Disable `lsp-ui-imenu-buffer'."
-  (when lsp-ui-imenu-refresh-after-change-p
+  (when lsp-ui-imenu-refresh-after-change
     (remove-hook 'after-change-functions #'lsp-ui-imenu--start-refresh t))
   (remove-hook 'after-save-hook #'lsp-ui-imenu--start-refresh t))
 
