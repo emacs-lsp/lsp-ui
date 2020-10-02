@@ -71,7 +71,7 @@
   :type 'boolean
   :group 'lsp-ui-imenu)
 
-(defcustom lsp-ui-imenu-refresh-delay 1.0
+(defcustom lsp-ui-imenu-auto-refresh-delay 1.0
   "Delay time to refresh imenu."
   :type 'float
   :group 'lsp-ui-imenu)
@@ -370,7 +370,7 @@ Return the updated COLOR-INDEX."
   "Starts the auto refresh timer."
   (lsp-ui-util-safe-kill-timer lsp-ui-imenu--refresh-timer)
   (setq lsp-ui-imenu--refresh-timer
-        (run-with-idle-timer lsp-ui-imenu-refresh-delay nil #'lsp-ui-imenu--refresh)))
+        (run-with-idle-timer lsp-ui-imenu-auto-refresh-delay nil #'lsp-ui-imenu--refresh)))
 
 (defun lsp-ui-imenu-buffer--enable ()
   "Enable `lsp-ui-imenu-buffer'."
