@@ -66,19 +66,16 @@
   :type 'number
   :group 'lsp-ui-imenu)
 
-(defcustom lsp-ui-imenu-auto-refresh t
+(defcustom lsp-ui-imenu-auto-refresh 'after-save
   "Automatically refresh imenu when certain conditions meet."
-  :type 'boolean
+  :type '(choice (const :tag "Enable" t)
+                 (const :tag "Active only when after save" after-save)
+                 (const :tag "Disable" nil))
   :group 'lsp-ui-imenu)
 
 (defcustom lsp-ui-imenu-auto-refresh-delay 1.0
   "Delay time to refresh imenu."
   :type 'float
-  :group 'lsp-ui-imenu)
-
-(defcustom lsp-ui-imenu-refresh-after-change nil
-  "Trigger refresh imenu after changes."
-  :type 'boolean
   :group 'lsp-ui-imenu)
 
 (defcustom lsp-ui-imenu--custom-mode-line-format nil
@@ -260,7 +257,7 @@ Return the updated COLOR-INDEX."
 
 (defun lsp-ui-imenu--refresh-content ()
   "Refresh imenu content menu"
-  (let ((imenu-auto-rescan lsp-ui-imenu-auto-refresh))
+  (let ((imenu-auto-rescan t))
     (setq lsp-ui-imenu--origin (current-buffer))
     (imenu--make-index-alist)
     (let ((imenu-buffer (get-buffer-create lsp-ui-imenu-buffer-name))
@@ -289,24 +286,23 @@ Return the updated COLOR-INDEX."
   "Open ui-imenu in side window."
   (interactive)
   (lsp-ui-imenu-buffer-mode 1)
-  (let ((imenu-auto-rescan lsp-ui-imenu-auto-refresh))
-    (setq lsp-ui-imenu--origin (current-buffer))
-    (imenu--make-index-alist)
-    (let ((imenu-buffer (get-buffer-create lsp-ui-imenu-buffer-name)))
-      (lsp-ui-imenu--refresh-content)
-      (let ((win (display-buffer-in-side-window imenu-buffer '((side . right)))))
-        (set-window-margins win 1)
-        (select-window win)
-        (set-window-start win 1)
-        (lsp-ui-imenu--move-to-name-beginning)
-        (set-window-dedicated-p win t)
-        ;; when `lsp-ui-imenu-window-width' is 0, fit window to buffer
-        (if (= lsp-ui-imenu-window-width 0)
-            (let ((fit-window-to-buffer-horizontally 'only))
-              (fit-window-to-buffer win)
-              (window-resize win 3 t))
-          (let ((x (- lsp-ui-imenu-window-width (window-width))))
-            (window-resize (selected-window) x t)))))))
+  (setq lsp-ui-imenu--origin (current-buffer))
+  (imenu--make-index-alist)
+  (let ((imenu-buffer (get-buffer-create lsp-ui-imenu-buffer-name)))
+    (lsp-ui-imenu--refresh-content)
+    (let ((win (display-buffer-in-side-window imenu-buffer '((side . right)))))
+      (set-window-margins win 1)
+      (select-window win)
+      (set-window-start win 1)
+      (lsp-ui-imenu--move-to-name-beginning)
+      (set-window-dedicated-p win t)
+      ;; when `lsp-ui-imenu-window-width' is 0, fit window to buffer
+      (if (= lsp-ui-imenu-window-width 0)
+          (let ((fit-window-to-buffer-horizontally 'only))
+            (fit-window-to-buffer win)
+            (window-resize win 3 t))
+        (let ((x (- lsp-ui-imenu-window-width (window-width))))
+          (window-resize (selected-window) x t))))))
 
 (defun lsp-ui-imenu--kill nil
   "Kill imenu window."
@@ -371,8 +367,7 @@ Return the updated COLOR-INDEX."
         (if (equal (current-buffer) imenu-buffer)
             (select-window (get-buffer-window lsp-ui-imenu--origin))
           (setq lsp-ui-imenu--origin (current-buffer)))
-        ;; Force refresh, ignore custom variable.
-        (let ((lsp-ui-imenu-auto-refresh t)) (lsp-ui-imenu--refresh-content))))))
+        (lsp-ui-imenu--refresh-content)))))
 
 (defun lsp-ui-imenu--start-refresh (&rest _)
   "Starts the auto refresh timer."
@@ -382,15 +377,23 @@ Return the updated COLOR-INDEX."
 
 (defun lsp-ui-imenu-buffer--enable ()
   "Enable `lsp-ui-imenu-buffer'."
-  (when lsp-ui-imenu-refresh-after-change
-    (add-hook 'after-change-functions #'lsp-ui-imenu--start-refresh nil t))
-  (add-hook 'after-save-hook #'lsp-ui-imenu--start-refresh nil t))
+  (when lsp-ui-imenu-auto-refresh
+    (cl-case lsp-ui-imenu-auto-refresh
+      (after-save
+       (add-hook 'after-save-hook #'lsp-ui-imenu--start-refresh nil t))
+      (t
+       (add-hook 'after-change-functions #'lsp-ui-imenu--start-refresh nil t)
+       (add-hook 'after-save-hook #'lsp-ui-imenu--start-refresh nil t)))))
 
 (defun lsp-ui-imenu-buffer--disable ()
   "Disable `lsp-ui-imenu-buffer'."
-  (when lsp-ui-imenu-refresh-after-change
-    (remove-hook 'after-change-functions #'lsp-ui-imenu--start-refresh t))
-  (remove-hook 'after-save-hook #'lsp-ui-imenu--start-refresh t))
+  (when lsp-ui-imenu-auto-refresh
+    (cl-case lsp-ui-imenu-auto-refresh
+      (after-save
+       (remove-hook 'after-save-hook #'lsp-ui-imenu--start-refresh t))
+      (t
+       (remove-hook 'after-change-functions #'lsp-ui-imenu--start-refresh t)
+       (remove-hook 'after-save-hook #'lsp-ui-imenu--start-refresh t)))))
 
 (define-minor-mode lsp-ui-imenu-buffer-mode
   "Minor mode 'lsp-ui-imenu-buffer-mode'."
