@@ -307,6 +307,7 @@ Return the updated COLOR-INDEX."
 (defun lsp-ui-imenu--kill nil
   "Kill imenu window."
   (interactive)
+  (lsp-ui-imenu-buffer-mode -1)
   (kill-buffer-and-window))
 
 (defun lsp-ui-imenu--jump (direction)
