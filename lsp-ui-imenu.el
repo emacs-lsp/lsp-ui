@@ -66,7 +66,7 @@
   :type 'number
   :group 'lsp-ui-imenu)
 
-(defcustom lsp-ui-imenu-auto-refresh 'after-save
+(defcustom lsp-ui-imenu-auto-refresh nil
   "Automatically refresh imenu when certain conditions meet."
   :type '(choice (const :tag "Enable" t)
                  (const :tag "Active only when after save" after-save)
