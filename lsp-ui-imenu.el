@@ -92,7 +92,7 @@
 (declare-function imenu--subalist-p 'imenu)
 (defvar imenu--index-alist)
 
-(defvar lsp-ui-imenu--refresh-timer nil
+(defvar-local lsp-ui-imenu--refresh-timer nil
   "Auto refresh timer for imenu.")
 
 (defun lsp-ui-imenu--pad (s len bars depth color-index for-title is-last)
