@@ -908,6 +908,8 @@ HOVER is the doc returned by the LS.
 BOUNDS are points of the symbol that have been requested.
 BUFFER is the buffer where the request has been made."
   (let ((bounds (or (lsp-ui-doc--extract-bounds hover) bounds)))
+    (cl-flet
+	((render-function (or lsp-ui-doc-render-function (lambda (x) x))))
     (if (and hover
              (>= (point) (car bounds))
              (<= (point) (cdr bounds))
@@ -919,7 +921,7 @@ BUFFER is the buffer where the request has been made."
            (-some->> contents
              lsp-ui-doc--extract
              (replace-regexp-in-string "\r" ""))))
-      (lsp-ui-doc--hide-frame))))
+      (lsp-ui-doc--hide-frame)))))
 
 (defun lsp-ui-doc--delete-frame ()
   "Delete the child frame if it exists."
