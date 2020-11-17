@@ -93,7 +93,7 @@ This only takes effect when `lsp-ui-doc-position' is 'top or 'bottom."
   :group 'lsp-ui-doc)
 
 (defcustom lsp-ui-doc-max-width 150
-  "Maximum number of columns of the frame or nil for ``frame-width''."
+  "Maximum number of columns of the frame or nil for `frame-width'."
   :type 'integer
   :group 'lsp-ui-doc)
 
