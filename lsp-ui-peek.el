@@ -109,13 +109,12 @@ By default, the peek view isn't shown if there is 1 xref."
   :group 'lsp-ui-peek)
 
 (defface lsp-ui-peek-highlight
-  '((((background light)) :background "dim gray"
-     :foreground "white"
-     :distant-foreground "black")
+  '((((background light)) :background "yellow"
+     :box (:line-width -1 :color "red"))
     (t :background "white"
        :foreground "black"
        :distant-foreground "white"
-       :box (:line-width -1 :color "white")))
+       :box (:line-width -1 :color "red")))
   "Face used to highlight the reference/definition.
 Do not use box, underline or overline prop.  If you want to use
 box, use a negative value for its width.  Those properties deform
