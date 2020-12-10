@@ -22,7 +22,7 @@ jobs:
     steps:
     - uses: actions/checkout@v2
 
-    - uses: actions/setup-python@v1.1.1
+    - uses: actions/setup-python@v2
       with:
         python-version: '3.6'
         architecture: 'x64'
@@ -50,7 +50,6 @@ jobs:
         mkdir -p $HOME/bin
         wget https://github.com/rust-analyzer/rust-analyzer/releases/download/$RUST_ANALYZER_VERSION/rust-analyzer-linux -O $HOME/bin/rust-analyzer
         chmod +x $HOME/bin/rust-analyzer
-        echo "::add-path::$HOME/bin"
 
     - name: Run tests
       run: 'make ci'
