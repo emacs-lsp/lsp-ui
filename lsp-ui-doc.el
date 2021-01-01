@@ -702,12 +702,13 @@ FN is the function to call on click."
 (defvar-local lsp-ui-doc--inline-width nil)
 
 (defun lsp-ui-doc--inline-window-width nil
-  (- (min (window-text-width)
-          (window-body-width))
-     (if (bound-and-true-p display-line-numbers-mode)
-         (+ 2 (line-number-display-width))
-       0)
-     1))
+  "Calculate inner padding for the child frame showing the documentation"
+  (let ((additional-width-spacing (if (bound-and-true-p lsp-ui-doc-use-childframe)
+                                      8 1)))
+    (- (min (window-text-width) (window-body-width))
+       (if (bound-and-true-p display-line-numbers-mode)
+           (+ 2 (line-number-display-width)) 0)
+       additional-width-spacing)))
 
 (defun lsp-ui-doc--inline-zip (s1 s2)
   (let* ((width (lsp-ui-doc--inline-window-width))
