@@ -470,6 +470,10 @@ Push sideline overlays on `lsp-ui-sideline--ovs'."
   '((t :inherit lsp-disabled-code-action-face))
   "Faced used to show disabled code actions in the sideline.")
 
+(defface lsp-ui-sideline-preferred-code-action-face
+  '((t :inherit lsp-preferred-code-action-face))
+  "Face used to show preferred code actions in the sideline.")
+
 (defcustom lsp-ui-sideline-show-disabled-code-actions t
   "Whether disabled code actions should be shown.
 They cannot be executed."
@@ -501,9 +505,11 @@ They cannot be executed."
                                                            (lsp-execute-code-action action))))
                         map))
               (len (length title))
-              (disabled? (lsp:code-action-disabled? action))
+              ((&CodeAction :disabled? :is-preferred?) action)
               (title (progn (add-face-text-property 0 len 'lsp-ui-sideline-global nil title)
                             (add-face-text-property 0 len 'lsp-ui-sideline-code-action nil title)
+                            (when is-preferred?
+                              (add-face-text-property 0 len 'lsp-ui-sideline-preferred-code-action-face nil title))
                             (when disabled?
                               (add-face-text-property 0 len 'lsp-ui-sideline-disabled-code-action-face nil title)
                               (add-text-properties 0 len `(help-echo ,(lsp:code-action-disabled-reason disabled?)) title))
