@@ -470,13 +470,21 @@ Push sideline overlays on `lsp-ui-sideline--ovs'."
   '((t :inherit lsp-disabled-code-action-face))
   "Faced used to show disabled code actions in the sideline.")
 
+(defcustom lsp-ui-sideline-show-disabled-code-actions t
+  "Whether disabled code actions should be shown.
+They cannot be executed."
+  :type 'boolean
+  :group 'lsp-ui-sideline)
+
 (defun lsp-ui-sideline--code-actions (actions bol eol)
   "Show code ACTIONS."
   (let ((inhibit-modification-hooks t))
     (when lsp-ui-sideline-actions-kind-regex
-      (setq actions (seq-filter (-lambda ((&CodeAction :kind?))
-                                  (or (not kind?)
-                                      (s-match lsp-ui-sideline-actions-kind-regex kind?)))
+      (setq actions (seq-filter (-lambda ((&CodeAction :kind? :disabled?))
+                                  (and (or (not disabled?)
+                                           lsp-ui-sideline-show-disabled-code-actions)
+                                       (or (not kind?)
+                                           (s-match lsp-ui-sideline-actions-kind-regex kind?))))
                                 actions)))
     (setq lsp-ui-sideline--code-actions actions)
     (lsp-ui-sideline--delete-kind 'actions)
