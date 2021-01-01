@@ -466,6 +466,10 @@ Push sideline overlays on `lsp-ui-sideline--ovs'."
        (propertize " " 'display (lsp-ui-sideline--code-actions-make-image))
        (propertize " " 'display '(space :width 0.3))))))
 
+(defface lsp-ui-sideline-disabled-code-action-face
+  '((t :inherit lsp-disabled-code-action-face))
+  "Faced used to show disabled code actions in the sideline.")
+
 (defun lsp-ui-sideline--code-actions (actions bol eol)
   "Show code ACTIONS."
   (let ((inhibit-modification-hooks t))
@@ -489,8 +493,12 @@ Push sideline overlays on `lsp-ui-sideline--ovs'."
                                                            (lsp-execute-code-action action))))
                         map))
               (len (length title))
+              (disabled? (lsp:code-action-disabled? action))
               (title (progn (add-face-text-property 0 len 'lsp-ui-sideline-global nil title)
                             (add-face-text-property 0 len 'lsp-ui-sideline-code-action nil title)
+                            (when disabled?
+                              (add-face-text-property 0 len 'lsp-ui-sideline-disabled-code-action-face nil title)
+                              (add-text-properties 0 len `(help-echo ,(lsp:code-action-disabled-reason disabled?)) title))
                             (add-text-properties 0 len `(keymap ,keymap mouse-face highlight) title)
                             title))
               (string (concat (propertize " " 'display `(space :align-to (- right-fringe ,(lsp-ui-sideline--align (+ len (length image)) margin))))
