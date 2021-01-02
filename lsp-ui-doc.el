@@ -979,11 +979,12 @@ before, or if the new window is the minibuffer."
     (and (buffer-live-p it) it)
     (kill-buffer it)))
 
-(defun lsp-ui-doc--handle-scroll (_win _new-start)
+(defun lsp-ui-doc--handle-scroll (win _new-start)
   (let ((frame (lsp-ui-doc--get-frame)))
     (and frame
          (eq lsp-ui-doc-position 'at-point)
          (frame-visible-p frame)
+         (eq win (selected-window))
          (if (and lsp-ui-doc--bounds
                   (eq (window-buffer) (frame-parameter frame 'lsp-ui-doc--buffer-origin))
                   (not (minibufferp (window-buffer)))
