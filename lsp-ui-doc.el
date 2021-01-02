@@ -980,6 +980,11 @@ before, or if the new window is the minibuffer."
     (kill-buffer it)))
 
 (defun lsp-ui-doc--handle-scroll (win _new-start)
+  "Handle scrolling to the document frame.
+
+This function is apply to hook `window-scroll-functions'.
+
+Argument WIN is current applying window."
   (let ((frame (lsp-ui-doc--get-frame)))
     (and frame
          (eq lsp-ui-doc-position 'at-point)
