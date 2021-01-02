@@ -989,7 +989,7 @@ Argument WIN is current applying window."
     (and frame
          (eq lsp-ui-doc-position 'at-point)
          (frame-visible-p frame)
-         (eq win (selected-window))
+         (eq win (selected-window))  ; This resolved #524
          (if (and lsp-ui-doc--bounds
                   (eq (window-buffer) (frame-parameter frame 'lsp-ui-doc--buffer-origin))
                   (not (minibufferp (window-buffer)))
