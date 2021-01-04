@@ -229,8 +229,8 @@ Return the updated COLOR-INDEX."
   "Get imenu padding determined by `lsp-ui-imenu-kind-position'.
 ITEMS are used when the kind position is 'left."
   (cl-case lsp-ui-imenu-kind-position
-    ('top 1)
-    ('left (--> (-filter 'imenu--subalist-p items)
+    (top 1)
+    (left (--> (-filter 'imenu--subalist-p items)
                 (--map (length (car it)) it)
                 (-max (or it '(1)))))
     (t (user-error "Invalid value for imenu's kind position: %s" lsp-ui-imenu-kind-position))))
