@@ -36,5 +36,17 @@
   "Safely kill the TIMER."
   (when (timerp timer) (cancel-timer timer)))
 
+(defun lsp-ui-util-line-number-display-width ()
+  "Safe way to get value from function `line-number-display-width'."
+  (if (bound-and-true-p display-line-numbers-mode)
+      ;; For some reason, function `line-number-display-width' gave
+      ;; us error `args-out-of-range' even we do not pass anything towards
+      ;; to it function. See the following links,
+      ;;
+      ;; - https://github.com/emacs-lsp/lsp-ui/issues/294
+      ;; - https://github.com/emacs-lsp/lsp-ui/issues/533 (duplicate)
+      (+ (or (ignore-errors (line-number-display-width)) 0) 2)
+    0))
+
 (provide 'lsp-ui-util)
 ;;; lsp-ui-util.el ends here
