@@ -5,7 +5,7 @@
 ;; Author: Sebastien Chapuis <sebastien@chapu.is>
 ;; URL: https://github.com/emacs-lsp/lsp-ui
 ;; Keywords: languages, tools
-;; Version: 6.2
+;; Version: 6.3
 
 ;;; License
 ;;
@@ -35,6 +35,7 @@
 
 (require 'lsp-mode)
 (require 'dash)
+(require 'lsp-ui-util)
 
 (defgroup lsp-ui-imenu nil
   "Display imenu entries."
@@ -58,12 +59,24 @@
 (defcustom lsp-ui-imenu-colors '("deep sky blue" "green3")
   "Color list to cycle through for entry groups."
   :type '(repeat color)
-  :group 'lsp-ui-menu)
+  :group 'lsp-ui-imenu)
 
 (defcustom lsp-ui-imenu-window-width 0
   "When not 0, don't fit window to buffer and use value as window-width."
   :type 'number
-  :group 'lsp-ui-menu)
+  :group 'lsp-ui-imenu)
+
+(defcustom lsp-ui-imenu-auto-refresh nil
+  "Automatically refresh imenu when certain conditions meet."
+  :type '(choice (const :tag "Enable" t)
+                 (const :tag "Active only when after save" after-save)
+                 (const :tag "Disable" nil))
+  :group 'lsp-ui-imenu)
+
+(defcustom lsp-ui-imenu-auto-refresh-delay 1.0
+  "Delay time to refresh imenu."
+  :type 'float
+  :group 'lsp-ui-imenu)
 
 (defcustom lsp-ui-imenu--custom-mode-line-format nil
   "Custom mode line format to be used in `lsp-ui-menu-mode'."
@@ -75,6 +88,9 @@
 (declare-function imenu--make-index-alist 'imenu)
 (declare-function imenu--subalist-p 'imenu)
 (defvar imenu--index-alist)
+
+(defvar-local lsp-ui-imenu--refresh-timer nil
+  "Auto refresh timer for imenu.")
 
 (defun lsp-ui-imenu--pad (s len bars depth color-index for-title is-last)
   (let ((n (- len (length s))))
@@ -244,32 +260,41 @@ ITEMS are used when the kind position is 'left."
 (defvar lsp-ui-imenu-buffer-name "*lsp-ui-imenu*"
   "Buffer name for imenu buffers.")
 
+(defun lsp-ui-imenu--refresh-content ()
+  "Refresh imenu content menu"
+  (let ((imenu-auto-rescan t))
+    (setq lsp-ui-imenu--origin (current-buffer))
+    (imenu--make-index-alist)
+    (let ((imenu-buffer (get-buffer-create lsp-ui-imenu-buffer-name))
+          (list imenu--index-alist))
+      (with-current-buffer imenu-buffer
+        (let* ((padding (lsp-ui-imenu--get-padding list))
+               (grouped-by-subs (-partition-by 'imenu--subalist-p list))
+               (color-index 0)
+               (bars (make-bool-vector lsp-ui-imenu--max-bars t))
+               (inhibit-read-only t))
+          (remove-overlays)
+          (erase-buffer)
+          (dolist (group grouped-by-subs)
+            (if (imenu--subalist-p (car group))
+                (setq color-index (lsp-ui-imenu--insert-items "" group padding bars 0 color-index))
+              (lsp-ui-imenu--put-separator)
+              (lsp-ui-imenu--insert-items "" group padding bars 1 color-index)
+              (setq color-index (1+ color-index))))
+          (lsp-ui-imenu-mode)
+          (when lsp-ui-imenu--custom-mode-line-format
+            (setq mode-line-format lsp-ui-imenu--custom-mode-line-format))
+          (goto-char (point-min))
+          (add-hook 'post-command-hook 'lsp-ui-imenu--post-command nil t))))))
+
 (defun lsp-ui-imenu nil
   "Open ui-imenu in side window."
   (interactive)
+  (lsp-ui-imenu-buffer-mode 1)
   (setq lsp-ui-imenu--origin (current-buffer))
   (imenu--make-index-alist)
-  (let ((imenu-buffer (get-buffer-create lsp-ui-imenu-buffer-name))
-        (list imenu--index-alist))
-    (with-current-buffer imenu-buffer
-      (let* ((padding (lsp-ui-imenu--get-padding list))
-             (grouped-by-subs (-partition-by 'imenu--subalist-p list))
-             (color-index 0)
-             (bars (make-bool-vector lsp-ui-imenu--max-bars t))
-             (inhibit-read-only t))
-        (remove-overlays)
-        (erase-buffer)
-        (dolist (group grouped-by-subs)
-          (if (imenu--subalist-p (car group))
-              (setq color-index (lsp-ui-imenu--insert-items "" group padding bars 0 color-index))
-            (lsp-ui-imenu--put-separator)
-            (lsp-ui-imenu--insert-items "" group padding bars 1 color-index)
-            (setq color-index (1+ color-index))))
-        (lsp-ui-imenu-mode)
-        (when lsp-ui-imenu--custom-mode-line-format
-          (setq mode-line-format lsp-ui-imenu--custom-mode-line-format))
-        (goto-char (point-min))
-        (add-hook 'post-command-hook 'lsp-ui-imenu--post-command nil t)))
+  (let ((imenu-buffer (get-buffer-create lsp-ui-imenu-buffer-name)))
+    (lsp-ui-imenu--refresh-content)
     (let ((win (display-buffer-in-side-window imenu-buffer '((side . right)))))
       (set-window-margins win 1)
       (select-window win)
@@ -287,6 +312,7 @@ ITEMS are used when the kind position is 'left."
 (defun lsp-ui-imenu--kill nil
   "Kill imenu window."
   (interactive)
+  (lsp-ui-imenu-buffer-mode -1)
   (kill-buffer-and-window))
 
 (defun lsp-ui-imenu--jump (direction)
@@ -327,6 +353,7 @@ ITEMS are used when the kind position is 'left."
 (defvar lsp-ui-imenu-mode-map
   (let ((map (make-sparse-keymap)))
     (define-key map (kbd "q") 'lsp-ui-imenu--kill)
+    (define-key map (kbd "r") 'lsp-ui-imenu--refresh)
     (define-key map (kbd "<right>") 'lsp-ui-imenu--next-kind)
     (define-key map (kbd "<left>") 'lsp-ui-imenu--prev-kind)
     (define-key map (kbd "<return>") 'lsp-ui-imenu--view)
@@ -339,7 +366,47 @@ ITEMS are used when the kind position is 'left."
 (define-derived-mode lsp-ui-imenu-mode special-mode "lsp-ui-imenu"
   "Mode showing imenu entries.")
 
-(defun lsp-ui-imenu-enable (_enable))
+(defun lsp-ui-imenu--refresh ()
+  "Safe refresh imenu content."
+  (interactive)
+  (let ((imenu-buffer (get-buffer lsp-ui-imenu-buffer-name)))
+    (when imenu-buffer
+      (save-selected-window
+        (if (equal (current-buffer) imenu-buffer)
+            (select-window (get-buffer-window lsp-ui-imenu--origin))
+          (setq lsp-ui-imenu--origin (current-buffer)))
+        (lsp-ui-imenu--refresh-content)))))
+
+(defun lsp-ui-imenu--start-refresh (&rest _)
+  "Starts the auto refresh timer."
+  (lsp-ui-util--safe-kill-timer lsp-ui-imenu--refresh-timer)
+  (setq lsp-ui-imenu--refresh-timer
+        (run-with-idle-timer lsp-ui-imenu-auto-refresh-delay nil #'lsp-ui-imenu--refresh)))
+
+(defun lsp-ui-imenu-buffer--enable ()
+  "Enable `lsp-ui-imenu-buffer'."
+  (when lsp-ui-imenu-auto-refresh
+    (cl-case lsp-ui-imenu-auto-refresh
+      (after-save
+       (add-hook 'after-save-hook #'lsp-ui-imenu--start-refresh nil t))
+      (t
+       (add-hook 'after-change-functions #'lsp-ui-imenu--start-refresh nil t)
+       (add-hook 'after-save-hook #'lsp-ui-imenu--start-refresh nil t)))))
+
+(defun lsp-ui-imenu-buffer--disable ()
+  "Disable `lsp-ui-imenu-buffer'."
+  (when lsp-ui-imenu-auto-refresh
+    (cl-case lsp-ui-imenu-auto-refresh
+      (after-save
+       (remove-hook 'after-save-hook #'lsp-ui-imenu--start-refresh t))
+      (t
+       (remove-hook 'after-change-functions #'lsp-ui-imenu--start-refresh t)
+       (remove-hook 'after-save-hook #'lsp-ui-imenu--start-refresh t)))))
+
+(define-minor-mode lsp-ui-imenu-buffer-mode
+  "Minor mode 'lsp-ui-imenu-buffer-mode'."
+  :group lsp-ui-imenu
+  (if lsp-ui-imenu-buffer-mode (lsp-ui-imenu-buffer--enable) (lsp-ui-imenu-buffer--disable)))
 
 (provide 'lsp-ui-imenu)
 ;;; lsp-ui-imenu.el ends here
