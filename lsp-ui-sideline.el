@@ -305,6 +305,19 @@ is set to t."
                      (string= (overlay-get it 'info) info))
                 lsp-ui-sideline--ovs))))
 
+;; TODO: Move this function to `util' module.
+(defun lsp-ui-util-line-number-display-width ()
+  "Safe way to get value from function `line-number-display-width'."
+  (if (bound-and-true-p display-line-numbers-mode)
+      ;; For some reason, function `line-number-display-width' gave
+      ;; us error `args-out-of-range' even we do not pass anything towards
+      ;; to it function. See the following links,
+      ;;
+      ;; - https://github.com/emacs-lsp/lsp-ui/issues/294
+      ;; - https://github.com/emacs-lsp/lsp-ui/issues/533 (duplicate)
+      (+ (or (ignore-errors (line-number-display-width)) 0) 2)
+    0))
+
 (defun lsp-ui-sideline--margin-width ()
   (+ (if fringes-outside-margins right-margin-width 0)
      (or (and (boundp 'fringe-mode)
@@ -319,11 +332,10 @@ is set to t."
                (equal (cadr win-fringes) 0))
            2
          0))
-     (if (and (bound-and-true-p display-line-numbers-mode)
-              (< emacs-major-version 27))
+     (if (< emacs-major-version 27)
          ;; This was necessary with emacs < 27, recent versions take
          ;; into account the display-line width with :align-to
-         (+ 2 (line-number-display-width))
+         (lsp-ui-util-line-number-display-width)
        0)
      (if (or
           (bound-and-true-p whitespace-mode)
@@ -334,11 +346,10 @@ is set to t."
 (defun lsp-ui-sideline--window-width ()
   (- (min (window-text-width) (window-body-width))
      (lsp-ui-sideline--margin-width)
-     (or (and (bound-and-true-p display-line-numbers-mode)
-              (>= emacs-major-version 27)
+     (or (and (>= emacs-major-version 27)
               ;; We still need this number when calculating available space
               ;; even with emacs >= 27
-              (+ (line-number-display-width) 2))
+              (lsp-ui-util-line-number-display-width))
          0)))
 
 (defun lsp-ui-sideline--display-all-info (buffer list-infos tag bol eol)
