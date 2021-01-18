@@ -24,7 +24,7 @@
 
 ;;; Code:
 
-(require 'flycheck)
+(require 'flycheck nil 'noerror)  ; Temporary solution, see #514
 (require 'pcase)
 (require 'dash)
 
