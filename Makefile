@@ -12,9 +12,18 @@ ci: build compile clean
 # TODO: Fix tests
 # ci: build compile test clean
 
-compile:
+unix-compile:
 	@echo "Compiling..."
 	@$(CASK) $(EMACS) -Q --batch \
+		-L . \
+		--eval '(setq byte-compile-error-on-warn t)' \
+		-f batch-byte-compile \
+		*.el
+
+windows-compile:
+	@echo "Compiling..."
+	@$(CASK) $(EMACS) -Q --batch \
+		-l test/windows-bootstrap.el \
 		-L . \
 		--eval '(setq byte-compile-error-on-warn t)' \
 		-f batch-byte-compile \
@@ -26,4 +35,4 @@ test:
 clean:
 	EMACS=$(EMACS) cask clean-elc
 
-.PHONY: build ci compile test clean
+.PHONY: build ci unix-compile test clean
