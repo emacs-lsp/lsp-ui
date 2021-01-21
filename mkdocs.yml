@@ -30,5 +30,5 @@ markdown_extensions:
 
 plugins:
   - search
-  - awesome-pages
+  - mkdocs-awesome-pages-plugin
   - git-revision-date-localized
