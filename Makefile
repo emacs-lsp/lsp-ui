@@ -13,8 +13,10 @@ build:
 	EMACS=$(EMACS) cask build
 	EMACS=$(EMACS) cask clean-elc
 
+# FIXME: Add `unix-test`
 unix-ci: build unix-compile clean
 
+# FIXME: Add `windows-test`
 windows-ci: CASK=
 windows-ci: windows-compile clean
 
