@@ -9,7 +9,7 @@ on:
       - master
 
 jobs:
-  unix-build:
+  unix-test:
     runs-on: ${{ matrix.os }}
     strategy:
       matrix:
