@@ -22,39 +22,39 @@ jobs:
           - snapshot
 
     steps:
-    - uses: actions/checkout@v2
+      - uses: actions/checkout@v2
 
-    - uses: actions/setup-python@v2
-      with:
-        python-version: '3.6'
-        architecture: 'x64'
+      - uses: actions/setup-python@v2
+        with:
+          python-version: '3.6'
+          architecture: 'x64'
 
-    - uses: purcell/setup-emacs@master
-      with:
-        version: ${{ matrix.emacs_version }}
+      - uses: purcell/setup-emacs@master
+        with:
+          version: ${{ matrix.emacs_version }}
 
-    - uses: conao3/setup-cask@master
-      with:
-        version: 0.8.4
+      - uses: conao3/setup-cask@master
+        with:
+          version: 0.8.4
 
-    - name: Install Rust toolchain
-      uses: actions-rs/toolchain@v1
-      with:
-        profile: minimal
-        toolchain: stable
-        override: true
-        components: rust-src
+      - name: Install Rust toolchain
+        uses: actions-rs/toolchain@v1
+        with:
+          profile: minimal
+          toolchain: stable
+          override: true
+          components: rust-src
 
-    - name: Install Rust Analyzer
-      env:
-        RUST_ANALYZER_VERSION: 2020-04-20
-      run: |
-        mkdir -p $HOME/bin
-        wget https://github.com/rust-analyzer/rust-analyzer/releases/download/$RUST_ANALYZER_VERSION/rust-analyzer-linux -O $HOME/bin/rust-analyzer
-        chmod +x $HOME/bin/rust-analyzer
+      - name: Install Rust Analyzer
+        env:
+          RUST_ANALYZER_VERSION: 2020-04-20
+        run: |
+          mkdir -p $HOME/bin
+          wget https://github.com/rust-analyzer/rust-analyzer/releases/download/$RUST_ANALYZER_VERSION/rust-analyzer-linux -O $HOME/bin/rust-analyzer
+          chmod +x $HOME/bin/rust-analyzer
 
-    - name: Run tests
-      run: 'make unix-ci'
+      - name: Run tests
+        run: 'make unix-ci'
 
   windows-test:
     runs-on: windows-latest
@@ -70,9 +70,30 @@ jobs:
     steps:
       - uses: actions/checkout@v2
 
+      - uses: actions/setup-python@v2
+        with:
+          python-version: '3.6'
+          architecture: 'x64'
+
       - uses: jcs090218/setup-emacs-windows@master
         with:
           version: ${{ matrix.emacs-version }}
 
+      - name: Install Rust toolchain
+        uses: actions-rs/toolchain@v1
+        with:
+          profile: minimal
+          toolchain: stable
+          override: true
+          components: rust-src
+
+      - name: Install Rust Analyzer
+        env:
+          RUST_ANALYZER_VERSION: 2020-04-20
+        run: |
+          mkdir -p $HOME/bin
+          wget https://github.com/rust-analyzer/rust-analyzer/releases/download/$RUST_ANALYZER_VERSION/rust-analyzer-linux -O $HOME/bin/rust-analyzer
+          chmod +x $HOME/bin/rust-analyzer
+
       - name: Run tests
-        run: make windows-ci
+        run: 'make windows-ci'
