@@ -40,7 +40,8 @@
   :link '(info-link "(lsp-ui-flycheck) Customizing"))
 
 (defcustom lsp-ui-flycheck-list-position 'bottom
-  "Position where `lsp-ui-flycheck-list' will show diagnostics for the whole workspace."
+  "Position where `lsp-ui-flycheck-list' will show diagnostics for the
+whole workspace."
   :type '(choice (const :tag "Bottom" bottom)
                  (const :tag "Right" right))
   :group 'lsp-ui-flycheck)
