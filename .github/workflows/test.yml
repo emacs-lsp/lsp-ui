@@ -54,7 +54,7 @@ jobs:
         chmod +x $HOME/bin/rust-analyzer
 
     - name: Run tests
-      run: 'make ci'
+      run: 'make unix-ci'
 
   windows-test:
     runs-on: windows-latest
@@ -96,4 +96,4 @@ jobs:
         chmod +x $HOME/bin/rust-analyzer
 
     - name: Run tests
-      run: 'make ci'
+      run: 'make windows-ci'
