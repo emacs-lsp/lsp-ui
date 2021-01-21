@@ -10,7 +10,7 @@ build:
 
 ci: build compile clean
 # TODO: Fix tests
-# ci: build compile test clean
+# ci: build compile unix-test clean
 
 unix-compile:
 	@echo "Compiling..."
@@ -29,10 +29,10 @@ windows-compile:
 		-f batch-byte-compile \
 		*.el
 
-test:
+unix-test:
 	EMACS=$(EMACS) cask exec ert-runner
 
 clean:
 	EMACS=$(EMACS) cask clean-elc
 
-.PHONY: build ci unix-compile test clean
+.PHONY: build ci unix-compile unix-test clean
