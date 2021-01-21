@@ -15,7 +15,7 @@ build:
 
 unix-ci: build unix-compile clean
 # TODO: Fix tests
-#unixci: build unix-compile unix-test clean
+#unix-ci: build unix-compile unix-test clean
 
 windows-ci: CASK=
 windows-ci: windows-compile clean
