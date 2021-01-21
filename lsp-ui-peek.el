@@ -70,10 +70,10 @@
 
 (defcustom lsp-ui-peek-fontify 'on-demand
   "Whether to fontify chunks of code (use semantics colors).
-WARNING: 'always can heavily slow the processing when `lsp-ui-peek-expand-function'
-expands more than 1 file.
-It is recommended to keep the default value of `lsp-ui-peek-expand-function' when
-this variable is set to 'always."
+WARNING: 'always can heavily slow the processing when
+`lsp-ui-peek-expand-function' expands more than 1 file.
+It is recommended to keep the default value of `lsp-ui-peek-expand-function'
+when this variable is set to 'always."
   :type '(choice (const :tag "Never" never)
                  (const :tag "On demand" on-demand)
                  (const :tag "Always" always))
