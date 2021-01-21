@@ -20,9 +20,6 @@ jobs:
         with:
           version: 0.8.4
 
-      - name: Generate LSPs docs
-        run: 'make docs'
-
       - name: MkDocs
         run: |
           cp -rf README.md images docs
