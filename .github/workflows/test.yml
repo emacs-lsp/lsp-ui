@@ -79,21 +79,5 @@ jobs:
         with:
           version: ${{ matrix.emacs-version }}
 
-      - name: Install Rust toolchain
-        uses: actions-rs/toolchain@v1
-        with:
-          profile: minimal
-          toolchain: stable
-          override: true
-          components: rust-src
-
-      - name: Install Rust Analyzer
-        env:
-          RUST_ANALYZER_VERSION: 2020-04-20
-        run: |
-          mkdir -p $HOME/bin
-          wget https://github.com/rust-analyzer/rust-analyzer/releases/download/$RUST_ANALYZER_VERSION/rust-analyzer-linux -O $HOME/bin/rust-analyzer
-          chmod +x $HOME/bin/rust-analyzer
-
       - name: Run tests
         run: 'make windows-ci'
