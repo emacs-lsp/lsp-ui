@@ -13,7 +13,7 @@ build:
 	EMACS=$(EMACS) cask build
 	EMACS=$(EMACS) cask clean-elc
 
-nix-ci: build unix-compile unix-test clean
+unix-ci: build unix-compile unix-test clean
 
 windows-ci: CASK=
 windows-ci: windows-compile clean
