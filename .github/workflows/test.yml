@@ -70,14 +70,14 @@ jobs:
     steps:
     - uses: actions/checkout@v2
 
-    - uses: jcs090218/setup-emacs-windows@master
-      with:
-        version: ${{ matrix.emacs_version }}
-
     - uses: actions/setup-python@v2
       with:
         python-version: '3.6'
         architecture: 'x64'
+
+    - uses: jcs090218/setup-emacs-windows@master
+      with:
+        version: ${{ matrix.emacs_version }}
 
     - name: Install Rust toolchain
       uses: actions-rs/toolchain@v1
