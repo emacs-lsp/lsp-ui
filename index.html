@@ -1,7 +1,4 @@
 
-
-
-
 <!doctype html>
 <html lang="en" class="no-js">
   <head>
@@ -11,8 +8,9 @@
       
       
       
+      
       <link rel="shortcut icon" href="images/logo.png">
-      <meta name="generator" content="mkdocs-1.1.2, mkdocs-material-5.5.14">
+      <meta name="generator" content="mkdocs-1.1.2, mkdocs-material-6.2.4">
     
     
       
@@ -20,14 +18,18 @@
       
     
     
-      <link rel="stylesheet" href="assets/stylesheets/main.d3202873.min.css">
+      <link rel="stylesheet" href="assets/stylesheets/main.15aa0b43.min.css">
       
+        
+        <link rel="stylesheet" href="assets/stylesheets/palette.75751829.min.css">
+        
       
     
     
     
       
-        <link href="https://fonts.gstatic.com" rel="preconnect" crossorigin>
+        
+        <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
         <link rel="stylesheet" href="https://fonts.googleapis.com/css?family=Roboto:300,400,400i,700%7CRoboto+Mono&display=fallback">
         <style>body,input{font-family:"Roboto",-apple-system,BlinkMacSystemFont,Helvetica,Arial,sans-serif}code,kbd,pre{font-family:"Roboto Mono",SFMono-Regular,Consolas,Menlo,monospace}</style>
       
@@ -43,7 +45,13 @@
   </head>
   
   
-    <body dir="ltr">
+    
+    
+    
+    
+    
+    <body dir="ltr" data-md-color-scheme="" data-md-color-primary="none" data-md-color-accent="none">
+      
   
     
     <input class="md-toggle" data-md-toggle="drawer" type="checkbox" id="__drawer" autocomplete="off">
@@ -61,7 +69,9 @@
       
     </div>
     
-      <header class="md-header" data-md-component="header">
+      
+
+<header class="md-header" data-md-component="header">
   <nav class="md-header-nav md-grid" aria-label="Header">
     <a href="." title="LSP UI" class="md-header-nav__button md-logo" aria-label="LSP UI">
       
@@ -72,18 +82,20 @@
       <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M3 6h18v2H3V6m0 5h18v2H3v-2m0 5h18v2H3v-2z"/></svg>
     </label>
     <div class="md-header-nav__title" data-md-component="header-title">
-      
-        <div class="md-header-nav__ellipsis">
-          <span class="md-header-nav__topic md-ellipsis">
+      <div class="md-header-nav__ellipsis">
+        <div class="md-header-nav__topic">
+          <span class="md-ellipsis">
             LSP UI
           </span>
-          <span class="md-header-nav__topic md-ellipsis">
+        </div>
+        <div class="md-header-nav__topic">
+          <span class="md-ellipsis">
             
               Home
             
           </span>
         </div>
-      
+      </div>
     </div>
     
       <label class="md-header-nav__button md-icon" for="__search">
@@ -94,7 +106,7 @@
   <label class="md-search__overlay" for="__search"></label>
   <div class="md-search__inner" role="search">
     <form class="md-search__form" name="search">
-      <input type="text" class="md-search__input" name="query" aria-label="Search" placeholder="Search" autocapitalize="off" autocorrect="off" autocomplete="off" spellcheck="false" data-md-component="search-query" data-md-state="active">
+      <input type="text" class="md-search__input" name="query" aria-label="Search" placeholder="Search" autocapitalize="off" autocorrect="off" autocomplete="off" spellcheck="false" data-md-component="search-query" data-md-state="active" required>
       <label class="md-search__icon md-icon" for="__search">
         <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M9.5 3A6.5 6.5 0 0116 9.5c0 1.61-.59 3.09-1.56 4.23l.27.27h.79l5 5-1.5 1.5-5-5v-.79l-.27-.27A6.516 6.516 0 019.5 16 6.5 6.5 0 013 9.5 6.5 6.5 0 019.5 3m0 2C7 5 5 7 5 9.5S7 14 9.5 14 14 12 14 9.5 12 5 9.5 5z"/></svg>
         <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M20 11v2H8l5.5 5.5-1.42 1.42L4.16 12l7.92-7.92L13.5 5.5 8 11h12z"/></svg>
@@ -135,8 +147,6 @@
     
     <div class="md-container" data-md-component="container">
       
-        
-      
       
         
       
@@ -144,10 +154,16 @@
         <div class="md-main__inner md-grid">
           
             
-              <div class="md-sidebar md-sidebar--primary" data-md-component="navigation">
+              
+              <div class="md-sidebar md-sidebar--primary" data-md-component="navigation" >
                 <div class="md-sidebar__scrollwrap">
                   <div class="md-sidebar__inner">
-                    <nav class="md-nav md-nav--primary" aria-label="Navigation" data-md-level="0">
+                    
+
+
+
+
+<nav class="md-nav md-nav--primary" aria-label="Navigation" data-md-level="0">
   <label class="md-nav__title" for="__drawer">
     <a href="." title="LSP UI" class="md-nav__button md-logo" aria-label="LSP UI">
       
@@ -176,6 +192,7 @@
       
       
 
+
   
 
 
@@ -191,7 +208,7 @@
         <span class="md-nav__icon md-icon"></span>
       </label>
     
-    <a href="." title="Home" class="md-nav__link md-nav__link--active">
+    <a href="." class="md-nav__link md-nav__link--active">
       Home
     </a>
     
@@ -264,7 +281,8 @@
               </div>
             
             
-              <div class="md-sidebar md-sidebar--secondary" data-md-component="toc">
+              
+              <div class="md-sidebar md-sidebar--secondary" data-md-component="toc" >
                 <div class="md-sidebar__scrollwrap">
                   <div class="md-sidebar__inner">
                     
@@ -339,16 +357,12 @@
                   </a>
                 
                 
-                  
-                
-                
                 <h1 id="lsp-ui">lsp-ui<a class="headerlink" href="#lsp-ui" title="Permanent link">#</a></h1>
 <p><a href="https://melpa.org/#/lsp-ui"><img alt="MELPA" src="https://melpa.org/packages/lsp-ui-badge.svg" /></a>
 <a href="https://stable.melpa.org/#/lsp-ui"><img alt="MELPA Stable" src="https://stable.melpa.org/packages/lsp-ui-badge.svg" /></a>
-<a href="https://gitter.im/emacs-lsp/lsp-mode"><img alt="" src="https://badges.gitter.im/emacs-lsp/lsp-mode.svg" /></a>
+<a href="https://discord.gg/swuxy5AAgT"><img alt="" src="https://discordapp.com/api/guilds/789885435026604033/widget.png?style=shield" /></a>
 <a href="https://github.com/emacs-lsp/lsp-ui/actions"><img alt="Build Status" src="https://github.com/emacs-lsp/lsp-ui/workflows/CI/badge.svg?branch=master" /></a></p>
 <!-- markdown-toc start - Don't edit this section. Run M-x markdown-toc-refresh-toc -->
-
 <p><strong>Table of Contents</strong></p>
 <ul>
 <li><a href="#lsp-ui">lsp-ui</a><ul>
@@ -371,7 +385,6 @@
 <p>Or use the builtin package manager.</p>
 <div class="highlight"><pre><span></span><code>M-x ~package-install~ [RET] ~lsp-ui~ [RET]
 </code></pre></div>
-
 <h2 id="lsp-ui-sideline">lsp-ui-sideline:<a class="headerlink" href="#lsp-ui-sideline" title="Permanent link">#</a></h2>
 <p>Show informations of the symbols on the current line.
 It also show flycheck diagnostics and LSP code actions
@@ -394,7 +407,6 @@ when user changes current point</li>
 <div class="highlight"><pre><span></span><code><span class="p">(</span><span class="nf">define-key</span> <span class="nv">lsp-ui-mode-map</span> <span class="p">[</span><span class="nv">remap</span> <span class="nv">xref-find-definitions</span><span class="p">]</span> <span class="nf">#&#39;</span><span class="nv">lsp-ui-peek-find-definitions</span><span class="p">)</span>
 <span class="p">(</span><span class="nf">define-key</span> <span class="nv">lsp-ui-mode-map</span> <span class="p">[</span><span class="nv">remap</span> <span class="nv">xref-find-references</span><span class="p">]</span> <span class="nf">#&#39;</span><span class="nv">lsp-ui-peek-find-references</span><span class="p">)</span>
 </code></pre></div>
-
 <p>There is a window-local jump list dedicated to cross references:
 <div class="highlight"><pre><span></span><code><span class="p">(</span><span class="nv">lsp-ui-peek-jump-backward</span><span class="p">)</span>
 <span class="p">(</span><span class="nv">lsp-ui-peek-jump-forward</span><span class="p">)</span>
@@ -421,6 +433,8 @@ when user changes current point</li>
 <li><code>lsp-ui-doc-enable</code> enable lsp-ui-doc</li>
 <li><code>lsp-ui-doc-position</code> Where to display the doc</li>
 <li><code>lsp-ui-doc-delay</code> Number of seconds before showing the doc</li>
+<li><code>lsp-ui-doc-show-with-cursor</code> When non-nil, move the cursor over a symbol to show the doc</li>
+<li><code>lsp-ui-doc-show-with-mouse</code> When non-nil, move the mouse pointer over a symbol to show the doc</li>
 </ul>
 <h2 id="lsp-ui-imenu">lsp-ui-imenu<a class="headerlink" href="#lsp-ui-imenu" title="Permanent link">#</a></h2>
 <p>Show imenu entries.</p>
@@ -429,6 +443,8 @@ when user changes current point</li>
 <ul>
 <li><code>lsp-ui-imenu-window-width</code> set window width</li>
 <li><code>lsp-ui-imenu--custom-mode-line-format</code> mode line format</li>
+<li><code>lsp-ui-imenu-auto-refresh</code> auto refresh when necessary</li>
+<li><code>lsp-ui-imenu-refresh-delay</code> delay to refresh imenu</li>
 </ul>
 <h2 id="contributing">Contributing<a class="headerlink" href="#contributing" title="Permanent link">#</a></h2>
 <p>Any kind of help is appreciated. If you want to help us maintaining this package,
@@ -441,7 +457,7 @@ when user changes current point</li>
 <div class="md-source-date">
   <small>
     
-      Last update: <span class="git-revision-date-localized-plugin git-revision-date-localized-plugin-date">September 23, 2020</span>
+      Last update: <span class="git-revision-date-localized-plugin git-revision-date-localized-plugin-date">January 21, 2021</span>
     
   </small>
 </div>
@@ -508,15 +524,15 @@ when user changes current point</li>
       
     </div>
     
-      <script src="assets/javascripts/vendor.2d1db4bd.min.js"></script>
-      <script src="assets/javascripts/bundle.6627ddf3.min.js"></script><script id="__lang" type="application/json">{"clipboard.copy": "Copy to clipboard", "clipboard.copied": "Copied to clipboard", "search.config.lang": "en", "search.config.pipeline": "trimmer, stopWordFilter", "search.config.separator": "[\\s\\-]+", "search.result.placeholder": "Type to start searching", "search.result.none": "No matching documents", "search.result.one": "1 matching document", "search.result.other": "# matching documents"}</script>
+      <script src="assets/javascripts/vendor.93c04032.min.js"></script>
+      <script src="assets/javascripts/bundle.83e5331e.min.js"></script><script id="__lang" type="application/json">{"clipboard.copy": "Copy to clipboard", "clipboard.copied": "Copied to clipboard", "search.config.lang": "en", "search.config.pipeline": "trimmer, stopWordFilter", "search.config.separator": "[\\s\\-]+", "search.placeholder": "Search", "search.result.placeholder": "Type to start searching", "search.result.none": "No matching documents", "search.result.one": "1 matching document", "search.result.other": "# matching documents", "search.result.more.one": "1 more on this page", "search.result.more.other": "# more on this page", "search.result.term.missing": "Missing"}</script>
       
       <script>
         app = initialize({
           base: ".",
           features: [],
           search: Object.assign({
-            worker: "assets/javascripts/worker/search.5eca75d3.min.js"
+            worker: "assets/javascripts/worker/search.8c7e0a7e.min.js"
           }, typeof search !== "undefined" && search)
         })
       </script>
