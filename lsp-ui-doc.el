@@ -980,20 +980,27 @@ before, or if the new window is the minibuffer."
     (and (buffer-live-p it) it)
     (kill-buffer it)))
 
-(defun lsp-ui-doc--handle-scroll (_win _new-start)
+(defun lsp-ui-doc--handle-scroll (win _new-start)
+  "Handle scrolling to the document frame.
+
+This function is apply to hook `window-scroll-functions'.
+
+Argument WIN is current applying window."
   (let ((frame (lsp-ui-doc--get-frame)))
-    (and frame
-         (eq lsp-ui-doc-position 'at-point)
-         (frame-visible-p frame)
-         (if (and lsp-ui-doc--bounds
-                  (eq (window-buffer) (frame-parameter frame 'lsp-ui-doc--buffer-origin))
-                  (not (minibufferp (window-buffer)))
-                  (>= (point) (car lsp-ui-doc--bounds))
-                  (<= (point) (cdr lsp-ui-doc--bounds)))
-             (lsp-ui-doc--move-frame frame)
-           ;; The point might have changed if the window was scrolled
-           ;; too far
-           (lsp-ui-doc--hide-frame)))))
+    (if (minibufferp (window-buffer))
+        (lsp-ui-doc--hide-frame)
+      (when (and frame
+                 (eq lsp-ui-doc-position 'at-point)
+                 (frame-visible-p frame)
+                 (eq win (selected-window)))  ; This resolved #524
+        (if (and lsp-ui-doc--bounds
+                 (eq (window-buffer) (frame-parameter frame 'lsp-ui-doc--buffer-origin))
+                 (>= (point) (car lsp-ui-doc--bounds))
+                 (<= (point) (cdr lsp-ui-doc--bounds)))
+            (lsp-ui-doc--move-frame frame)
+          ;; The point might have changed if the window was scrolled
+          ;; too far
+          (lsp-ui-doc--hide-frame))))))
 
 (defvar-local lsp-ui-doc--timer-mouse-movement nil)
 (defvar-local lsp-ui-doc--last-event nil)

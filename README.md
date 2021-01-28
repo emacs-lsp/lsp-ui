@@ -3,7 +3,7 @@ lsp-ui
 
 [![MELPA](https://melpa.org/packages/lsp-ui-badge.svg)](https://melpa.org/#/lsp-ui)
 [![MELPA Stable](https://stable.melpa.org/packages/lsp-ui-badge.svg)](https://stable.melpa.org/#/lsp-ui)
-[![](https://badges.gitter.im/emacs-lsp/lsp-mode.svg)](https://gitter.im/emacs-lsp/lsp-mode)
+[![](https://discordapp.com/api/guilds/789885435026604033/widget.png?style=shield)](https://discord.gg/swuxy5AAgT)
 [![Build Status](https://github.com/emacs-lsp/lsp-ui/workflows/CI/badge.svg?branch=master)](https://github.com/emacs-lsp/lsp-ui/actions)
 
 <!-- markdown-toc start - Don't edit this section. Run M-x markdown-toc-refresh-toc -->
@@ -97,6 +97,8 @@ Customization:
 - `lsp-ui-doc-enable` enable lsp-ui-doc
 - `lsp-ui-doc-position` Where to display the doc
 - `lsp-ui-doc-delay` Number of seconds before showing the doc
+- `lsp-ui-doc-show-with-cursor` When non-nil, move the cursor over a symbol to show the doc
+- `lsp-ui-doc-show-with-mouse` When non-nil, move the mouse pointer over a symbol to show the doc
 
 ## lsp-ui-imenu
 
@@ -108,7 +110,8 @@ Customization:
 
 - `lsp-ui-imenu-window-width` set window width
 - `lsp-ui-imenu--custom-mode-line-format` mode line format
-
+- `lsp-ui-imenu-auto-refresh` auto refresh when necessary
+- `lsp-ui-imenu-refresh-delay` delay to refresh imenu
 
 ## Contributing
 

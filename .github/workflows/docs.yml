@@ -12,10 +12,19 @@ jobs:
       - name: Checkout
         uses: actions/checkout@v2
 
+      - uses: purcell/setup-emacs@master
+        with:
+          version: 27.1
+
+      - uses: conao3/setup-cask@master
+        with:
+          version: 0.8.4
+
       - name: MkDocs
         run: |
           cp -rf README.md images docs
-          docker run --rm -v ${PWD}:/docs squidfunk/mkdocs-material -- build
+          docker login docker.pkg.github.com --username $GITHUB_ACTOR --password ${{ secrets.GITHUB_TOKEN }}
+          docker run --rm -v ${PWD}:/docs docker.pkg.github.com/emacs-lsp/docs-image/docs-image -- build
 
       - name: Deploy
         uses: peaceiris/actions-gh-pages@v3
