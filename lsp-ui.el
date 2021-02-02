@@ -39,10 +39,8 @@
 
 (defconst lsp-ui-resources-dir
   (--> (find-library-name "lsp-ui")
-       (file-name-directory it)
-       (expand-file-name "resources" it)
-       (file-name-as-directory it)
-       (and (file-exists-p it) it)))
+    (file-name-directory it))
+  "Resource folder for package `lsp-ui'.")
 
 (require 'lsp-ui-sideline)
 (require 'lsp-ui-peek)
@@ -67,10 +65,8 @@
   (with-temp-buffer
     (insert string)
     (delay-mode-hooks
-      (let ((inhibit-message t))
-        (funcall major))
-      (ignore-errors
-        (font-lock-ensure)))
+      (let ((inhibit-message t)) (funcall major))
+      (ignore-errors (font-lock-ensure)))
     (buffer-string)))
 
 (defun lsp-ui--workspace-path (path)
@@ -86,7 +82,7 @@ If the PATH is not in the workspace, it returns the original PATH."
 (defun lsp-ui--toggle (enable)
   (dolist (feature '(lsp-ui-peek lsp-ui-sideline lsp-ui-doc lsp-ui-imenu))
     (let* ((sym (--> (intern-soft (concat (symbol-name feature) "-enable"))
-                     (and (boundp it) it)))
+                  (and (boundp it) it)))
            (value (symbol-value sym))
            (fn (symbol-function sym)))
       (and (or value (not enable))
