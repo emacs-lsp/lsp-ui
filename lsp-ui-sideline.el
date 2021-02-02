@@ -224,10 +224,7 @@ if OFFSET is non-nil, it starts search OFFSET lines from user point line."
     (while (and (null pos) (<= (abs index) 30))
       (setq index (if up (1- index) (1+ index)))
       (setq pos (lsp-ui-sideline--calc-space win-width str-len index)))
-    (if (and up (or (null pos) (and (lsp-ui-sideline--first-line-p pos)
-                                    ;; line-end-position returns a wrong value when its
-                                    ;; argument lead to a line < 0, so we need to use this trick
-                                    (-any-p 'lsp-ui-sideline--first-line-p lsp-ui-sideline--occupied-lines))))
+    (if (and up (or (null pos) (lsp-ui-sideline--first-line-p pos)))
         (lsp-ui-sideline--find-line str-len bol eol nil offset)
       (and pos (or (> pos eol) (< pos bol))
            (push pos lsp-ui-sideline--occupied-lines)
@@ -419,8 +416,8 @@ Push sideline overlays on `lsp-ui-sideline--ovs'."
     (lsp-ui-sideline--delete-kind 'diagnostics)
     (dolist (e (flycheck-overlay-errors-in bol (1+ eol)))
       (let* ((lines (--> (flycheck-error-format-message-and-id e)
-                         (split-string it "\n")
-                         (lsp-ui-sideline--split-long-lines it)))
+                      (split-string it "\n")
+                      (lsp-ui-sideline--split-long-lines it)))
              (display-lines (butlast lines (- (length lines) lsp-ui-sideline-diagnostic-max-lines)))
              (offset 1))
         (dolist (line (nreverse display-lines))
@@ -453,15 +450,15 @@ Push sideline overlays on `lsp-ui-sideline--ovs'."
 
 (defun lsp-ui-sideline--scale-lightbulb (height)
   (--> (frame-char-height)
-       (/ (float it) height)))
+    (/ (float it) height)))
 
 (defun lsp-ui-sideline--code-actions-make-image nil
   (let ((is-default (equal lsp-ui-sideline-actions-icon lsp-ui-sideline-actions-icon-default)))
     (--> `(image :type png :file ,lsp-ui-sideline-actions-icon :ascent center)
-         (append it `(:scale ,(->> (cond (is-default 128)
-                                         ((fboundp 'image-size) (cdr (image-size it t)))
-                                         (t (error "Function image-size undefined.  Use default icon")))
-                                   (lsp-ui-sideline--scale-lightbulb)))))))
+      (append it `(:scale ,(->> (cond (is-default 128)
+                                      ((fboundp 'image-size) (cdr (image-size it t)))
+                                      (t (error "Function image-size undefined.  Use default icon")))
+                                (lsp-ui-sideline--scale-lightbulb)))))))
 
 (defun lsp-ui-sideline--code-actions-image nil
   (when lsp-ui-sideline-actions-icon
@@ -517,8 +514,8 @@ Push sideline overlays on `lsp-ui-sideline--ovs'."
   (->> (--remove
         (when (eq (overlay-get it 'kind) kind)
           (--> (overlay-get it 'position)
-               (remq it lsp-ui-sideline--occupied-lines)
-               (setq lsp-ui-sideline--occupied-lines it))
+            (remq it lsp-ui-sideline--occupied-lines)
+            (setq lsp-ui-sideline--occupied-lines it))
           (delete-overlay it)
           t)
         lsp-ui-sideline--ovs)
