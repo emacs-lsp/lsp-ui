@@ -446,7 +446,10 @@ Push sideline overlays on `lsp-ui-sideline--ovs'."
   (lsp-execute-code-action (lsp--select-action lsp-ui-sideline--code-actions)))
 
 (defun lsp-ui-sideline--scale-lightbulb (height)
-  (--> (frame-char-height)
+  "Scale the lightbulb image to character height.
+
+Argument HEIGHT is an actual image height in pixel."
+  (--> (- (frame-char-height) 1)
     (/ (float it) height)))
 
 (defun lsp-ui-sideline--code-actions-make-image nil
