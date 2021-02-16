@@ -33,7 +33,6 @@
 (require 'lsp-protocol)
 (require 'lsp-mode)
 (require 'dash)
-(require 'dash-functional)
 (require 'goto-addr)
 (require 'markdown-mode)
 (require 'cl-lib)
