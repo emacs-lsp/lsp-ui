@@ -449,6 +449,10 @@ Push sideline overlays on `lsp-ui-sideline--ovs'."
     (user-error "No code actions on the current line"))
   (lsp-execute-code-action (lsp--select-action lsp-ui-sideline--code-actions)))
 
+(defun lsp-ui-sideline-set-default-icon ()
+  "Set default icon for sideline actions."
+  (setq lsp-ui-sideline-actions-icon lsp-ui-sideline-actions-icon-default))
+
 (defun lsp-ui-sideline--scale-lightbulb (height)
   "Scale the lightbulb image to character height.
 
