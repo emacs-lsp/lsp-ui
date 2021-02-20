@@ -112,7 +112,11 @@ when user changes current point."
        (image-type-available-p 'png)
        (expand-file-name "lightbulb.png" lsp-ui-resources-dir)))
 
-(defcustom lsp-ui-sideline-actions-icon lsp-ui-sideline-actions-icon-default
+;; TODO: Set the default actions to `nil' temporarily due to image
+;; scale issue on Emacs version 26.3 or below.
+;;
+;; See #573
+(defcustom lsp-ui-sideline-actions-icon nil
   "Image file for actions.  It must be a png file."
   :type '(choice file (const :tag "Disable" nil))
   :group 'lsp-ui-sideline)
