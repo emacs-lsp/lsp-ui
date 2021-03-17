@@ -323,7 +323,7 @@ We don't extract the string that `lps-line' is already displaying."
     (mapconcat 'lsp-ui-doc--extract-marked-string
                (lsp-ui-doc--filter-marked-string (seq-filter #'identity contents))
                "\n\n"
-               ;; (propertize "\n\n" 'face '(:height 0.4))
+               ;;(propertize "\n\n" 'face '(:height 0.4))
                ))
    ;; when we get markdown contents, render using emacs gfm-view-mode / markdown-mode
    ((and (lsp-marked-string? contents)
@@ -593,8 +593,12 @@ FN is the function to call on click."
 
 (defun lsp-ui-doc--make-smaller-empty-lines nil
   "Make empty lines half normal lines."
-  (goto-char 1)
-  (insert (propertize "\n" 'face '(:height 0.2)))
+  (progn  ; Customize line before header
+    (goto-char 1)
+    (insert (propertize "\n" 'face '(:height 0.2))))
+  (progn  ; Customize line after header
+    (forward-line 1)
+    (insert (propertize " " 'face '(:height 0.1))))
   (while (not (eobp))
     (when (and (eolp) (not (bobp)))
       (save-excursion
@@ -603,7 +607,7 @@ FN is the function to call on click."
                      (not (get-text-property (max (- (point) 2) 1) 'markdown-heading)))
                 (get-text-property (point) 'markdown-hr))
         (insert (propertize " " 'face `(:height 0.2))
-                (propertize "\n" 'face '(:height 0.2)))))
+                (propertize "\n" 'face '(:height 0.4)))))
     (forward-line))
   (insert (propertize "\n\n" 'face '(:height 0.3))))
 
