@@ -630,9 +630,7 @@ FN is the function to call on click."
         (goto-char next)
         (setq bolp (bolp)
               before (char-before))
-        (delete-region (point) (save-excursion
-                                 (forward-visible-line 1)
-                                 (point)))
+        (delete-region (point) (save-excursion (forward-visible-line 1) (point)))
         (setq after (char-after (1+ (point))))
         (insert
          (concat
@@ -652,10 +650,9 @@ FN is the function to call on click."
     (if lsp-ui-doc-use-webkit
         (progn
           (lsp-ui-doc--webkit-execute-script
-           (format
-            "renderMarkdown('%s', '%s');"
-            symbol
-            (url-hexify-string string))
+           (format "renderMarkdown('%s', '%s');"
+                   symbol
+                   (url-hexify-string string))
            'lsp-ui-doc--webkit-resize-callback))
       (erase-buffer)
       (insert (s-trim string))
