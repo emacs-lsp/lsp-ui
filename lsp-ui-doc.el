@@ -323,7 +323,7 @@ We don't extract the string that `lps-line' is already displaying."
     (mapconcat 'lsp-ui-doc--extract-marked-string
                (lsp-ui-doc--filter-marked-string (seq-filter #'identity contents))
                "\n\n"
-               ;; (propertize "\n\n" 'face '(:height 0.4))
+               ;;(propertize "\n\n" 'face '(:height 0.4))
                ))
    ;; when we get markdown contents, render using emacs gfm-view-mode / markdown-mode
    ((and (lsp-marked-string? contents)
@@ -348,13 +348,7 @@ We don't extract the string that `lps-line' is already displaying."
     (let ((inhibit-read-only t))
       (insert " ")
       (goto-char 1)
-      (let ((id (make-xwidget
-                 'webkit
-                 nil
-                 1
-                 1
-                 nil
-                 (buffer-name))))
+      (let ((id (make-xwidget 'webkit nil 1 1 nil (buffer-name))))
         (set-xwidget-query-on-exit-flag id nil)
         (put-text-property (point) (+ 1 (point))
                            'display (list 'xwidget ':xwidget id))
@@ -470,7 +464,7 @@ FRAME just below the symbol at point."
                          (if (< (car it) (window-start))
                              (cons 0 0)
                            (posn-x-y (posn-at-point (1- (window-end))))))))
-          (frame-relative-symbol-x (+ start-x x))
+          (frame-relative-symbol-x (+ start-x x (* (frame-char-width) 2)))
           (frame-relative-symbol-y (+ start-y y))
           (char-height (frame-char-height))
           ;; Make sure the frame is positioned horizontally such that
@@ -599,8 +593,12 @@ FN is the function to call on click."
 
 (defun lsp-ui-doc--make-smaller-empty-lines nil
   "Make empty lines half normal lines."
-  (goto-char 1)
-  (insert (propertize "\n" 'face '(:height 0.2)))
+  (progn  ; Customize line before header
+    (goto-char 1)
+    (insert (propertize "\n" 'face '(:height 0.2))))
+  (progn  ; Customize line after header
+    (forward-line 1)
+    (insert (propertize " " 'face '(:height 0.1))))
   (while (not (eobp))
     (when (and (eolp) (not (bobp)))
       (save-excursion
@@ -609,7 +607,7 @@ FN is the function to call on click."
                      (not (get-text-property (max (- (point) 2) 1) 'markdown-heading)))
                 (get-text-property (point) 'markdown-hr))
         (insert (propertize " " 'face `(:height 0.2))
-                (propertize "\n" 'face '(:height 0.2)))))
+                (propertize "\n" 'face '(:height 0.4)))))
     (forward-line))
   (insert (propertize "\n\n" 'face '(:height 0.3))))
 
@@ -632,9 +630,7 @@ FN is the function to call on click."
         (goto-char next)
         (setq bolp (bolp)
               before (char-before))
-        (delete-region (point) (save-excursion
-                                 (forward-visible-line 1)
-                                 (point)))
+        (delete-region (point) (save-excursion (forward-visible-line 1) (point)))
         (setq after (char-after (1+ (point))))
         (insert
          (concat
@@ -654,10 +650,9 @@ FN is the function to call on click."
     (if lsp-ui-doc-use-webkit
         (progn
           (lsp-ui-doc--webkit-execute-script
-           (format
-            "renderMarkdown('%s', '%s');"
-            symbol
-            (url-hexify-string string))
+           (format "renderMarkdown('%s', '%s');"
+                   symbol
+                   (url-hexify-string string))
            'lsp-ui-doc--webkit-resize-callback))
       (erase-buffer)
       (insert (s-trim string))
@@ -701,8 +696,7 @@ FN is the function to call on click."
 (defvar-local lsp-ui-doc--inline-width nil)
 
 (defun lsp-ui-doc--inline-window-width nil
-  (- (min (window-text-width)
-          (window-body-width))
+  (- (min (window-text-width) (window-body-width))
      (if (bound-and-true-p display-line-numbers-mode)
          (+ 2 (line-number-display-width))
        0)
@@ -745,9 +739,7 @@ FN is the function to call on click."
 
 (defun lsp-ui-doc--inline-pos-at (start lines)
   "Calcul the position at START + forward n LINES."
-  (save-excursion (goto-char start)
-                  (forward-line lines)
-                  (point)))
+  (save-excursion (goto-char start) (forward-line lines) (point)))
 
 (defun lsp-ui-doc--inline-pos (height)
   "Return a cons of positions where to place the doc.
