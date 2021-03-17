@@ -432,8 +432,8 @@ We don't extract the string that `lps-line' is already displaying."
   "Mark as unused function."
   (-> (when (bound-and-true-p lsp-ui-sideline--occupied-lines)
         (-min lsp-ui-sideline--occupied-lines))
-      (line-number-at-pos)
-      (lsp-ui-doc--line-height)))
+    (line-number-at-pos)
+    (lsp-ui-doc--line-height)))
 
 (defun lsp-ui-doc--webkit-resize-callback (size)
   "Callback when resizing using webkit depends on the SIZE."
@@ -466,10 +466,10 @@ symbol at point, to not obstruct the view of the code that follows.
 If there's no space above in the current window, it places
 FRAME just below the symbol at point."
   (-let* (((x . y) (--> (or lsp-ui-doc--bounds (bounds-of-thing-at-point 'symbol))
-                        (or (posn-x-y (posn-at-point (car it)))
-                            (if (< (car it) (window-start))
-                                (cons 0 0)
-                              (posn-x-y (posn-at-point (1- (window-end))))))))
+                     (or (posn-x-y (posn-at-point (car it)))
+                         (if (< (car it) (window-start))
+                             (cons 0 0)
+                           (posn-x-y (posn-at-point (1- (window-end))))))))
           (frame-relative-symbol-x (+ start-x x))
           (frame-relative-symbol-y (+ start-y y))
           (char-height (frame-char-height))
@@ -730,16 +730,16 @@ FN is the function to call on click."
 
 (defun lsp-ui-doc--inline-merge (strings)
   (let* ((buffer-strings (-> (lsp-ui-doc--inline-untab strings)
-                             (lsp-ui-doc--remove-invisibles)
-                             (split-string "\n")))
+                           (lsp-ui-doc--remove-invisibles)
+                           (split-string "\n")))
          (doc-strings (-> (lsp-ui-doc--with-buffer (buffer-string))
-                          (lsp-ui-doc--inline-untab)
-                          (lsp-ui-doc--remove-invisibles)
-                          (split-string "\n")))
+                        (lsp-ui-doc--inline-untab)
+                        (lsp-ui-doc--remove-invisibles)
+                        (split-string "\n")))
          (merged (--> (lsp-ui-doc--inline-faking-frame doc-strings)
-                      (-zip-with 'lsp-ui-doc--inline-zip buffer-strings it)
-                      (string-join it "\n")
-                      (concat it "\n"))))
+                   (-zip-with 'lsp-ui-doc--inline-zip buffer-strings it)
+                   (string-join it "\n")
+                   (concat it "\n"))))
     (add-face-text-property 0 (length merged) 'default t merged)
     merged))
 
