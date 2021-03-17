@@ -464,7 +464,7 @@ FRAME just below the symbol at point."
                          (if (< (car it) (window-start))
                              (cons 0 0)
                            (posn-x-y (posn-at-point (1- (window-end))))))))
-          (frame-relative-symbol-x (+ start-x x))
+          (frame-relative-symbol-x (+ start-x x (* (frame-char-width) 2)))
           (frame-relative-symbol-y (+ start-y y))
           (char-height (frame-char-height))
           ;; Make sure the frame is positioned horizontally such that
