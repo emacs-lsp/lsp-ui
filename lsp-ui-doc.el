@@ -348,13 +348,7 @@ We don't extract the string that `lps-line' is already displaying."
     (let ((inhibit-read-only t))
       (insert " ")
       (goto-char 1)
-      (let ((id (make-xwidget
-                 'webkit
-                 nil
-                 1
-                 1
-                 nil
-                 (buffer-name))))
+      (let ((id (make-xwidget 'webkit nil 1 1 nil (buffer-name))))
         (set-xwidget-query-on-exit-flag id nil)
         (put-text-property (point) (+ 1 (point))
                            'display (list 'xwidget ':xwidget id))
@@ -701,8 +695,7 @@ FN is the function to call on click."
 (defvar-local lsp-ui-doc--inline-width nil)
 
 (defun lsp-ui-doc--inline-window-width nil
-  (- (min (window-text-width)
-          (window-body-width))
+  (- (min (window-text-width) (window-body-width))
      (if (bound-and-true-p display-line-numbers-mode)
          (+ 2 (line-number-display-width))
        0)
@@ -745,9 +738,7 @@ FN is the function to call on click."
 
 (defun lsp-ui-doc--inline-pos-at (start lines)
   "Calcul the position at START + forward n LINES."
-  (save-excursion (goto-char start)
-                  (forward-line lines)
-                  (point)))
+  (save-excursion (goto-char start) (forward-line lines) (point)))
 
 (defun lsp-ui-doc--inline-pos (height)
   "Return a cons of positions where to place the doc.
