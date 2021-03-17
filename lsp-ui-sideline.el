@@ -265,7 +265,7 @@ MARKED-STRING is the string returned by `lsp-ui-sideline--extract-info'."
     (->> (if (> (length marked-string) win-width)
              (car (split-string marked-string "[\r\n]+"))
            marked-string)
-         (replace-regexp-in-string "[\n\r\t ]+" " "))))
+      (replace-regexp-in-string "[\n\r\t ]+" " "))))
 
 (defun lsp-ui-sideline--align (&rest lengths)
   (+ (apply '+ lengths)
@@ -466,7 +466,7 @@ Argument HEIGHT is an actual image height in pixel."
       (append it `(:scale ,(->> (cond (is-default 128)
                                       ((fboundp 'image-size) (cdr (image-size it t)))
                                       (t (error "Function image-size undefined.  Use default icon")))
-                                (lsp-ui-sideline--scale-lightbulb)))))))
+                             (lsp-ui-sideline--scale-lightbulb)))))))
 
 (defun lsp-ui-sideline--code-actions-image nil
   (when lsp-ui-sideline-actions-icon
@@ -487,9 +487,9 @@ Argument HEIGHT is an actual image height in pixel."
     (lsp-ui-sideline--delete-kind 'actions)
     (seq-doseq (action actions)
       (-let* ((title (->> (lsp:code-action-title action)
-                          (replace-regexp-in-string "[\n\t ]+" " ")
-                          (concat (unless lsp-ui-sideline-actions-icon
-                                    lsp-ui-sideline-code-actions-prefix))))
+                       (replace-regexp-in-string "[\n\t ]+" " ")
+                       (concat (unless lsp-ui-sideline-actions-icon
+                                 lsp-ui-sideline-code-actions-prefix))))
               (image (lsp-ui-sideline--code-actions-image))
               (margin (lsp-ui-sideline--margin-width))
               (keymap (let ((map (make-sparse-keymap)))
@@ -527,7 +527,7 @@ Argument HEIGHT is an actual image height in pixel."
           (delete-overlay it)
           t)
         lsp-ui-sideline--ovs)
-       (setq lsp-ui-sideline--ovs)))
+    (setq lsp-ui-sideline--ovs)))
 
 (defvar-local lsp-ui-sideline--last-tick-info nil)
 (defvar-local lsp-ui-sideline--previous-line nil)
