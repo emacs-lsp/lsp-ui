@@ -31,6 +31,7 @@ unix-compile:
 windows-compile:
 	@echo "Compiling..."
 	@$(CASK) $(EMACS) -Q --batch \
+		--eval '(setq emacs-lsp-ci t)' \
 		-l test/windows-bootstrap.el \
 		-L . \
 		--eval '(setq byte-compile-error-on-warn t)' \
@@ -42,6 +43,7 @@ unix-test:
 
 windows-test:
 	@$(EMACS) -Q --batch \
+		--eval '(setq emacs-lsp-ci t)' \
 		-l test/windows-bootstrap.el \
 		-L . \
 		$(LOAD-TEST-FILES) \
