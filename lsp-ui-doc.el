@@ -302,7 +302,7 @@ Because some variables are buffer local.")
        (if (and language (not (string= "text" language)))
            (format "```%s\n%s\n```" language string)
          string))
-      (t (lsp--render-element (lsp-ui-doc--inline-formatted-string string)))))))
+      (t (lsp--render-string (lsp-ui-doc--inline-formatted-string string) language))))))
 
 (defun lsp-ui-doc--filter-marked-string (list-marked-string)
   "Filter the LIST-MARKED-STRING."
