@@ -304,7 +304,7 @@ Because some variables are buffer local.")
          string))
       ;; For other programming languages
       (language (lsp--render-string (lsp-ui-doc--inline-formatted-string string) language))
-      ;; For default markdown content
+      ;; For default element content
       (t (lsp--render-element (lsp-ui-doc--inline-formatted-string string)))))))
 
 (defun lsp-ui-doc--filter-marked-string (list-marked-string)
