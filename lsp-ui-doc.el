@@ -297,7 +297,6 @@ Because some variables are buffer local.")
                                  (lsp:markup-content-kind marked-string)))
                         language))
           (markdown-hr-display-char nil))
-     (message "--> language: %s" language)
      (cond
       (lsp-ui-doc-use-webkit
        (if (and language (not (string= "text" language)))
