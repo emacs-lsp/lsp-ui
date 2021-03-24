@@ -227,7 +227,7 @@ if OFFSET is non-nil, it starts search OFFSET lines from user point line."
       (setq pos (lsp-ui-sideline--calc-space win-width str-len index)))
     (if (and up (or (null pos)
                     ;; This will avoid sideline not showing on the first
-                    ;; of the buffer.
+                    ;; line of the buffer.
                     (and (lsp-ui-sideline--first-line-p pos)
                          (lsp-ui-sideline--first-line-p (point)))))
         (lsp-ui-sideline--find-line str-len bol eol nil offset)
