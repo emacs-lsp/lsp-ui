@@ -564,8 +564,7 @@ from the language server."
            symbols)
       (setq lsp-ui-sideline--tag tag
             lsp-ui-sideline--last-width (window-text-width))
-      (when (and line-changed lsp-ui-sideline-show-diagnostics)
-        (lsp-ui-sideline--diagnostics buffer bol eol))
+      (lsp-ui-sideline--diagnostics buffer bol eol)
       (when (and lsp-ui-sideline-show-code-actions
                  (or (lsp--capability "codeActionProvider")
                      (lsp--registered-capability "textDocument/codeAction")))
