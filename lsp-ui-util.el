@@ -48,5 +48,14 @@
       (+ (or (ignore-errors (line-number-display-width)) 0) 2)
     0))
 
+(defun lsp-ui-util-line-string (pos)
+  "Return string at POS."
+  (when (integerp pos) (save-excursion (goto-char pos) (thing-at-point 'line))))
+
+(defun lsp-ui-util-column (&optional pos)
+  "Return column at POS."
+  (setq pos (or pos (point)))
+  (save-excursion (goto-char pos) (current-column)))
+
 (provide 'lsp-ui-util)
 ;;; lsp-ui-util.el ends here

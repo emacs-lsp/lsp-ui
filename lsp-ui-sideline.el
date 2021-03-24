@@ -35,6 +35,7 @@
 (require 'lsp-mode)
 (require 'flycheck nil 'noerror)
 (require 'dash)
+(require 'rect)
 (require 'seq)
 (require 'subr-x)
 (require 'face-remap)
@@ -273,10 +274,16 @@ MARKED-STRING is the string returned by `lsp-ui-sideline--extract-info'."
            marked-string)
       (replace-regexp-in-string "[\n\r\t ]+" " "))))
 
+(defun lsp-ui-sideline--visible-column ()
+  "Return column relative to the first visible character on the line."
+  ;; Divided by 10 to convert from pixel to text width.
+  (- (/ (car (pos-visible-in-window-p nil nil t)) 10) (lsp-ui-sideline--margin-width)))
+
 (defun lsp-ui-sideline--align (&rest lengths)
   "Align sideline string by LENGTHS from the right of the window."
-  (+ (apply '+ lengths)
-     (if (display-graphic-p) 1 2)))
+  (+ (- (+ (current-column) (- (lsp-ui-sideline--window-width) (lsp-ui-sideline--visible-column)))
+        (apply '+ lengths))
+     (- (if (display-graphic-p) 1 2))))
 
 (defun lsp-ui-sideline--compute-height nil
   "Return a fixed size for text in sideline."
@@ -296,11 +303,10 @@ CURRENT is non-nil when the point is on the symbol."
          (str (if lsp-ui-sideline-show-symbol
                   (concat info " " (propertize (concat " " symbol " ") 'face face))
                 info))
-         (len (length str))
-         (margin (lsp-ui-sideline--margin-width)))
+         (len (length str)))
     (add-face-text-property 0 len 'lsp-ui-sideline-global nil str)
     (concat
-     (propertize " " 'display `(space :align-to (- right-fringe ,(lsp-ui-sideline--align len margin))))
+     (propertize " " 'display `(space :align-to (- right-fringe ,(lsp-ui-sideline--align len))))
      (propertize str 'display (lsp-ui-sideline--compute-height)))))
 
 (defun lsp-ui-sideline--check-duplicate (symbol info)
@@ -312,6 +318,7 @@ is set to t."
                 lsp-ui-sideline--ovs))))
 
 (defun lsp-ui-sideline--margin-width ()
+  "Calculate the window margin outside of text area."
   (+ (if fringes-outside-margins right-margin-width 0)
      (or (and (boundp 'fringe-mode)
               (consp fringe-mode)
@@ -325,7 +332,7 @@ is set to t."
                (equal (cadr win-fringes) 0))
            2
          0))
-     (if (< emacs-major-version 27)
+     (if (>= emacs-major-version 27)
          ;; This was necessary with emacs < 27, recent versions take
          ;; into account the display-line width with :align-to
          (lsp-ui-util-line-number-display-width)
@@ -337,13 +344,9 @@ is set to t."
        0)))
 
 (defun lsp-ui-sideline--window-width ()
+  "Calculate the window width only inside the text area."
   (- (min (window-text-width) (window-body-width))
-     (lsp-ui-sideline--margin-width)
-     (or (and (>= emacs-major-version 27)
-              ;; We still need this number when calculating available space
-              ;; even with emacs >= 27
-              (lsp-ui-util-line-number-display-width))
-         0)))
+     (lsp-ui-sideline--margin-width)))
 
 (defun lsp-ui-sideline--display-all-info (buffer list-infos tag bol eol)
   (when (and (eq (current-buffer) buffer)
@@ -426,26 +429,26 @@ Push sideline overlays on `lsp-ui-sideline--ovs'."
       (let* ((lines (--> (flycheck-error-format-message-and-id e)
                       (split-string it "\n")
                       (lsp-ui-sideline--split-long-lines it)))
-             (display-lines (butlast lines (- (length lines) lsp-ui-sideline-diagnostic-max-lines)))
+             (display-lines (nreverse (butlast lines (- (length lines) lsp-ui-sideline-diagnostic-max-lines))))
              (offset 1))
-        (dolist (line (nreverse display-lines))
-          (let* ((message (string-trim (replace-regexp-in-string "[\t ]+" " " line)))
-                 (len (length message))
+        (dolist (line display-lines)
+          (let* ((msg (string-trim (replace-regexp-in-string "[\t ]+" " " line)))
+                 (msg (replace-regexp-in-string " " " " msg))
+                 (len (length msg))
                  (level (flycheck-error-level e))
                  (face (if (eq level 'info) 'success level))
-                 (margin (lsp-ui-sideline--margin-width))
-                 (message (progn (add-face-text-property 0 len 'lsp-ui-sideline-global nil message)
-                                 (add-face-text-property 0 len face nil message)
-                                 message))
-                 (string (concat (propertize " " 'display `(space :align-to (- right-fringe ,(lsp-ui-sideline--align len margin))))
-                                 (propertize message 'display (lsp-ui-sideline--compute-height))))
+                 (msg (progn (add-face-text-property 0 len 'lsp-ui-sideline-global nil msg)
+                             (add-face-text-property 0 len face nil msg)
+                             msg))
                  (pos-ov (lsp-ui-sideline--find-line len bol eol t offset))
+                 (end-pos (lsp-ui-util-column (car pos-ov)))
+                 (string (concat (propertize (spaces-string (lsp-ui-sideline--align len end-pos)))
+                                 (propertize msg 'display (lsp-ui-sideline--compute-height))))
                  (ov (and pos-ov (make-overlay (car pos-ov) (car pos-ov)))))
             (when pos-ov
               (setq offset (1+ (car (cdr pos-ov))))
-              (overlay-put ov 'after-string string)
               (overlay-put ov 'kind 'diagnostics)
-              (overlay-put ov 'before-string " ")
+              (overlay-put ov 'before-string string)
               (overlay-put ov 'position (car pos-ov))
               (push ov lsp-ui-sideline--ovs))))))))
 
@@ -495,10 +498,10 @@ Argument HEIGHT is an actual image height in pixel."
     (seq-doseq (action actions)
       (-let* ((title (->> (lsp:code-action-title action)
                        (replace-regexp-in-string "[\n\t ]+" " ")
+                       (replace-regexp-in-string " " " ")
                        (concat (unless lsp-ui-sideline-actions-icon
                                  lsp-ui-sideline-code-actions-prefix))))
               (image (lsp-ui-sideline--code-actions-image))
-              (margin (lsp-ui-sideline--margin-width))
               (keymap (let ((map (make-sparse-keymap)))
                         (define-key map [down-mouse-1] (lambda () (interactive)
                                                          (save-excursion
@@ -509,14 +512,14 @@ Argument HEIGHT is an actual image height in pixel."
                             (add-face-text-property 0 len 'lsp-ui-sideline-code-action nil title)
                             (add-text-properties 0 len `(keymap ,keymap mouse-face highlight) title)
                             title))
-              (string (concat (propertize " " 'display `(space :align-to (- right-fringe ,(lsp-ui-sideline--align (+ len (length image)) margin))))
+              (pos-ov (lsp-ui-sideline--find-line (+ 1 (length title) (length image)) bol eol t))
+              (end-pos (lsp-ui-util-column (car pos-ov)))
+              (string (concat (propertize (spaces-string (lsp-ui-sideline--align (+ len (length image)) end-pos)))
                               image
                               (propertize title 'display (lsp-ui-sideline--compute-height))))
-              (pos-ov (lsp-ui-sideline--find-line (+ 1 (length title) (length image)) bol eol t))
               (ov (and pos-ov (make-overlay (car pos-ov) (car pos-ov)))))
         (when pos-ov
-          (overlay-put ov 'after-string string)
-          (overlay-put ov 'before-string " ")
+          (overlay-put ov 'before-string string)
           (overlay-put ov 'kind 'actions)
           (overlay-put ov 'position (car pos-ov))
           (push ov lsp-ui-sideline--ovs))))))
@@ -563,8 +566,7 @@ from the language server."
            symbols)
       (setq lsp-ui-sideline--tag tag
             lsp-ui-sideline--last-width (window-text-width))
-      (when (and line-changed lsp-ui-sideline-show-diagnostics)
-        (lsp-ui-sideline--diagnostics buffer bol eol))
+      (lsp-ui-sideline--diagnostics buffer bol eol)
       (when (and lsp-ui-sideline-show-code-actions
                  (or (lsp--capability "codeActionProvider")
                      (lsp--registered-capability "textDocument/codeAction")))
