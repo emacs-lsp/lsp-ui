@@ -498,6 +498,7 @@ Argument HEIGHT is an actual image height in pixel."
     (seq-doseq (action actions)
       (-let* ((title (->> (lsp:code-action-title action)
                        (replace-regexp-in-string "[\n\t ]+" " ")
+                       (replace-regexp-in-string " " " ")
                        (concat (unless lsp-ui-sideline-actions-icon
                                  lsp-ui-sideline-code-actions-prefix))))
               (image (lsp-ui-sideline--code-actions-image))
