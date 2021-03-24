@@ -274,6 +274,7 @@ MARKED-STRING is the string returned by `lsp-ui-sideline--extract-info'."
       (replace-regexp-in-string "[\n\r\t ]+" " "))))
 
 (defun lsp-ui-sideline--align (&rest lengths)
+  "Align sideline string by LENGTHS from the right of the window."
   (+ (apply '+ lengths)
      (if (display-graphic-p) 1 2)))
 
