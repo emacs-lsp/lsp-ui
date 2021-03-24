@@ -196,7 +196,7 @@ This face have a low priority over the others."
   (save-excursion (goto-char 1) (forward-line 1) (> (point) pos)))
 
 (defun lsp-ui-sideline--calc-space (win-width str-len index)
-  "Calcul whether there is enough space on line.
+  "Calculate whether there is enough space on line.
 If there is enough space, it returns the point of the last
 character on the line.
 
@@ -212,20 +212,26 @@ INDEX is the line number (relative to the current line)."
 
 (defun lsp-ui-sideline--find-line (str-len bol eol &optional up offset)
   "Find a line where the string can be inserted.
-It loops on the nexts lines to find enough space.
-Returns the point of the last character on the line.
 
-STR-LEN is the string size.
-BOL & EOL are beginning and ending of the user point line.
-if UP is non-nil, it loops on the previous lines.
-if OFFSET is non-nil, it starts search OFFSET lines from user point line."
+It loops on the nexts lines to find enough space.  Returns the point
+of the last character on the line.
+
+Argument STR-LEN is the string size.
+Argument BOL and EOL are beginning and ending of the user point line.
+If optional argument UP is non-nil, it loops on the previous lines.
+If optional argument OFFSET is non-nil, it starts search OFFSET lines
+from user point line."
   (let ((win-width (lsp-ui-sideline--window-width))
         (index (if (null offset) 1 offset))
         pos)
     (while (and (null pos) (<= (abs index) 30))
       (setq index (if up (1- index) (1+ index)))
       (setq pos (lsp-ui-sideline--calc-space win-width str-len index)))
-    (if (and up (or (null pos) (lsp-ui-sideline--first-line-p pos)))
+    (if (and up (or (null pos)
+                    ;; This will avoid sideline not showing on the first
+                    ;; line of the buffer.
+                    (and (lsp-ui-sideline--first-line-p pos)
+                         (lsp-ui-sideline--first-line-p (point)))))
         (lsp-ui-sideline--find-line str-len bol eol nil offset)
       (and pos (or (> pos eol) (< pos bol))
            (push pos lsp-ui-sideline--occupied-lines)
@@ -268,6 +274,7 @@ MARKED-STRING is the string returned by `lsp-ui-sideline--extract-info'."
       (replace-regexp-in-string "[\n\r\t ]+" " "))))
 
 (defun lsp-ui-sideline--align (&rest lengths)
+  "Align sideline string by LENGTHS from the right of the window."
   (+ (apply '+ lengths)
      (if (display-graphic-p) 1 2)))
 
