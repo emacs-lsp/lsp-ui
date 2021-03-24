@@ -35,6 +35,7 @@
 (require 'lsp-mode)
 (require 'flycheck nil 'noerror)
 (require 'dash)
+(require 'rect)
 (require 'seq)
 (require 'subr-x)
 (require 'face-remap)
@@ -276,12 +277,13 @@ MARKED-STRING is the string returned by `lsp-ui-sideline--extract-info'."
 (defun lsp-ui-sideline--visible-column ()
   "Return column relative to the first visible character on the line."
   ;; Divided by 10 to convert from pixel to text width.
-  (/ (car (pos-visible-in-window-p nil nil t)) 10))
+  (- (/ (car (pos-visible-in-window-p nil nil t)) 10) (lsp-ui-sideline--margin-width)))
 
 (defun lsp-ui-sideline--align (&rest lengths)
   "Align sideline string by LENGTHS from the right of the window."
-  (+ (apply '+ lengths)
-     (if (display-graphic-p) 1 2)))
+  (+ (- (+ (current-column) (- (lsp-ui-sideline--window-width) (lsp-ui-sideline--visible-column)))
+        (apply '+ lengths))
+     (- (if (display-graphic-p) 1 2))))
 
 (defun lsp-ui-sideline--compute-height nil
   "Return a fixed size for text in sideline."
@@ -437,15 +439,15 @@ Push sideline overlays on `lsp-ui-sideline--ovs'."
                  (msg (progn (add-face-text-property 0 len 'lsp-ui-sideline-global nil msg)
                              (add-face-text-property 0 len face nil msg)
                              msg))
-                 (string (concat (propertize " " 'display `(space :align-to (- right-fringe ,(lsp-ui-sideline--align len))))
-                                 (propertize msg 'display (lsp-ui-sideline--compute-height))))
                  (pos-ov (lsp-ui-sideline--find-line len bol eol t offset))
+                 (end-pos (lsp-ui-util-column (car pos-ov)))
+                 (string (concat (propertize (spaces-string (lsp-ui-sideline--align len end-pos)))
+                                 (propertize msg 'display (lsp-ui-sideline--compute-height))))
                  (ov (and pos-ov (make-overlay (car pos-ov) (car pos-ov)))))
             (when pos-ov
               (setq offset (1+ (car (cdr pos-ov))))
-              (overlay-put ov 'after-string string)
               (overlay-put ov 'kind 'diagnostics)
-              (overlay-put ov 'before-string " ")
+              (overlay-put ov 'before-string string)
               (overlay-put ov 'position (car pos-ov))
               (push ov lsp-ui-sideline--ovs))))))))
 
@@ -508,14 +510,14 @@ Argument HEIGHT is an actual image height in pixel."
                             (add-face-text-property 0 len 'lsp-ui-sideline-code-action nil title)
                             (add-text-properties 0 len `(keymap ,keymap mouse-face highlight) title)
                             title))
-              (string (concat (propertize " " 'display `(space :align-to (- right-fringe ,(lsp-ui-sideline--align (+ len (length image))))))
+              (pos-ov (lsp-ui-sideline--find-line (+ 1 (length title) (length image)) bol eol t))
+              (end-pos (lsp-ui-util-column (car pos-ov)))
+              (string (concat (propertize (spaces-string (lsp-ui-sideline--align (+ len (length image)) end-pos)))
                               image
                               (propertize title 'display (lsp-ui-sideline--compute-height))))
-              (pos-ov (lsp-ui-sideline--find-line (+ 1 (length title) (length image)) bol eol t))
               (ov (and pos-ov (make-overlay (car pos-ov) (car pos-ov)))))
         (when pos-ov
-          (overlay-put ov 'after-string string)
-          (overlay-put ov 'before-string " ")
+          (overlay-put ov 'before-string string)
           (overlay-put ov 'kind 'actions)
           (overlay-put ov 'position (car pos-ov))
           (push ov lsp-ui-sideline--ovs))))))
