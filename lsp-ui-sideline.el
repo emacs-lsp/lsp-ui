@@ -212,13 +212,15 @@ INDEX is the line number (relative to the current line)."
 
 (defun lsp-ui-sideline--find-line (str-len bol eol &optional up offset)
   "Find a line where the string can be inserted.
-It loops on the nexts lines to find enough space.
-Returns the point of the last character on the line.
 
-STR-LEN is the string size.
-BOL & EOL are beginning and ending of the user point line.
-if UP is non-nil, it loops on the previous lines.
-if OFFSET is non-nil, it starts search OFFSET lines from user point line."
+It loops on the nexts lines to find enough space.  Returns the point
+of the last character on the line.
+
+Argument STR-LEN is the string size.
+Argument BOL and EOL are beginning and ending of the user point line.
+If optional argument UP is non-nil, it loops on the previous lines.
+If optional argument OFFSET is non-nil, it starts search OFFSET lines
+from user point line."
   (let ((win-width (lsp-ui-sideline--window-width))
         (index (if (null offset) 1 offset))
         pos)
