@@ -196,7 +196,7 @@ This face have a low priority over the others."
   (save-excursion (goto-char 1) (forward-line 1) (> (point) pos)))
 
 (defun lsp-ui-sideline--calc-space (win-width str-len index)
-  "Calcul whether there is enough space on line.
+  "Calculate whether there is enough space on line.
 If there is enough space, it returns the point of the last
 character on the line.
 
@@ -225,7 +225,11 @@ if OFFSET is non-nil, it starts search OFFSET lines from user point line."
     (while (and (null pos) (<= (abs index) 30))
       (setq index (if up (1- index) (1+ index)))
       (setq pos (lsp-ui-sideline--calc-space win-width str-len index)))
-    (if (and up (or (null pos) (lsp-ui-sideline--first-line-p pos)))
+    (if (and up (or (null pos)
+                    ;; This will avoid sideline not showing on the first
+                    ;; of the buffer.
+                    (and (lsp-ui-sideline--first-line-p pos)
+                         (lsp-ui-sideline--first-line-p (point)))))
         (lsp-ui-sideline--find-line str-len bol eol nil offset)
       (and pos (or (> pos eol) (< pos bol))
            (push pos lsp-ui-sideline--occupied-lines)
