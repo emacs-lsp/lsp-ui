@@ -276,8 +276,12 @@ MARKED-STRING is the string returned by `lsp-ui-sideline--extract-info'."
 
 (defun lsp-ui-sideline--visible-column ()
   "Return column relative to the first visible character on the line."
-  ;; Divided by 10 to convert from pixel to text width.
-  (- (/ (car (pos-visible-in-window-p nil nil t)) 10) (lsp-ui-sideline--margin-width)))
+  (let ((column (car (pos-visible-in-window-p nil nil t)))
+        (factor (round (* (lsp-ui-util-text-scale-factor) 10)))
+        ;; Margin width remain as constant, hence we apply 10
+        (margin-pixel (* (lsp-ui-sideline--margin-width) 10)))
+    (setq column (- column margin-pixel))
+    (/ column factor)))
 
 (defun lsp-ui-sideline--current-column ()
   "Return column value with handle of `truncate-lines-mode'."
@@ -291,19 +295,10 @@ MARKED-STRING is the string returned by `lsp-ui-sideline--extract-info'."
 
 (defun lsp-ui-sideline--align (&rest lengths)
   "Align sideline string by LENGTHS from the right of the window."
-  (+ (- (+ (lsp-ui-sideline--current-column)
-           (- (lsp-ui-sideline--window-width) (lsp-ui-sideline--visible-column)))
-        (apply '+ lengths))
+  (+ (lsp-ui-sideline--current-column)
+     (- (lsp-ui-sideline--window-width) (lsp-ui-sideline--visible-column))
+     (- (apply '+ lengths))
      (- (if (display-graphic-p) 1 2))))
-
-(defun lsp-ui-sideline--compute-height nil
-  "Return a fixed size for text in sideline."
-  (if (null text-scale-mode-remapping)
-      '(height 1)
-    ;; Readjust height when text-scale-mode is used
-    (list 'height
-          (/ 1 (or (plist-get (cdr text-scale-mode-remapping) :height)
-                   1)))))
 
 (defun lsp-ui-sideline--make-display-string (info symbol current)
   "Make final string to display in buffer.
@@ -318,7 +313,7 @@ CURRENT is non-nil when the point is on the symbol."
     (add-face-text-property 0 len 'lsp-ui-sideline-global nil str)
     (concat
      (propertize " " 'display `(space :align-to (- right-fringe ,(lsp-ui-sideline--align len))))
-     (propertize str 'display (lsp-ui-sideline--compute-height)))))
+     str)))
 
 (defun lsp-ui-sideline--check-duplicate (symbol info)
   "Check if there's already a SYMBOL containing INFO, unless `lsp-ui-sideline-ignore-duplicate'
@@ -356,8 +351,10 @@ is set to t."
 
 (defun lsp-ui-sideline--window-width ()
   "Calculate the window width only inside the text area."
-  (- (min (window-text-width) (window-body-width))
-     (lsp-ui-sideline--margin-width)))
+  (round
+   (- (/ (min (window-text-width) (window-body-width))
+         (lsp-ui-util--text-scale-factor))
+      (lsp-ui-sideline--margin-width))))
 
 (defun lsp-ui-sideline--display-all-info (buffer list-infos tag bol eol)
   (when (and (eq (current-buffer) buffer)
@@ -454,7 +451,7 @@ Push sideline overlays on `lsp-ui-sideline--ovs'."
                  (pos-ov (lsp-ui-sideline--find-line len bol eol t offset))
                  (end-pos (lsp-ui-util-column (car pos-ov)))
                  (string (concat (propertize (spaces-string (lsp-ui-sideline--align len end-pos)))
-                                 (propertize msg 'display (lsp-ui-sideline--compute-height))))
+                                 msg))
                  (ov (and pos-ov (make-overlay (car pos-ov) (car pos-ov)))))
             (when pos-ov
               (setq offset (1+ (car (cdr pos-ov))))
@@ -526,8 +523,7 @@ Argument HEIGHT is an actual image height in pixel."
               (pos-ov (lsp-ui-sideline--find-line (+ 1 (length title) (length image)) bol eol t))
               (end-pos (lsp-ui-util-column (car pos-ov)))
               (string (concat (propertize (spaces-string (lsp-ui-sideline--align (+ len (length image)) end-pos)))
-                              image
-                              (propertize title 'display (lsp-ui-sideline--compute-height))))
+                              image title))
               (ov (and pos-ov (make-overlay (car pos-ov) (car pos-ov)))))
         (when pos-ov
           (overlay-put ov 'before-string string)
