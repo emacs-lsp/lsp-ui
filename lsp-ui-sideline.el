@@ -352,9 +352,9 @@ is set to t."
 (defun lsp-ui-sideline--window-width ()
   "Calculate the window width only inside the text area."
   (round
-   (- (/ (min (window-text-width) (window-body-width))
-         (lsp-ui-util-text-scale-factor))
-      (lsp-ui-sideline--margin-width))))
+   (/ (- (min (window-text-width) (window-body-width))
+         (lsp-ui-sideline--margin-width))
+      (lsp-ui-util-text-scale-factor))))
 
 (defun lsp-ui-sideline--display-all-info (buffer list-infos tag bol eol)
   (when (and (eq (current-buffer) buffer)
