@@ -286,7 +286,7 @@ MARKED-STRING is the string returned by `lsp-ui-sideline--extract-info'."
       (save-excursion
         (while (and (<= start (point)) (not (bobp)))
           (setq col (current-column))
-          (ignore-errors (previous-line)))))
+          (with-no-warnings (ignore-errors (previous-line))))))
     col))
 
 (defun lsp-ui-sideline--align (&rest lengths)
