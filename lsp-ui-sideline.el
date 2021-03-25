@@ -298,7 +298,7 @@ MARKED-STRING is the string returned by `lsp-ui-sideline--extract-info'."
   (+ (lsp-ui-sideline--current-column)
      (- (lsp-ui-sideline--window-width) (lsp-ui-sideline--visible-column))
      (- (apply '+ lengths))
-     (- (if (display-graphic-p) 1 2))))
+     (- (if (display-graphic-p) 2 3))))
 
 (defun lsp-ui-sideline--make-display-string (info symbol current)
   "Make final string to display in buffer.
@@ -456,7 +456,8 @@ Push sideline overlays on `lsp-ui-sideline--ovs'."
             (when pos-ov
               (setq offset (1+ (car (cdr pos-ov))))
               (overlay-put ov 'kind 'diagnostics)
-              (overlay-put ov 'before-string string)
+              (overlay-put ov 'after-string string)
+              (overlay-put ov 'before-string " ")
               (overlay-put ov 'position (car pos-ov))
               (push ov lsp-ui-sideline--ovs))))))))
 
@@ -526,7 +527,8 @@ Argument HEIGHT is an actual image height in pixel."
                               image title))
               (ov (and pos-ov (make-overlay (car pos-ov) (car pos-ov)))))
         (when pos-ov
-          (overlay-put ov 'before-string string)
+          (overlay-put ov 'after-string string)
+          (overlay-put ov 'before-string " ")
           (overlay-put ov 'kind 'actions)
           (overlay-put ov 'position (car pos-ov))
           (push ov lsp-ui-sideline--ovs))))))
