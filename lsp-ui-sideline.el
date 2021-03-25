@@ -280,7 +280,7 @@ MARKED-STRING is the string returned by `lsp-ui-sideline--extract-info'."
   (- (/ (car (pos-visible-in-window-p nil nil t)) 10) (lsp-ui-sideline--margin-width)))
 
 (defun lsp-ui-sideline--current-column ()
-  "Return colument value with handle of `truncate-lines-mode'."
+  "Return column value with handle of `truncate-lines-mode'."
   (let ((col (current-column)) (start (line-beginning-position)))
     (unless truncate-lines
       (save-excursion
