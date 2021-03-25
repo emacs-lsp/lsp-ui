@@ -279,9 +279,21 @@ MARKED-STRING is the string returned by `lsp-ui-sideline--extract-info'."
   ;; Divided by 10 to convert from pixel to text width.
   (- (/ (car (pos-visible-in-window-p nil nil t)) 10) (lsp-ui-sideline--margin-width)))
 
+(defun lsp-ui-sideline--current-column ()
+  "Return colument value with handle of `truncate-lines-mode'."
+  (let ((col (current-column)) (start (line-beginning-position)))
+    (unless truncate-lines
+      (save-excursion
+        (while (and (<= start (point)) (not (bobp)))
+          (setq col (current-column))
+          (ignore-errors (previous-line))
+          )))
+    col))
+
 (defun lsp-ui-sideline--align (&rest lengths)
   "Align sideline string by LENGTHS from the right of the window."
-  (+ (- (+ (current-column) (- (lsp-ui-sideline--window-width) (lsp-ui-sideline--visible-column)))
+  (+ (- (+ (lsp-ui-sideline--current-column)
+           (- (lsp-ui-sideline--window-width) (lsp-ui-sideline--visible-column)))
         (apply '+ lengths))
      (- (if (display-graphic-p) 1 2))))
 
