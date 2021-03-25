@@ -353,7 +353,7 @@ is set to t."
   "Calculate the window width only inside the text area."
   (round
    (- (/ (min (window-text-width) (window-body-width))
-         (lsp-ui-util--text-scale-factor))
+         (lsp-ui-util-text-scale-factor))
       (lsp-ui-sideline--margin-width))))
 
 (defun lsp-ui-sideline--display-all-info (buffer list-infos tag bol eol)
