@@ -57,5 +57,9 @@
   (setq pos (or pos (point)))
   (save-excursion (goto-char pos) (current-column)))
 
+(defun lsp-ui-util-text-scale-factor ()
+  "Return the factor effect by `text-scale-mode'."
+  (or (plist-get (cdr text-scale-mode-remapping) :height) 1))
+
 (provide 'lsp-ui-util)
 ;;; lsp-ui-util.el ends here
