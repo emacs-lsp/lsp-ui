@@ -430,6 +430,7 @@ Push sideline overlays on `lsp-ui-sideline--ovs'."
              (offset 1))
         (dolist (line (nreverse display-lines))
           (let* ((msg (string-trim (replace-regexp-in-string "[\t ]+" " " line)))
+                 (msg (replace-regexp-in-string " " " " msg))
                  (len (length msg))
                  (level (flycheck-error-level e))
                  (face (if (eq level 'info) 'success level))
@@ -495,6 +496,7 @@ Argument HEIGHT is an actual image height in pixel."
     (seq-doseq (action actions)
       (-let* ((title (->> (lsp:code-action-title action)
                        (replace-regexp-in-string "[\n\t ]+" " ")
+                       (replace-regexp-in-string " " " ")
                        (concat (unless lsp-ui-sideline-actions-icon
                                  lsp-ui-sideline-code-actions-prefix))))
               (image (lsp-ui-sideline--code-actions-image))
