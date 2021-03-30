@@ -566,12 +566,13 @@ FN is the function to call on click."
 (defun lsp-ui-doc--open-markdown-link (&rest _)
   (interactive "P")
   (let ((buffer-list-update-hook nil))
-    (-when-let* ((valid (and (listp last-input-event)
-                             (eq (car last-input-event) 'mouse-2)))
-                 (event (cadr last-input-event))
-                 (win (posn-window event))
-                 (buffer (window-buffer win))
-                 (point (posn-point event)))
+    (-let [(buffer point) (if-let* ((valid (and (listp last-input-event)
+                                                (eq (car last-input-event) 'mouse-2)))
+                                    (event (cadr last-input-event))
+                                    (win (posn-window event))
+                                    (buffer (window-buffer win)))
+                              `(,buffer ,(posn-point event))
+                            `(,(current-buffer) ,(point)))]
       (with-current-buffer buffer
         ;; Markdown-mode puts the url in 'help-echo
         (-some--> (get-text-property point 'help-echo)
