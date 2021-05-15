@@ -136,6 +136,11 @@ option."
   :type 'boolean
   :group 'lsp-ui-doc)
 
+(defcustom lsp-ui-doc-enhanced-markdown t
+  "Lsp-ui-doc will attempt to better format the markdown documentation."
+  :type 'boolean
+  :group 'lsp-ui-doc)
+
 (defface lsp-ui-doc-background
   '((((background light)) :background "#b3b3b3")
     (t :background "#272A36"))
@@ -660,7 +665,7 @@ FN is the function to call on click."
            'lsp-ui-doc--webkit-resize-callback))
       (erase-buffer)
       (insert (s-trim string))
-      (unless (lsp-ui-doc--inline-p)
+      (unless (or (lsp-ui-doc--inline-p) (not lsp-ui-doc-enhanced-markdown))
         (lsp-ui-doc--make-smaller-empty-lines)
         (lsp-ui-doc--handle-hr-lines))
       (add-text-properties 1 (point) '(line-height 1))
