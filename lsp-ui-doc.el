@@ -33,7 +33,6 @@
 (require 'lsp-protocol)
 (require 'lsp-mode)
 (require 'dash)
-(require 'dash-functional)
 (require 'goto-addr)
 (require 'markdown-mode)
 (require 'cl-lib)
@@ -303,6 +302,9 @@ Because some variables are buffer local.")
        (if (and language (not (string= "text" language)))
            (format "```%s\n%s\n```" language string)
          string))
+      ;; For other programming languages
+      (language (lsp--render-string (lsp-ui-doc--inline-formatted-string string) language))
+      ;; For default element content
       (t (lsp--render-element (lsp-ui-doc--inline-formatted-string string)))))))
 
 (defun lsp-ui-doc--filter-marked-string (list-marked-string)
@@ -324,7 +326,7 @@ We don't extract the string that `lps-line' is already displaying."
     (mapconcat 'lsp-ui-doc--extract-marked-string
                (lsp-ui-doc--filter-marked-string (seq-filter #'identity contents))
                "\n\n"
-               ;; (propertize "\n\n" 'face '(:height 0.4))
+               ;;(propertize "\n\n" 'face '(:height 0.4))
                ))
    ;; when we get markdown contents, render using emacs gfm-view-mode / markdown-mode
    ((and (lsp-marked-string? contents)
@@ -349,13 +351,7 @@ We don't extract the string that `lps-line' is already displaying."
     (let ((inhibit-read-only t))
       (insert " ")
       (goto-char 1)
-      (let ((id (make-xwidget
-                 'webkit
-                 nil
-                 1
-                 1
-                 nil
-                 (buffer-name))))
+      (let ((id (make-xwidget 'webkit nil 1 1 nil (buffer-name))))
         (set-xwidget-query-on-exit-flag id nil)
         (put-text-property (point) (+ 1 (point))
                            'display (list 'xwidget ':xwidget id))
@@ -433,8 +429,8 @@ We don't extract the string that `lps-line' is already displaying."
   "Mark as unused function."
   (-> (when (bound-and-true-p lsp-ui-sideline--occupied-lines)
         (-min lsp-ui-sideline--occupied-lines))
-      (line-number-at-pos)
-      (lsp-ui-doc--line-height)))
+    (line-number-at-pos)
+    (lsp-ui-doc--line-height)))
 
 (defun lsp-ui-doc--webkit-resize-callback (size)
   "Callback when resizing using webkit depends on the SIZE."
@@ -467,11 +463,11 @@ symbol at point, to not obstruct the view of the code that follows.
 If there's no space above in the current window, it places
 FRAME just below the symbol at point."
   (-let* (((x . y) (--> (or lsp-ui-doc--bounds (bounds-of-thing-at-point 'symbol))
-                        (or (posn-x-y (posn-at-point (car it)))
-                            (if (< (car it) (window-start))
-                                (cons 0 0)
-                              (posn-x-y (posn-at-point (1- (window-end))))))))
-          (frame-relative-symbol-x (+ start-x x))
+                     (or (posn-x-y (posn-at-point (car it)))
+                         (if (< (car it) (window-start))
+                             (cons 0 0)
+                           (posn-x-y (posn-at-point (1- (window-end))))))))
+          (frame-relative-symbol-x (+ start-x x (* (frame-char-width) 2)))
           (frame-relative-symbol-y (+ start-y y))
           (char-height (frame-char-height))
           ;; Make sure the frame is positioned horizontally such that
@@ -570,12 +566,13 @@ FN is the function to call on click."
 (defun lsp-ui-doc--open-markdown-link (&rest _)
   (interactive "P")
   (let ((buffer-list-update-hook nil))
-    (-when-let* ((valid (and (listp last-input-event)
-                             (eq (car last-input-event) 'mouse-2)))
-                 (event (cadr last-input-event))
-                 (win (posn-window event))
-                 (buffer (window-buffer win))
-                 (point (posn-point event)))
+    (-let [(buffer point) (if-let* ((valid (and (listp last-input-event)
+                                                (eq (car last-input-event) 'mouse-2)))
+                                    (event (cadr last-input-event))
+                                    (win (posn-window event))
+                                    (buffer (window-buffer win)))
+                              `(,buffer ,(posn-point event))
+                            `(,(current-buffer) ,(point)))]
       (with-current-buffer buffer
         ;; Markdown-mode puts the url in 'help-echo
         (-some--> (get-text-property point 'help-echo)
@@ -600,8 +597,12 @@ FN is the function to call on click."
 
 (defun lsp-ui-doc--make-smaller-empty-lines nil
   "Make empty lines half normal lines."
-  (goto-char 1)
-  (insert (propertize "\n" 'face '(:height 0.2)))
+  (progn  ; Customize line before header
+    (goto-char 1)
+    (insert (propertize "\n" 'face '(:height 0.2))))
+  (progn  ; Customize line after header
+    (forward-line 1)
+    (insert (propertize " " 'face '(:height 0.1))))
   (while (not (eobp))
     (when (and (eolp) (not (bobp)))
       (save-excursion
@@ -610,7 +611,7 @@ FN is the function to call on click."
                      (not (get-text-property (max (- (point) 2) 1) 'markdown-heading)))
                 (get-text-property (point) 'markdown-hr))
         (insert (propertize " " 'face `(:height 0.2))
-                (propertize "\n" 'face '(:height 0.2)))))
+                (propertize "\n" 'face '(:height 0.4)))))
     (forward-line))
   (insert (propertize "\n\n" 'face '(:height 0.3))))
 
@@ -633,9 +634,7 @@ FN is the function to call on click."
         (goto-char next)
         (setq bolp (bolp)
               before (char-before))
-        (delete-region (point) (save-excursion
-                                 (forward-visible-line 1)
-                                 (point)))
+        (delete-region (point) (save-excursion (forward-visible-line 1) (point)))
         (setq after (char-after (1+ (point))))
         (insert
          (concat
@@ -655,10 +654,9 @@ FN is the function to call on click."
     (if lsp-ui-doc-use-webkit
         (progn
           (lsp-ui-doc--webkit-execute-script
-           (format
-            "renderMarkdown('%s', '%s');"
-            symbol
-            (url-hexify-string string))
+           (format "renderMarkdown('%s', '%s');"
+                   symbol
+                   (url-hexify-string string))
            'lsp-ui-doc--webkit-resize-callback))
       (erase-buffer)
       (insert (s-trim string))
@@ -732,24 +730,22 @@ FN is the function to call on click."
 
 (defun lsp-ui-doc--inline-merge (strings)
   (let* ((buffer-strings (-> (lsp-ui-doc--inline-untab strings)
-                             (lsp-ui-doc--remove-invisibles)
-                             (split-string "\n")))
+                           (lsp-ui-doc--remove-invisibles)
+                           (split-string "\n")))
          (doc-strings (-> (lsp-ui-doc--with-buffer (buffer-string))
-                          (lsp-ui-doc--inline-untab)
-                          (lsp-ui-doc--remove-invisibles)
-                          (split-string "\n")))
+                        (lsp-ui-doc--inline-untab)
+                        (lsp-ui-doc--remove-invisibles)
+                        (split-string "\n")))
          (merged (--> (lsp-ui-doc--inline-faking-frame doc-strings)
-                      (-zip-with 'lsp-ui-doc--inline-zip buffer-strings it)
-                      (string-join it "\n")
-                      (concat it "\n"))))
+                   (-zip-with 'lsp-ui-doc--inline-zip buffer-strings it)
+                   (string-join it "\n")
+                   (concat it "\n"))))
     (add-face-text-property 0 (length merged) 'default t merged)
     merged))
 
 (defun lsp-ui-doc--inline-pos-at (start lines)
   "Calcul the position at START + forward n LINES."
-  (save-excursion (goto-char start)
-                  (forward-line lines)
-                  (point)))
+  (save-excursion (goto-char start) (forward-line lines) (point)))
 
 (defun lsp-ui-doc--inline-pos (height)
   "Return a cons of positions where to place the doc.
@@ -919,7 +915,8 @@ BUFFER is the buffer where the request has been made."
            (thing-at-point 'symbol t)
            (-some->> contents
              lsp-ui-doc--extract
-             (replace-regexp-in-string "\r" ""))))
+             (replace-regexp-in-string "\r" "")
+             (replace-regexp-in-string " " " "))))
       (lsp-ui-doc--hide-frame))))
 
 (defun lsp-ui-doc--delete-frame ()

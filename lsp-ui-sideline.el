@@ -112,7 +112,11 @@ when user changes current point."
        (image-type-available-p 'png)
        (expand-file-name "lightbulb.png" lsp-ui-resources-dir)))
 
-(defcustom lsp-ui-sideline-actions-icon lsp-ui-sideline-actions-icon-default
+;; TODO: Set the default actions to `nil' temporarily due to image
+;; scale issue on Emacs version 26.3 or below.
+;;
+;; See #573
+(defcustom lsp-ui-sideline-actions-icon nil
   "Image file for actions.  It must be a png file."
   :type '(choice file (const :tag "Disable" nil))
   :group 'lsp-ui-sideline)
@@ -189,13 +193,10 @@ This face have a low priority over the others."
 
 (defun lsp-ui-sideline--first-line-p (pos)
   "Return non-nil if POS is on the first line."
-  (save-excursion
-    (goto-char 1)
-    (forward-line)
-    (> (point) pos)))
+  (save-excursion (goto-char 1) (forward-line 1) (> (point) pos)))
 
 (defun lsp-ui-sideline--calc-space (win-width str-len index)
-  "Calcul whether there is enough space on line.
+  "Calculate whether there is enough space on line.
 If there is enough space, it returns the point of the last
 character on the line.
 
@@ -211,23 +212,26 @@ INDEX is the line number (relative to the current line)."
 
 (defun lsp-ui-sideline--find-line (str-len bol eol &optional up offset)
   "Find a line where the string can be inserted.
-It loops on the nexts lines to find enough space.
-Returns the point of the last character on the line.
 
-STR-LEN is the string size.
-BOL & EOL are beginning and ending of the user point line.
-if UP is non-nil, it loops on the previous lines.
-if OFFSET is non-nil, it starts search OFFSET lines from user point line."
+It loops on the nexts lines to find enough space.  Returns the point
+of the last character on the line.
+
+Argument STR-LEN is the string size.
+Argument BOL and EOL are beginning and ending of the user point line.
+If optional argument UP is non-nil, it loops on the previous lines.
+If optional argument OFFSET is non-nil, it starts search OFFSET lines
+from user point line."
   (let ((win-width (lsp-ui-sideline--window-width))
         (index (if (null offset) 1 offset))
         pos)
     (while (and (null pos) (<= (abs index) 30))
       (setq index (if up (1- index) (1+ index)))
       (setq pos (lsp-ui-sideline--calc-space win-width str-len index)))
-    (if (and up (or (null pos) (and (lsp-ui-sideline--first-line-p pos)
-                                    ;; line-end-position returns a wrong value when its
-                                    ;; argument lead to a line < 0, so we need to use this trick
-                                    (-any-p 'lsp-ui-sideline--first-line-p lsp-ui-sideline--occupied-lines))))
+    (if (and up (or (null pos)
+                    ;; This will avoid sideline not showing on the first
+                    ;; line of the buffer.
+                    (and (lsp-ui-sideline--first-line-p pos)
+                         (lsp-ui-sideline--first-line-p (point)))))
         (lsp-ui-sideline--find-line str-len bol eol nil offset)
       (and pos (or (> pos eol) (< pos bol))
            (push pos lsp-ui-sideline--occupied-lines)
@@ -267,9 +271,10 @@ MARKED-STRING is the string returned by `lsp-ui-sideline--extract-info'."
     (->> (if (> (length marked-string) win-width)
              (car (split-string marked-string "[\r\n]+"))
            marked-string)
-         (replace-regexp-in-string "[\n\r\t ]+" " "))))
+      (replace-regexp-in-string "[\n\r\t ]+" " "))))
 
 (defun lsp-ui-sideline--align (&rest lengths)
+  "Align sideline string by LENGTHS from the right of the window."
   (+ (apply '+ lengths)
      (if (display-graphic-p) 1 2)))
 
@@ -419,21 +424,22 @@ Push sideline overlays on `lsp-ui-sideline--ovs'."
     (lsp-ui-sideline--delete-kind 'diagnostics)
     (dolist (e (flycheck-overlay-errors-in bol (1+ eol)))
       (let* ((lines (--> (flycheck-error-format-message-and-id e)
-                         (split-string it "\n")
-                         (lsp-ui-sideline--split-long-lines it)))
+                      (split-string it "\n")
+                      (lsp-ui-sideline--split-long-lines it)))
              (display-lines (butlast lines (- (length lines) lsp-ui-sideline-diagnostic-max-lines)))
              (offset 1))
         (dolist (line (nreverse display-lines))
-          (let* ((message (string-trim (replace-regexp-in-string "[\t ]+" " " line)))
-                 (len (length message))
+          (let* ((msg (string-trim (replace-regexp-in-string "[\t ]+" " " line)))
+                 (msg (replace-regexp-in-string " " " " msg))
+                 (len (length msg))
                  (level (flycheck-error-level e))
                  (face (if (eq level 'info) 'success level))
                  (margin (lsp-ui-sideline--margin-width))
-                 (message (progn (add-face-text-property 0 len 'lsp-ui-sideline-global nil message)
-                                 (add-face-text-property 0 len face nil message)
-                                 message))
+                 (msg (progn (add-face-text-property 0 len 'lsp-ui-sideline-global nil msg)
+                             (add-face-text-property 0 len face nil msg)
+                             msg))
                  (string (concat (propertize " " 'display `(space :align-to (- right-fringe ,(lsp-ui-sideline--align len margin))))
-                                 (propertize message 'display (lsp-ui-sideline--compute-height))))
+                                 (propertize msg 'display (lsp-ui-sideline--compute-height))))
                  (pos-ov (lsp-ui-sideline--find-line len bol eol t offset))
                  (ov (and pos-ov (make-overlay (car pos-ov) (car pos-ov)))))
             (when pos-ov
@@ -451,17 +457,24 @@ Push sideline overlays on `lsp-ui-sideline--ovs'."
     (user-error "No code actions on the current line"))
   (lsp-execute-code-action (lsp--select-action lsp-ui-sideline--code-actions)))
 
+(defun lsp-ui-sideline-set-default-icon ()
+  "Set default icon for sideline actions."
+  (setq lsp-ui-sideline-actions-icon lsp-ui-sideline-actions-icon-default))
+
 (defun lsp-ui-sideline--scale-lightbulb (height)
-  (--> (frame-char-height)
-       (/ (float it) height)))
+  "Scale the lightbulb image to character height.
+
+Argument HEIGHT is an actual image height in pixel."
+  (--> (- (frame-char-height) 1)
+    (/ (float it) height)))
 
 (defun lsp-ui-sideline--code-actions-make-image nil
   (let ((is-default (equal lsp-ui-sideline-actions-icon lsp-ui-sideline-actions-icon-default)))
     (--> `(image :type png :file ,lsp-ui-sideline-actions-icon :ascent center)
-         (append it `(:scale ,(->> (cond (is-default 128)
-                                         ((fboundp 'image-size) (cdr (image-size it t)))
-                                         (t (error "Function image-size undefined.  Use default icon")))
-                                   (lsp-ui-sideline--scale-lightbulb)))))))
+      (append it `(:scale ,(->> (cond (is-default 128)
+                                      ((fboundp 'image-size) (cdr (image-size it t)))
+                                      (t (error "Function image-size undefined.  Use default icon")))
+                             (lsp-ui-sideline--scale-lightbulb)))))))
 
 (defun lsp-ui-sideline--code-actions-image nil
   (when lsp-ui-sideline-actions-icon
@@ -482,9 +495,10 @@ Push sideline overlays on `lsp-ui-sideline--ovs'."
     (lsp-ui-sideline--delete-kind 'actions)
     (seq-doseq (action actions)
       (-let* ((title (->> (lsp:code-action-title action)
-                          (replace-regexp-in-string "[\n\t ]+" " ")
-                          (concat (unless lsp-ui-sideline-actions-icon
-                                    lsp-ui-sideline-code-actions-prefix))))
+                       (replace-regexp-in-string "[\n\t ]+" " ")
+                       (replace-regexp-in-string " " " ")
+                       (concat (unless lsp-ui-sideline-actions-icon
+                                 lsp-ui-sideline-code-actions-prefix))))
               (image (lsp-ui-sideline--code-actions-image))
               (margin (lsp-ui-sideline--margin-width))
               (keymap (let ((map (make-sparse-keymap)))
@@ -517,12 +531,12 @@ Push sideline overlays on `lsp-ui-sideline--ovs'."
   (->> (--remove
         (when (eq (overlay-get it 'kind) kind)
           (--> (overlay-get it 'position)
-               (remq it lsp-ui-sideline--occupied-lines)
-               (setq lsp-ui-sideline--occupied-lines it))
+            (remq it lsp-ui-sideline--occupied-lines)
+            (setq lsp-ui-sideline--occupied-lines it))
           (delete-overlay it)
           t)
         lsp-ui-sideline--ovs)
-       (setq lsp-ui-sideline--ovs)))
+    (setq lsp-ui-sideline--ovs)))
 
 (defvar-local lsp-ui-sideline--last-tick-info nil)
 (defvar-local lsp-ui-sideline--previous-line nil)

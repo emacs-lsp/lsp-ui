@@ -30,17 +30,19 @@
 
 (let* ((package-archives '(("melpa" . "https://melpa.org/packages/")
                            ("gnu" . "http://elpa.gnu.org/packages/")))
-       (pkgs (append '(dash dash-functional lsp-mode markdown-mode)
+       (pkgs (append '(dash lsp-mode markdown-mode)
                      '(ert-runner flycheck rustic))))
   (package-initialize)
   (package-refresh-contents)
 
   (mapc (lambda (pkg)
           (unless (package-installed-p pkg)
-            (package-install pkg)))
+            (package-refresh-contents) (package-install pkg)))
         pkgs)
 
   (add-hook 'kill-emacs-hook
-            `(lambda () (delete-directory ,user-emacs-directory t))))
+            `(lambda ()
+               (unless (boundp 'emacs-lsp-ci)
+                 (delete-directory ,user-emacs-directory t)))))
 
 ;;; windows-bootstrap.el ends here
