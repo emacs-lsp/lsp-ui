@@ -599,7 +599,7 @@ FN is the function to call on click."
   "Make empty lines half normal lines."
   (progn  ; Customize line before header
     (goto-char 1)
-    (insert (propertize "\n" 'face '(:height 0.2))))
+    (insert (propertize "\n" 'face '(:height 0.3))))
   (progn  ; Customize line after header
     (forward-line 1)
     (insert (propertize " " 'face '(:height 0.1))))
