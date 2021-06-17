@@ -141,6 +141,14 @@ This can be used to insert, for example, an unicode character: 💡")
 (defvar-local lsp-ui-sideline--occupied-lines nil
   "List of lines occupied by an overlay of `lsp-ui-sideline'.")
 
+(defvar-local lsp-ui-sideline--first-line-pushed nil
+  "Record weather if we display sideline in the first line.
+
+If we do, then sideline will always look downward instead of the upward direction.
+
+This prevent sideline displays below than the first line, which it will cause
+weird looking user interface.")
+
 (defvar-local lsp-ui-sideline--tag nil
   "Tag marking where the last operation was based.
 It is used to know when the cursor has changed its line or point.")
@@ -237,8 +245,10 @@ from user point line."
     (while (and (null pos) (<= (abs index) 30))
       (setq index (if up (1- index) (1+ index)))
       (setq pos (lsp-ui-sideline--calc-space win-width str-len index)))
-    (if (and up (or (null pos) (<= pos 1)))
+    (if (and up (or (null pos) (and (<= pos 1) lsp-ui-sideline--first-line-pushed)))
         (lsp-ui-sideline--find-line str-len bol eol nil offset)
+      (when (lsp-ui-sideline--first-line-p pos)  ; mark first line push
+        (setq lsp-ui-sideline--first-line-pushed t))
       (and pos (or (> pos eol) (< pos bol))
            (push pos lsp-ui-sideline--occupied-lines)
            (list pos (1- index))))))
@@ -249,6 +259,7 @@ from user point line."
   (setq lsp-ui-sideline--tag nil
         lsp-ui-sideline--cached-infos nil
         lsp-ui-sideline--occupied-lines nil
+        lsp-ui-sideline--first-line-pushed nil
         lsp-ui-sideline--ovs nil))
 
 (defun lsp-ui-sideline--extract-info (contents)
@@ -538,7 +549,7 @@ Argument HEIGHT is an actual image height in pixel."
               (ov (and pos-ov (make-overlay (car pos-ov) (car pos-ov)))))
         (when pos-ov
           (overlay-put ov 'after-string string)
-          (overlay-put ov 'before-string "")
+          (overlay-put ov 'before-string " ")
           (overlay-put ov 'kind 'actions)
           (overlay-put ov 'position (car pos-ov))
           (push ov lsp-ui-sideline--ovs))))))
