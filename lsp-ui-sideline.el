@@ -247,8 +247,9 @@ from user point line."
       (setq pos (lsp-ui-sideline--calc-space win-width str-len index)))
     (if (and up (or (null pos) (and (<= pos 1) lsp-ui-sideline--first-line-pushed)))
         (lsp-ui-sideline--find-line str-len bol eol nil offset)
-      (when (lsp-ui-sideline--first-line-p pos)  ; mark first line push
-        (setq lsp-ui-sideline--first-line-pushed t))
+      (when (and (null lsp-ui-sideline--first-line-pushed)
+                 (lsp-ui-sideline--first-line-p pos))
+        (setq lsp-ui-sideline--first-line-pushed t))  ; mark first line push
       (and pos (or (> pos eol) (< pos bol))
            (push pos lsp-ui-sideline--occupied-lines)
            (list pos (1- index))))))
@@ -259,7 +260,7 @@ from user point line."
   (setq lsp-ui-sideline--tag nil
         lsp-ui-sideline--cached-infos nil
         lsp-ui-sideline--occupied-lines nil
-        lsp-ui-sideline--first-line-pushed nil
+        lsp-ui-sideline--first-line-pushed (lsp-ui-sideline--first-line-p (point))
         lsp-ui-sideline--ovs nil))
 
 (defun lsp-ui-sideline--extract-info (contents)
