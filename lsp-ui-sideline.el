@@ -144,7 +144,8 @@ This can be used to insert, for example, an unicode character: 💡")
 (defvar-local lsp-ui-sideline--first-line-pushed nil
   "Record weather if we display sideline in the first line.
 
-If we do, then sideline will always look downward instead of the upward direction.
+If we do, then sideline will always look downward instead of the upward
+direction.
 
 This prevent sideline displays below than the first line, which it will cause
 weird looking user interface.")
