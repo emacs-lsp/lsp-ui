@@ -215,6 +215,7 @@ INDEX is the line number (relative to the current line)."
     (unless (member eol lsp-ui-sideline--occupied-lines)
       (save-excursion
         (goto-char eol)
+        (end-of-line)
         (when (>= (- win-width (current-column)) str-len)
           eol)))))
 
@@ -236,11 +237,7 @@ from user point line."
     (while (and (null pos) (<= (abs index) 30))
       (setq index (if up (1- index) (1+ index)))
       (setq pos (lsp-ui-sideline--calc-space win-width str-len index)))
-    (if (and up (or (null pos)
-                    ;; This will avoid sideline not showing on the first
-                    ;; line of the buffer.
-                    (and (lsp-ui-sideline--first-line-p pos)
-                         (lsp-ui-sideline--first-line-p (point)))))
+    (if (and up (null pos))
         (lsp-ui-sideline--find-line str-len bol eol nil offset)
       (and pos (or (> pos eol) (< pos bol))
            (push pos lsp-ui-sideline--occupied-lines)
@@ -574,7 +571,7 @@ Argument HEIGHT is an actual image height in pixel."
           (or (-some-> range (lsp-get :start) (lsp-get :line) (= line))
               (-some-> range (lsp-get :end) (lsp-get :line) (= line))))
         (lsp--get-buffer-diagnostics))
-       (apply 'vector)))
+    (apply 'vector)))
 
 (defun lsp-ui-sideline--run (&optional buffer bol eol this-line)
   "Show information (flycheck + lsp).
