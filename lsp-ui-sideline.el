@@ -141,6 +141,15 @@ This can be used to insert, for example, an unicode character: 💡")
 (defvar-local lsp-ui-sideline--occupied-lines nil
   "List of lines occupied by an overlay of `lsp-ui-sideline'.")
 
+(defvar-local lsp-ui-sideline--first-line-pushed nil
+  "Record weather if we display sideline in the first line.
+
+If we do, then sideline will always look downward instead of the upward
+direction.
+
+This prevent sideline displays below than the first line, which it will cause
+weird looking user interface.")
+
 (defvar-local lsp-ui-sideline--tag nil
   "Tag marking where the last operation was based.
 It is used to know when the cursor has changed its line or point.")
@@ -215,6 +224,7 @@ INDEX is the line number (relative to the current line)."
     (unless (member eol lsp-ui-sideline--occupied-lines)
       (save-excursion
         (goto-char eol)
+        (end-of-line)
         (when (>= (- win-width (current-column)) str-len)
           eol)))))
 
@@ -236,12 +246,11 @@ from user point line."
     (while (and (null pos) (<= (abs index) 30))
       (setq index (if up (1- index) (1+ index)))
       (setq pos (lsp-ui-sideline--calc-space win-width str-len index)))
-    (if (and up (or (null pos)
-                    ;; This will avoid sideline not showing on the first
-                    ;; line of the buffer.
-                    (and (lsp-ui-sideline--first-line-p pos)
-                         (lsp-ui-sideline--first-line-p (point)))))
+    (if (and up (or (null pos) (and (<= pos 1) lsp-ui-sideline--first-line-pushed)))
         (lsp-ui-sideline--find-line str-len bol eol nil offset)
+      (when (and (null lsp-ui-sideline--first-line-pushed)
+                 (lsp-ui-sideline--first-line-p pos))
+        (setq lsp-ui-sideline--first-line-pushed t))  ; mark first line push
       (and pos (or (> pos eol) (< pos bol))
            (push pos lsp-ui-sideline--occupied-lines)
            (list pos (1- index))))))
@@ -252,6 +261,7 @@ from user point line."
   (setq lsp-ui-sideline--tag nil
         lsp-ui-sideline--cached-infos nil
         lsp-ui-sideline--occupied-lines nil
+        lsp-ui-sideline--first-line-pushed (lsp-ui-sideline--first-line-p (point))
         lsp-ui-sideline--ovs nil))
 
 (defun lsp-ui-sideline--extract-info (contents)
@@ -574,7 +584,7 @@ Argument HEIGHT is an actual image height in pixel."
           (or (-some-> range (lsp-get :start) (lsp-get :line) (= line))
               (-some-> range (lsp-get :end) (lsp-get :line) (= line))))
         (lsp--get-buffer-diagnostics))
-       (apply 'vector)))
+    (apply 'vector)))
 
 (defun lsp-ui-sideline--run (&optional buffer bol eol this-line)
   "Show information (flycheck + lsp).
