@@ -83,6 +83,7 @@ If the PATH is not in the workspace, it returns the original PATH."
       path)))
 
 (defun lsp-ui--toggle (enable)
+  "Toggle enable for each lsp-ui module."
   (dolist (feature '(lsp-ui-peek lsp-ui-sideline lsp-ui-doc lsp-ui-imenu))
     (let* ((sym (--> (intern-soft (concat (symbol-name feature) "-enable"))
                   (and (boundp it) it)))
@@ -171,7 +172,6 @@ Both should have the form (FILENAME LINE COLUMN)."
           (forward-char (caddr res))
           (cons idx (length refs)))
       (cons 0 0))))
-
 
 (provide 'lsp-ui)
 ;;; lsp-ui.el ends here
