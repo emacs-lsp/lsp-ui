@@ -237,7 +237,7 @@ from user point line."
     (while (and (null pos) (<= (abs index) 30))
       (setq index (if up (1- index) (1+ index)))
       (setq pos (lsp-ui-sideline--calc-space win-width str-len index)))
-    (if (and up (null pos))
+    (if (and up (or (null pos) (<= pos 1)))
         (lsp-ui-sideline--find-line str-len bol eol nil offset)
       (and pos (or (> pos eol) (< pos bol))
            (push pos lsp-ui-sideline--occupied-lines)
@@ -538,7 +538,7 @@ Argument HEIGHT is an actual image height in pixel."
               (ov (and pos-ov (make-overlay (car pos-ov) (car pos-ov)))))
         (when pos-ov
           (overlay-put ov 'after-string string)
-          (overlay-put ov 'before-string " ")
+          (overlay-put ov 'before-string "")
           (overlay-put ov 'kind 'actions)
           (overlay-put ov 'position (car pos-ov))
           (push ov lsp-ui-sideline--ovs))))))
