@@ -108,6 +108,10 @@ omitted or nil, and toggle it if ARG is ‘toggle’."
   :keymap lsp-ui-mode-map
   (lsp-ui--toggle lsp-ui-mode))
 
+;;;###autoload
+(define-global-minor-mode global-lsp-ui-mode lsp-ui-mode
+  (lambda () (lsp-ui-mode 1)))
+
 ;; The request is delegated to xref-backend-apropos defined in lsp-mode.
 ;; xref-find-apropos does similar job but is less appealing because it splits and
 ;; regex quotes the pattern. The language server likely knows more about how

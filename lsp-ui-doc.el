@@ -1102,6 +1102,9 @@ If nil, do not prevent mouse on prefix keys.")
     (remove-hook 'post-command-hook 'lsp-ui-doc--make-request t)
     (remove-hook 'delete-frame-functions 'lsp-ui-doc--on-delete t))))
 
+(define-global-minor-mode global-lsp-ui-doc-mode lsp-ui-doc-mode
+  (lambda () (lsp-ui-doc-mode 1)))
+
 (defun lsp-ui-doc-enable (enable)
   "Enable/disable ‘lsp-ui-doc-mode’.
 It is supposed to be called from `lsp-ui--toggle'"
@@ -1110,9 +1113,10 @@ It is supposed to be called from `lsp-ui--toggle'"
 (defun lsp-ui-doc-show ()
   "Trigger display hover information popup."
   (interactive)
-  (lsp-ui-doc--callback (lsp-request "textDocument/hover" (lsp--text-document-position-params))
-                        (or (bounds-of-thing-at-point 'symbol) (cons (point) (1+ (point))))
-                        (current-buffer)))
+  (when lsp-ui-doc-mode
+    (lsp-ui-doc--callback (lsp-request "textDocument/hover" (lsp--text-document-position-params))
+                          (or (bounds-of-thing-at-point 'symbol) (cons (point) (1+ (point))))
+                          (current-buffer))))
 
 (defun lsp-ui-doc-hide ()
   "Hide hover information popup."

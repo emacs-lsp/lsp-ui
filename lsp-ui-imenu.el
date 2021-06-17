@@ -366,6 +366,9 @@ ITEMS are used when the kind position is 'left."
 (define-derived-mode lsp-ui-imenu-mode special-mode "lsp-ui-imenu"
   "Mode showing imenu entries.")
 
+(define-global-minor-mode global-lsp-ui-imenu-mode lsp-ui-imenu-mode
+  (lambda () (lsp-ui-imenu-mode 1)))
+
 (defun lsp-ui-imenu--refresh ()
   "Safe refresh imenu content."
   (interactive)

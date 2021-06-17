@@ -709,6 +709,9 @@ This does not toggle display of flycheck diagnostics or code actions."
     (when lsp-ui-sideline-show-diagnostics
       (kill-local-variable 'flycheck-display-errors-function)))))
 
+(define-global-minor-mode global-lsp-ui-sideline-mode lsp-ui-sideline-mode
+  (lambda () (lsp-ui-sideline-mode 1)))
+
 (defun lsp-ui-sideline-enable (enable)
   "Enable/disable `lsp-ui-sideline-mode'."
   (lsp-ui-sideline-mode (if enable 1 -1))

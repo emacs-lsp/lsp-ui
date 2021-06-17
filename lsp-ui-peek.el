@@ -570,6 +570,9 @@ XREFS is a list of references/definitions."
     (lsp-ui-peek--deactivate-keymap)
     (lsp-ui-peek--peek-hide)))
 
+(define-global-minor-mode global-lsp-ui-peek-mode lsp-ui-peek-mode
+  (lambda () (lsp-ui-peek-mode 1)))
+
 (defun lsp-ui-peek--find-xrefs (input method param)
   "Find INPUT references.
 METHOD is ‘references’, ‘definitions’, `implementation` or a custom kind.
