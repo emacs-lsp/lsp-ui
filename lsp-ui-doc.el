@@ -36,6 +36,7 @@
 (require 'goto-addr)
 (require 'markdown-mode)
 (require 'cl-lib)
+(require 'lsp-ui-util)
 
 (when (featurep 'xwidget-internal)
   (require 'xwidget))
@@ -864,9 +865,7 @@ HEIGHT is the documentation number of lines."
 
 (defun lsp-ui-doc--make-request nil
   "Request the documentation to the LS."
-  (and (not track-mouse)
-       lsp-ui-doc-show-with-mouse
-       (setq-local track-mouse t))
+  (and (not track-mouse) lsp-ui-doc-show-with-mouse (setq-local track-mouse t))
   (when (and lsp-ui-doc-show-with-cursor
              (not (memq this-command lsp-ui-doc--ignore-commands))
              (not (bound-and-true-p lsp-ui-peek-mode))
@@ -891,6 +890,19 @@ HEIGHT is the documentation number of lines."
                         :mode 'tick
                         :cancel-token :lsp-ui-doc-hover)))))))
       (lsp-ui-doc--hide-frame))))
+
+(defcustom lsp-ui-doc-post-delay 0.2
+  "Seconds to wait before making post request."
+  :type 'number
+  :group 'lsp-ui-doc)
+
+(defvar-local lsp-ui-doc--post-timer nil
+  "Timer for post command.")
+
+(defun lsp-ui-doc--post-command ()
+  "Post command hook for UI doc."
+  (lsp-ui-util-safe-kill-timer lsp-ui-doc--post-timer)
+  (setq lsp-ui-doc--post-timer (run-with-timer lsp-ui-doc-post-delay nil #'lsp-ui-doc--make-request)))
 
 (defun lsp-ui-doc--extract-bounds (hover)
   (-when-let* ((hover hover)
@@ -1091,7 +1103,7 @@ If nil, do not prevent mouse on prefix keys.")
       (add-hook 'window-state-change-functions 'lsp-ui-doc--on-state-changed))
     (lsp-ui-doc--setup-mouse)
     (advice-add 'handle-switch-frame :before-while 'lsp-ui-doc--prevent-focus-doc)
-    (add-hook 'post-command-hook 'lsp-ui-doc--make-request nil t)
+    (add-hook 'post-command-hook 'lsp-ui-doc--post-command nil t)
     (add-hook 'window-scroll-functions 'lsp-ui-doc--handle-scroll nil t)
     (add-hook 'delete-frame-functions 'lsp-ui-doc--on-delete nil t))
    (t
@@ -1099,7 +1111,7 @@ If nil, do not prevent mouse on prefix keys.")
     (when (boundp 'window-state-change-functions)
       (remove-hook 'window-state-change-functions 'lsp-ui-doc--on-state-changed))
     (remove-hook 'window-scroll-functions 'lsp-ui-doc--handle-scroll t)
-    (remove-hook 'post-command-hook 'lsp-ui-doc--make-request t)
+    (remove-hook 'post-command-hook 'lsp-ui-doc--post-command t)
     (remove-hook 'delete-frame-functions 'lsp-ui-doc--on-delete t))))
 
 (defun lsp-ui-doc-enable (enable)
