@@ -36,6 +36,7 @@
 (require 'goto-addr)
 (require 'markdown-mode)
 (require 'cl-lib)
+(require 'lsp-ui-util)
 
 (when (featurep 'xwidget-internal)
   (require 'xwidget))
