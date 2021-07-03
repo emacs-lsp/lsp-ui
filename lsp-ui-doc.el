@@ -265,19 +265,14 @@ Because some variables are buffer local.")
           "*"))
 
 ;; ‘markdown-fontify-code-block-default-mode’ isn’t yet available in
-;; Markdown 2.3.
+;; Markdown 2.3.
 (defvar markdown-fontify-code-block-default-mode)
 
 (defun lsp-ui-doc--inline-wrapped-line (string)
   "Wraps a line of text (STRING) for inline display."
   (let ((doc-max-width (lsp-ui-doc--inline-window-width)))
     (cond ((string-empty-p string) "")
-          ((< (length string) doc-max-width) string)
-          (t (concat (substring string 0 (- doc-max-width 4))
-                     "\n"
-                     (string-trim-left
-                      (lsp-ui-doc--inline-wrapped-line
-                       (substring string (- doc-max-width 4)))))))))
+          (t string))))
 
 (defun lsp-ui-doc--inline-formatted-string (string)
   "Formats STRING for inline rendering."
@@ -661,6 +656,8 @@ FN is the function to call on click."
            'lsp-ui-doc--webkit-resize-callback))
       (erase-buffer)
       (insert (s-trim string))
+      (let ((fill-column (- lsp-ui-doc-max-width 5)))
+        (fill-region (point-min) (point-max)))
       (unless (lsp-ui-doc--inline-p)
         (lsp-ui-doc--make-smaller-empty-lines)
         (lsp-ui-doc--handle-hr-lines))
