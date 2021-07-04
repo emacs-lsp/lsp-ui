@@ -210,7 +210,8 @@ This face have a low priority over the others."
 
 (defun lsp-ui-sideline--first-line-p (pos)
   "Return non-nil if POS is on the first line."
-  (save-excursion (goto-char 1) (forward-line 1) (> (point) pos)))
+  (when (integerp pos)
+    (save-excursion (goto-char 1) (forward-line 1) (> (point) pos))))
 
 (defun lsp-ui-sideline--calc-space (win-width str-len index)
   "Calculate whether there is enough space on line.
