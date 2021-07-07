@@ -37,6 +37,7 @@
 (require 'markdown-mode)
 (require 'cl-lib)
 (require 'lsp-ui-util)
+(require 'subr-x)
 
 (when (featurep 'xwidget-internal)
   (require 'xwidget))
@@ -389,15 +390,12 @@ We don't extract the string that `lps-line' is already displaying."
   "Hide the frame."
   (setq lsp-ui-doc--bounds nil
         lsp-ui-doc--from-mouse nil)
-  (when (overlayp lsp-ui-doc--inline-ov)
-    (delete-overlay lsp-ui-doc--inline-ov))
-  (when (overlayp lsp-ui-doc--highlight-ov)
-    (delete-overlay lsp-ui-doc--highlight-ov))
-  (when (lsp-ui-doc--get-frame)
+  (lsp-ui-util-safe-delete-overlay lsp-ui-doc--inline-ov)
+  (lsp-ui-util-safe-delete-overlay lsp-ui-doc--highlight-ov)
+  (when-let ((frame (lsp-ui-doc--get-frame)))
     (unless lsp-ui-doc-use-webkit
-      (lsp-ui-doc--with-buffer
-        (erase-buffer)))
-    (make-frame-invisible (lsp-ui-doc--get-frame))))
+      (lsp-ui-doc--with-buffer (erase-buffer)))
+    (make-frame-invisible frame)))
 
 (defun lsp-ui-doc--buffer-width ()
   "Calcul the max width of the buffer."
@@ -870,7 +868,7 @@ HEIGHT is the documentation number of lines."
                          (and (looking-at "[[:graph:]]") (cons (point) (1+ (point))))))
         (unless (equal lsp-ui-doc--bounds bounds)
           (lsp-ui-doc--hide-frame)
-          (and lsp-ui-doc--timer (cancel-timer lsp-ui-doc--timer))
+          (lsp-ui-util-safe-kill-timer lsp-ui-doc--timer)
           (setq lsp-ui-doc--timer
                 (run-with-idle-timer
                  lsp-ui-doc-delay nil
@@ -886,19 +884,6 @@ HEIGHT is the documentation number of lines."
                         :mode 'tick
                         :cancel-token :lsp-ui-doc-hover)))))))
       (lsp-ui-doc--hide-frame))))
-
-(defcustom lsp-ui-doc-post-delay 0.2
-  "Seconds to wait before making post request."
-  :type 'number
-  :group 'lsp-ui-doc)
-
-(defvar-local lsp-ui-doc--post-timer nil
-  "Timer for post command.")
-
-(defun lsp-ui-doc--post-command ()
-  "Post command hook for UI doc."
-  (lsp-ui-util-safe-kill-timer lsp-ui-doc--post-timer)
-  (setq lsp-ui-doc--post-timer (run-with-timer lsp-ui-doc-post-delay nil #'lsp-ui-doc--make-request)))
 
 (defun lsp-ui-doc--extract-bounds (hover)
   (-when-let* ((hover hover)
@@ -1099,7 +1084,7 @@ If nil, do not prevent mouse on prefix keys.")
       (add-hook 'window-state-change-functions 'lsp-ui-doc--on-state-changed))
     (lsp-ui-doc--setup-mouse)
     (advice-add 'handle-switch-frame :before-while 'lsp-ui-doc--prevent-focus-doc)
-    (add-hook 'post-command-hook 'lsp-ui-doc--post-command nil t)
+    (add-hook 'post-command-hook 'lsp-ui-doc--make-request nil t)
     (add-hook 'window-scroll-functions 'lsp-ui-doc--handle-scroll nil t)
     (add-hook 'delete-frame-functions 'lsp-ui-doc--on-delete nil t))
    (t
@@ -1107,7 +1092,7 @@ If nil, do not prevent mouse on prefix keys.")
     (when (boundp 'window-state-change-functions)
       (remove-hook 'window-state-change-functions 'lsp-ui-doc--on-state-changed))
     (remove-hook 'window-scroll-functions 'lsp-ui-doc--handle-scroll t)
-    (remove-hook 'post-command-hook 'lsp-ui-doc--post-command t)
+    (remove-hook 'post-command-hook 'lsp-ui-doc--make-request t)
     (remove-hook 'delete-frame-functions 'lsp-ui-doc--on-delete t))))
 
 (defun lsp-ui-doc-enable (enable)
