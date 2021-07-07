@@ -395,8 +395,7 @@ We don't extract the string that `lps-line' is already displaying."
     (delete-overlay lsp-ui-doc--highlight-ov))
   (when (lsp-ui-doc--get-frame)
     (unless lsp-ui-doc-use-webkit
-      (lsp-ui-doc--with-buffer
-        (erase-buffer)))
+      (lsp-ui-doc--with-buffer (erase-buffer)))
     (make-frame-invisible (lsp-ui-doc--get-frame))))
 
 (defun lsp-ui-doc--buffer-width ()
@@ -870,7 +869,7 @@ HEIGHT is the documentation number of lines."
                          (and (looking-at "[[:graph:]]") (cons (point) (1+ (point))))))
         (unless (equal lsp-ui-doc--bounds bounds)
           (lsp-ui-doc--hide-frame)
-          (and lsp-ui-doc--timer (cancel-timer lsp-ui-doc--timer))
+          (lsp-ui-util-safe-kill-timer lsp-ui-doc--timer)
           (setq lsp-ui-doc--timer
                 (run-with-idle-timer
                  lsp-ui-doc-delay nil
