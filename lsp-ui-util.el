@@ -32,6 +32,8 @@
 
 ;;; Code:
 
+(require 'face-remap)
+
 (defun lsp-ui-util-safe-kill-timer (timer)
   "Safely kill the TIMER."
   (when (timerp timer) (cancel-timer timer)))
