@@ -395,7 +395,8 @@ We don't extract the string that `lps-line' is already displaying."
   (when-let ((frame (lsp-ui-doc--get-frame)))
     (unless lsp-ui-doc-use-webkit
       (lsp-ui-doc--with-buffer (erase-buffer)))
-    (make-frame-invisible frame)))
+    (when (frame-visible-p frame)
+      (make-frame-invisible frame))))
 
 (defun lsp-ui-doc--buffer-width ()
   "Calcul the max width of the buffer."
