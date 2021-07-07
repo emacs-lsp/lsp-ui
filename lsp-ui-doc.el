@@ -37,6 +37,7 @@
 (require 'markdown-mode)
 (require 'cl-lib)
 (require 'lsp-ui-util)
+(require 'subr-x)
 
 (when (featurep 'xwidget-internal)
   (require 'xwidget))
@@ -391,10 +392,10 @@ We don't extract the string that `lps-line' is already displaying."
         lsp-ui-doc--from-mouse nil)
   (lsp-ui-util-safe-delete-overlay lsp-ui-doc--inline-ov)
   (lsp-ui-util-safe-delete-overlay lsp-ui-doc--highlight-ov)
-  (when (lsp-ui-doc--get-frame)
+  (when-let ((frame (lsp-ui-doc--get-frame)))
     (unless lsp-ui-doc-use-webkit
       (lsp-ui-doc--with-buffer (erase-buffer)))
-    (make-frame-invisible (lsp-ui-doc--get-frame))))
+    (make-frame-invisible frame)))
 
 (defun lsp-ui-doc--buffer-width ()
   "Calcul the max width of the buffer."
