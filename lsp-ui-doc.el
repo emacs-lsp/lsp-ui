@@ -897,8 +897,6 @@ HEIGHT is the documentation number of lines."
 
 (defun lsp-ui-doc--post-command ()
   "Post command hook for UI doc."
-  (unless (memq this-command lsp-ui-doc--ignore-commands)
-    (lsp-ui-doc--hide-frame))
   (lsp-ui-util-safe-kill-timer lsp-ui-doc--post-timer)
   (setq lsp-ui-doc--post-timer (run-with-timer lsp-ui-doc-post-delay nil #'lsp-ui-doc--make-request)))
 
