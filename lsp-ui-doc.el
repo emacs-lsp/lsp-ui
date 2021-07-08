@@ -30,13 +30,16 @@
 
 ;;; Code:
 
+(require 'lsp-ui-util)
+
 (require 'lsp-protocol)
 (require 'lsp-mode)
 (require 'dash)
 (require 'goto-addr)
 (require 'markdown-mode)
+
 (require 'cl-lib)
-(require 'lsp-ui-util)
+(require 'face-remap)
 (require 'subr-x)
 
 (when (featurep 'xwidget-internal)
@@ -136,6 +139,11 @@ option."
 (defcustom lsp-ui-doc-winum-ignore t
   "Whether to ignore lsp-ui-doc buffers in winum."
   :type 'boolean
+  :group 'lsp-ui-doc)
+
+(defcustom lsp-ui-doc-text-scale-level 0
+  "Text scale amount for doc buffer."
+  :type 'integer
   :group 'lsp-ui-doc)
 
 (defface lsp-ui-doc-background
@@ -238,7 +246,9 @@ Because some variables are buffer local.")
                     (inhibit-point-motion-hooks t)
                     (inhibit-redisplay t))
                 ,@body)
-         (setq buffer-read-only t)))))
+         (setq buffer-read-only t)
+         (let ((text-scale-mode-step 1.1))
+           (text-scale-set lsp-ui-doc-text-scale-level))))))
 
 (defmacro lsp-ui-doc--get-parent (var)
   "Return VAR in `lsp-ui-doc--parent-vars'."
