@@ -1,0 +1,3 @@
+* Changelog
+** 7.0.1
+   - lsp-ui version working with lsp-mode v7.0.1
