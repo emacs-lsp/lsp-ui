@@ -403,8 +403,6 @@ We don't extract the string that `lps-line' is already displaying."
   (lsp-ui-util-safe-delete-overlay lsp-ui-doc--inline-ov)
   (lsp-ui-util-safe-delete-overlay lsp-ui-doc--highlight-ov)
   (when-let ((frame (lsp-ui-doc--get-frame)))
-    (unless lsp-ui-doc-use-webkit
-      (lsp-ui-doc--with-buffer (erase-buffer)))
     (when (frame-visible-p frame)
       (make-frame-invisible frame))))
 
