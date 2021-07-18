@@ -599,6 +599,24 @@ FN is the function to call on click."
        (frame-parameter nil 'lsp-ui-doc--no-focus)
        (select-frame (frame-parent) t)))
 
+(defun lsp-ui-doc--fill-document ()
+  "Better wrap the document so it fits the doc window."
+  (let ((fill-column (- lsp-ui-doc-max-width 5))
+        start        ; record start for `fill-region'
+        first-line)  ; first line in paragraph
+    (save-excursion
+      (goto-char (point-min))
+      (setq start (point)
+            first-line (thing-at-point 'line))
+      (while (re-search-forward "^[ \t]*\n" nil t)
+        (setq first-line (thing-at-point 'line))
+        (when (< fill-column (length first-line))
+          (fill-region start (point)))
+        (setq start (point)))
+      ;; Fill the last paragraph
+      (when (< fill-column (length first-line))
+        (fill-region start (point-max))))))
+
 (defun lsp-ui-doc--make-smaller-empty-lines nil
   "Make empty lines half normal lines."
   (progn  ; Customize line before header
@@ -664,9 +682,8 @@ FN is the function to call on click."
            'lsp-ui-doc--webkit-resize-callback))
       (erase-buffer)
       (insert (s-trim string))
-      (let ((fill-column (- lsp-ui-doc-max-width 5)))
-        (fill-region (point-min) (point-max)))
       (unless (lsp-ui-doc--inline-p)
+        (lsp-ui-doc--fill-document)
         (lsp-ui-doc--make-smaller-empty-lines)
         (lsp-ui-doc--handle-hr-lines))
       (add-text-properties 1 (point) '(line-height 1))
