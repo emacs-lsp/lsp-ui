@@ -7,12 +7,21 @@
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/github-markdown-css/2.10.0/github-markdown.css">
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/highlight.js/9.13.1/styles/default.min.css">
     <style>
+
+     :root {
+       --webkit-max-width-px: 600px;
+     }
+
      .markdown-body {
        box-sizing: border-box;
-       min-width: 400px;
-       max-width: 600px;
+       min-width: var(--webkit-max-width-px);
+       max-width: var(--webkit-max-width-px);
        margin: 0 auto;
        padding: 10px;
+     }
+
+     .markdown-body pre code {
+       white-space: pre-wrap;
      }
     </style>
   </head>
