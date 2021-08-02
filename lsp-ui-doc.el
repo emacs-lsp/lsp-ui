@@ -113,6 +113,11 @@ This only takes effect when `lsp-ui-doc-position' is 'top or 'bottom."
   :type 'integer
   :group 'lsp-ui-doc)
 
+(defcustom lsp-ui-doc-webkit-max-width-px 600
+  "Maximum width in pixels for the webkit frame."
+  :type 'integer
+  :group 'lsp-ui-doc)
+
 (defcustom lsp-ui-doc-max-height 13
   "Maximum number of lines in the frame."
   :type 'integer
@@ -305,7 +310,9 @@ Because some variables are buffer local.")
           (markdown-hr-display-char nil))
      (cond
       (lsp-ui-doc-use-webkit
-       (if (and language (not (string= "text" language)))
+       (if (and language
+                (not (string= "text" language))
+                (not (string= lsp/markup-kind-markdown language)))
            (format "```%s\n%s\n```" language string)
          string))
       ;; For other programming languages
@@ -364,8 +371,15 @@ We don't extract the string that `lps-line' is already displaying."
         (xwidget-webkit-mode)
         (xwidget-webkit-goto-uri (xwidget-at 1)
                                  lsp-ui-doc-webkit-client-path)
+        (lsp-ui-doc--webkit-set-width)
         (lsp-ui-doc--webkit-set-background)
         (lsp-ui-doc--webkit-set-foreground)))))
+
+(defun lsp-ui-doc--webkit-set-width ()
+  "Set webkit document max-width CSS property."
+  (lsp-ui-doc--webkit-execute-script
+   (format "document.documentElement.style.setProperty('--webkit-max-width-px', %d + 'px');"
+           lsp-ui-doc-webkit-max-width-px)))
 
 (defun lsp-ui-doc--webkit-set-background ()
   "Set background color of the WebKit widget."
