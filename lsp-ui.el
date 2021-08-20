@@ -38,7 +38,7 @@
 (require 'find-func)
 
 (defconst lsp-ui-resources-dir
-  (--> (find-library-name "lsp-ui")
+  (--> (or load-file-name (buffer-file-name))
        (file-name-directory it)
        (expand-file-name "resources" it)
        (file-name-as-directory it)
