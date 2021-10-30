@@ -23,10 +23,7 @@
 
 (require 'package)
 
-(setq user-emacs-directory (expand-file-name (make-temp-name ".emacs.d")
-                                             "~")
-      package-user-dir (expand-file-name (make-temp-name "tmp-elpa")
-                                         user-emacs-directory))
+(setq network-security-level 'low)
 
 (let* ((package-archives '(("melpa" . "https://melpa.org/packages/")
                            ("gnu" . "http://elpa.gnu.org/packages/")))

@@ -30,12 +30,17 @@
 
 ;;; Code:
 
+(require 'lsp-ui-util)
+
 (require 'lsp-protocol)
 (require 'lsp-mode)
 (require 'dash)
 (require 'goto-addr)
 (require 'markdown-mode)
+
 (require 'cl-lib)
+(require 'face-remap)
+(require 'subr-x)
 
 (when (featurep 'xwidget-internal)
   (require 'xwidget))
@@ -108,6 +113,11 @@ This only takes effect when `lsp-ui-doc-position' is 'top or 'bottom."
   :type 'integer
   :group 'lsp-ui-doc)
 
+(defcustom lsp-ui-doc-webkit-max-width-px 600
+  "Maximum width in pixels for the webkit frame."
+  :type 'integer
+  :group 'lsp-ui-doc)
+
 (defcustom lsp-ui-doc-max-height 13
   "Maximum number of lines in the frame."
   :type 'integer
@@ -139,6 +149,11 @@ option."
 (defcustom lsp-ui-doc-enhanced-markdown t
   "Lsp-ui-doc will attempt to better format the markdown documentation."
   :type 'boolean
+  :group 'lsp-ui-doc)
+
+(defcustom lsp-ui-doc-text-scale-level 0
+  "Text scale amount for doc buffer."
+  :type 'integer
   :group 'lsp-ui-doc)
 
 (defface lsp-ui-doc-background
@@ -241,7 +256,9 @@ Because some variables are buffer local.")
                     (inhibit-point-motion-hooks t)
                     (inhibit-redisplay t))
                 ,@body)
-         (setq buffer-read-only t)))))
+         (setq buffer-read-only t)
+         (let ((text-scale-mode-step 1.1))
+           (text-scale-set lsp-ui-doc-text-scale-level))))))
 
 (defmacro lsp-ui-doc--get-parent (var)
   "Return VAR in `lsp-ui-doc--parent-vars'."
@@ -269,19 +286,13 @@ Because some variables are buffer local.")
           "*"))
 
 ;; ‘markdown-fontify-code-block-default-mode’ isn’t yet available in
-;; Markdown 2.3.
+;; Markdown 2.3.
 (defvar markdown-fontify-code-block-default-mode)
 
 (defun lsp-ui-doc--inline-wrapped-line (string)
   "Wraps a line of text (STRING) for inline display."
-  (let ((doc-max-width (lsp-ui-doc--inline-window-width)))
-    (cond ((string-empty-p string) "")
-          ((< (length string) doc-max-width) string)
-          (t (concat (substring string 0 (- doc-max-width 4))
-                     "\n"
-                     (string-trim-left
-                      (lsp-ui-doc--inline-wrapped-line
-                       (substring string (- doc-max-width 4)))))))))
+  (cond ((string-empty-p string) "")
+        (t string)))
 
 (defun lsp-ui-doc--inline-formatted-string (string)
   "Formats STRING for inline rendering."
@@ -304,7 +315,9 @@ Because some variables are buffer local.")
           (markdown-hr-display-char nil))
      (cond
       (lsp-ui-doc-use-webkit
-       (if (and language (not (string= "text" language)))
+       (if (and language
+                (not (string= "text" language))
+                (not (string= lsp/markup-kind-markdown language)))
            (format "```%s\n%s\n```" language string)
          string))
       ;; For other programming languages
@@ -363,8 +376,15 @@ We don't extract the string that `lps-line' is already displaying."
         (xwidget-webkit-mode)
         (xwidget-webkit-goto-uri (xwidget-at 1)
                                  lsp-ui-doc-webkit-client-path)
+        (lsp-ui-doc--webkit-set-width)
         (lsp-ui-doc--webkit-set-background)
         (lsp-ui-doc--webkit-set-foreground)))))
+
+(defun lsp-ui-doc--webkit-set-width ()
+  "Set webkit document max-width CSS property."
+  (lsp-ui-doc--webkit-execute-script
+   (format "document.documentElement.style.setProperty('--webkit-max-width-px', %d + 'px');"
+           lsp-ui-doc-webkit-max-width-px)))
 
 (defun lsp-ui-doc--webkit-set-background ()
   "Set background color of the WebKit widget."
@@ -399,15 +419,11 @@ We don't extract the string that `lps-line' is already displaying."
   "Hide the frame."
   (setq lsp-ui-doc--bounds nil
         lsp-ui-doc--from-mouse nil)
-  (when (overlayp lsp-ui-doc--inline-ov)
-    (delete-overlay lsp-ui-doc--inline-ov))
-  (when (overlayp lsp-ui-doc--highlight-ov)
-    (delete-overlay lsp-ui-doc--highlight-ov))
-  (when (lsp-ui-doc--get-frame)
-    (unless lsp-ui-doc-use-webkit
-      (lsp-ui-doc--with-buffer
-        (erase-buffer)))
-    (make-frame-invisible (lsp-ui-doc--get-frame))))
+  (lsp-ui-util-safe-delete-overlay lsp-ui-doc--inline-ov)
+  (lsp-ui-util-safe-delete-overlay lsp-ui-doc--highlight-ov)
+  (when-let ((frame (lsp-ui-doc--get-frame)))
+    (when (frame-visible-p frame)
+      (make-frame-invisible frame))))
 
 (defun lsp-ui-doc--buffer-width ()
   "Calcul the max width of the buffer."
@@ -434,8 +450,8 @@ We don't extract the string that `lps-line' is already displaying."
   "Mark as unused function."
   (-> (when (bound-and-true-p lsp-ui-sideline--occupied-lines)
         (-min lsp-ui-sideline--occupied-lines))
-    (line-number-at-pos)
-    (lsp-ui-doc--line-height)))
+      (line-number-at-pos)
+      (lsp-ui-doc--line-height)))
 
 (defun lsp-ui-doc--webkit-resize-callback (size)
   "Callback when resizing using webkit depends on the SIZE."
@@ -468,10 +484,10 @@ symbol at point, to not obstruct the view of the code that follows.
 If there's no space above in the current window, it places
 FRAME just below the symbol at point."
   (-let* (((x . y) (--> (or lsp-ui-doc--bounds (bounds-of-thing-at-point 'symbol))
-                     (or (posn-x-y (posn-at-point (car it)))
-                         (if (< (car it) (window-start))
-                             (cons 0 0)
-                           (posn-x-y (posn-at-point (1- (window-end))))))))
+                        (or (posn-x-y (posn-at-point (car it)))
+                            (if (< (car it) (window-start))
+                                (cons 0 0)
+                              (posn-x-y (posn-at-point (1- (window-end))))))))
           (frame-relative-symbol-x (+ start-x x (* (frame-char-width) 2)))
           (frame-relative-symbol-y (+ start-y y))
           (char-height (frame-char-height))
@@ -600,11 +616,29 @@ FN is the function to call on click."
        (frame-parameter nil 'lsp-ui-doc--no-focus)
        (select-frame (frame-parent) t)))
 
+(defun lsp-ui-doc--fill-document ()
+  "Better wrap the document so it fits the doc window."
+  (let ((fill-column (- lsp-ui-doc-max-width 5))
+        start        ; record start for `fill-region'
+        first-line)  ; first line in paragraph
+    (save-excursion
+      (goto-char (point-min))
+      (setq start (point)
+            first-line (thing-at-point 'line))
+      (while (re-search-forward "^[ \t]*\n" nil t)
+        (setq first-line (thing-at-point 'line))
+        (when (< fill-column (length first-line))
+          (fill-region start (point)))
+        (setq start (point)))
+      ;; Fill the last paragraph
+      (when (< fill-column (length first-line))
+        (fill-region start (point-max))))))
+
 (defun lsp-ui-doc--make-smaller-empty-lines nil
   "Make empty lines half normal lines."
   (progn  ; Customize line before header
     (goto-char 1)
-    (insert (propertize "\n" 'face '(:height 0.2))))
+    (insert (propertize "\n" 'face '(:height 0.3))))
   (progn  ; Customize line after header
     (forward-line 1)
     (insert (propertize " " 'face '(:height 0.1))))
@@ -666,6 +700,7 @@ FN is the function to call on click."
       (erase-buffer)
       (insert (s-trim string))
       (unless (or (lsp-ui-doc--inline-p) (not lsp-ui-doc-enhanced-markdown))
+        (lsp-ui-doc--fill-document)
         (lsp-ui-doc--make-smaller-empty-lines)
         (lsp-ui-doc--handle-hr-lines))
       (add-text-properties 1 (point) '(line-height 1))
@@ -733,17 +768,16 @@ FN is the function to call on click."
 
 (defun lsp-ui-doc--inline-merge (strings)
   (let* ((buffer-strings (-> (lsp-ui-doc--inline-untab strings)
-                           (lsp-ui-doc--remove-invisibles)
-                           (split-string "\n")))
+                             (lsp-ui-doc--remove-invisibles)
+                             (split-string "\n")))
          (doc-strings (-> (lsp-ui-doc--with-buffer (buffer-string))
-                        (lsp-ui-doc--inline-untab)
-                        (lsp-ui-doc--remove-invisibles)
-                        (split-string "\n")))
+                          (lsp-ui-doc--inline-untab)
+                          (lsp-ui-doc--remove-invisibles)
+                          (split-string "\n")))
          (merged (--> (lsp-ui-doc--inline-faking-frame doc-strings)
-                   (-zip-with 'lsp-ui-doc--inline-zip buffer-strings it)
-                   (string-join it "\n")
-                   (concat it "\n"))))
-    (add-face-text-property 0 (length merged) 'default t merged)
+                      (-zip-with 'lsp-ui-doc--inline-zip buffer-strings it)
+                      (string-join it "\n")
+                      (concat it "\n"))))
     merged))
 
 (defun lsp-ui-doc--inline-pos-at (start lines)
@@ -779,6 +813,7 @@ HEIGHT is the documentation number of lines."
           (ov (if (overlayp lsp-ui-doc--inline-ov) lsp-ui-doc--inline-ov
                 (setq lsp-ui-doc--inline-ov (make-overlay start end)))))
     (move-overlay ov start end)
+    (overlay-put ov 'face 'default)
     (overlay-put ov 'display (lsp-ui-doc--inline-merge buffer-string))
     (overlay-put ov 'lsp-ui-doc-inline t)
     (overlay-put ov 'window (selected-window))))
@@ -841,6 +876,8 @@ HEIGHT is the documentation number of lines."
     (set-window-dedicated-p window t)
     ;;(redirect-frame-focus frame (frame-parent frame))
     (set-face-background 'internal-border lsp-ui-doc-border frame)
+    (when (facep 'child-frame-border)
+      (set-face-background 'child-frame-border lsp-ui-doc-border frame))
     (set-face-background 'fringe nil frame)
     (run-hook-with-args 'lsp-ui-doc-frame-hook frame window)
     (when lsp-ui-doc-use-webkit
@@ -867,9 +904,7 @@ HEIGHT is the documentation number of lines."
 
 (defun lsp-ui-doc--make-request nil
   "Request the documentation to the LS."
-  (and (not track-mouse)
-       lsp-ui-doc-show-with-mouse
-       (setq-local track-mouse t))
+  (and (not track-mouse) lsp-ui-doc-show-with-mouse (setq-local track-mouse t))
   (when (and lsp-ui-doc-show-with-cursor
              (not (memq this-command lsp-ui-doc--ignore-commands))
              (not (bound-and-true-p lsp-ui-peek-mode))
@@ -878,7 +913,7 @@ HEIGHT is the documentation number of lines."
                          (and (looking-at "[[:graph:]]") (cons (point) (1+ (point))))))
         (unless (equal lsp-ui-doc--bounds bounds)
           (lsp-ui-doc--hide-frame)
-          (and lsp-ui-doc--timer (cancel-timer lsp-ui-doc--timer))
+          (lsp-ui-util-safe-kill-timer lsp-ui-doc--timer)
           (setq lsp-ui-doc--timer
                 (run-with-idle-timer
                  lsp-ui-doc-delay nil
@@ -1136,7 +1171,8 @@ It is supposed to be called from `lsp-ui--toggle'"
 (defun lsp-ui-doc-glance ()
   "Trigger display hover information popup and hide it on next typing."
   (interactive)
-  (lsp-ui-doc--make-request)
+  (let ((lsp-ui-doc-show-with-cursor t))
+    (lsp-ui-doc--make-request))
   (when lsp-ui-doc--unfocus-frame-timer
     (cancel-timer lsp-ui-doc--unfocus-frame-timer))
   (add-hook 'post-command-hook 'lsp-ui-doc--glance-hide-frame))

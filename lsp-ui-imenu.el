@@ -247,8 +247,8 @@ ITEMS are used when the kind position is 'left."
   (cl-case lsp-ui-imenu-kind-position
     (top 1)
     (left (--> (-filter 'imenu--subalist-p items)
-            (--map (length (car it)) it)
-            (-max (or it '(1)))))
+               (--map (length (car it)) it)
+               (-max (or it '(1)))))
     (t (user-error "Invalid value for imenu's kind position: %s" lsp-ui-imenu-kind-position))))
 
 (defun lsp-ui-imenu--put-bit (bits offset)
@@ -379,7 +379,7 @@ ITEMS are used when the kind position is 'left."
 
 (defun lsp-ui-imenu--start-refresh (&rest _)
   "Starts the auto refresh timer."
-  (lsp-ui-util--safe-kill-timer lsp-ui-imenu--refresh-timer)
+  (lsp-ui-util-safe-kill-timer lsp-ui-imenu--refresh-timer)
   (setq lsp-ui-imenu--refresh-timer
         (run-with-idle-timer lsp-ui-imenu-auto-refresh-delay nil #'lsp-ui-imenu--refresh)))
 

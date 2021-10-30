@@ -141,6 +141,15 @@ This can be used to insert, for example, an unicode character: 💡")
 (defvar-local lsp-ui-sideline--occupied-lines nil
   "List of lines occupied by an overlay of `lsp-ui-sideline'.")
 
+(defvar-local lsp-ui-sideline--first-line-pushed nil
+  "Record weather if we display sideline in the first line.
+
+If we do, then sideline will always look downward instead of the upward
+direction.
+
+This prevent sideline displays below than the first line, which it will cause
+weird looking user interface.")
+
 (defvar-local lsp-ui-sideline--tag nil
   "Tag marking where the last operation was based.
 It is used to know when the cursor has changed its line or point.")
@@ -149,10 +158,18 @@ It is used to know when the cursor has changed its line or point.")
   "Value of window's width on the last operation.
 It is used to know when the window has changed of width.")
 
+(defvar-local lsp-ui-sideline--last-line-number nil
+  "Line number on the last operation.
+Used to avoid calling `line-number-at-pos' when we're on the same line.")
+
 (defvar-local lsp-ui-sideline--timer nil)
 
 (defvar-local lsp-ui-sideline--code-actions nil
   "Holds the latest code actions.")
+
+(defvar-local lsp-ui-sideline--cached-infos nil
+  "Cache of rendered line when `lsp-ui-sideline-wait-for-all-symbols'
+is nil. Used to not re-render the same line multiple times.")
 
 (defface lsp-ui-sideline-symbol
   '((t :foreground "grey"
@@ -193,7 +210,8 @@ This face have a low priority over the others."
 
 (defun lsp-ui-sideline--first-line-p (pos)
   "Return non-nil if POS is on the first line."
-  (save-excursion (goto-char 1) (forward-line 1) (> (point) pos)))
+  (when (integerp pos)
+    (save-excursion (goto-char 1) (forward-line 1) (> (point) pos))))
 
 (defun lsp-ui-sideline--calc-space (win-width str-len index)
   "Calculate whether there is enough space on line.
@@ -207,6 +225,7 @@ INDEX is the line number (relative to the current line)."
     (unless (member eol lsp-ui-sideline--occupied-lines)
       (save-excursion
         (goto-char eol)
+        (end-of-line)
         (when (>= (- win-width (current-column)) str-len)
           eol)))))
 
@@ -222,17 +241,17 @@ If optional argument UP is non-nil, it loops on the previous lines.
 If optional argument OFFSET is non-nil, it starts search OFFSET lines
 from user point line."
   (let ((win-width (lsp-ui-sideline--window-width))
+        (inhibit-field-text-motion t)
         (index (if (null offset) 1 offset))
         pos)
     (while (and (null pos) (<= (abs index) 30))
       (setq index (if up (1- index) (1+ index)))
       (setq pos (lsp-ui-sideline--calc-space win-width str-len index)))
-    (if (and up (or (null pos)
-                    ;; This will avoid sideline not showing on the first
-                    ;; line of the buffer.
-                    (and (lsp-ui-sideline--first-line-p pos)
-                         (lsp-ui-sideline--first-line-p (point)))))
+    (if (and up (or (null pos) (and (<= pos 1) lsp-ui-sideline--first-line-pushed)))
         (lsp-ui-sideline--find-line str-len bol eol nil offset)
+      (when (and (null lsp-ui-sideline--first-line-pushed)
+                 (lsp-ui-sideline--first-line-p pos))
+        (setq lsp-ui-sideline--first-line-pushed t))  ; mark first line push
       (and pos (or (> pos eol) (< pos bol))
            (push pos lsp-ui-sideline--occupied-lines)
            (list pos (1- index))))))
@@ -241,7 +260,9 @@ from user point line."
   "Delete overlays."
   (seq-do 'delete-overlay lsp-ui-sideline--ovs)
   (setq lsp-ui-sideline--tag nil
+        lsp-ui-sideline--cached-infos nil
         lsp-ui-sideline--occupied-lines nil
+        lsp-ui-sideline--first-line-pushed (lsp-ui-sideline--first-line-p (point))
         lsp-ui-sideline--ovs nil))
 
 (defun lsp-ui-sideline--extract-info (contents)
@@ -268,10 +289,10 @@ MARKED-STRING is the string returned by `lsp-ui-sideline--extract-info'."
     (setq marked-string (lsp--render-element marked-string))
     (add-face-text-property 0 (length marked-string) 'lsp-ui-sideline-symbol-info nil marked-string)
     (add-face-text-property 0 (length marked-string) 'default t marked-string)
-    (->> (if (> (length marked-string) win-width)
-             (car (split-string marked-string "[\r\n]+"))
+    (->> (if (> (length marked-string) (/ win-width 2))
+             (car (split-string (string-trim-left marked-string) "[\r\n]+"))
            marked-string)
-      (replace-regexp-in-string "[\n\r\t ]+" " "))))
+         (replace-regexp-in-string "[\n\r\t ]+" " "))))
 
 (defun lsp-ui-sideline--align (&rest lengths)
   "Align sideline string by LENGTHS from the right of the window."
@@ -345,9 +366,19 @@ is set to t."
               (lsp-ui-util-line-number-display-width))
          0)))
 
-(defun lsp-ui-sideline--display-all-info (buffer list-infos tag bol eol)
-  (when (and (eq (current-buffer) buffer)
-             (equal tag (lsp-ui-sideline--calculate-tag))
+(defun lsp-ui-sideline--valid-tag-p (tag mode)
+  (when tag
+    (-let ((inhibit-field-text-motion t)
+           ((p bol _eol buffer) tag))
+      (when (and (= bol (line-beginning-position))
+                 (eq buffer (current-buffer)))
+        (pcase mode
+          ('point (eq p (point)))
+          ('line t) ;; For 'line only bol is relevant
+          (_ (error "Wrong tag mode")))))))
+
+(defun lsp-ui-sideline--display-all-info (list-infos tag bol eol)
+  (when (and (lsp-ui-sideline--valid-tag-p tag 'line)
              (not (lsp-ui-sideline--stop-p)))
     (let ((inhibit-modification-hooks t)
           (win-width (window-body-width))
@@ -359,9 +390,12 @@ is set to t."
           (lsp-ui-sideline--push-info win-width symbol bounds info bol eol))))))
 
 (defun lsp-ui-sideline--push-info (win-width symbol bounds info bol eol)
-  (let* ((info (-some--> (lsp:hover-contents info)
-                 (lsp-ui-sideline--extract-info it)
-                 (lsp-ui-sideline--format-info it win-width)))
+  (let* ((markdown-hr-display-char nil)
+         (info (or (alist-get info lsp-ui-sideline--cached-infos)
+                   (-some--> (lsp:hover-contents info)
+                     (lsp-ui-sideline--extract-info it)
+                     (lsp-ui-sideline--format-info it win-width)
+                     (progn (push (cons info it) lsp-ui-sideline--cached-infos) it))))
          (current (and (>= (point) (car bounds)) (<= (point) (cdr bounds)))))
     (when (and (> (length info) 0)
                (lsp-ui-sideline--check-duplicate symbol info))
@@ -424,8 +458,8 @@ Push sideline overlays on `lsp-ui-sideline--ovs'."
     (lsp-ui-sideline--delete-kind 'diagnostics)
     (dolist (e (flycheck-overlay-errors-in bol (1+ eol)))
       (let* ((lines (--> (flycheck-error-format-message-and-id e)
-                      (split-string it "\n")
-                      (lsp-ui-sideline--split-long-lines it)))
+                         (split-string it "\n")
+                         (lsp-ui-sideline--split-long-lines it)))
              (display-lines (butlast lines (- (length lines) lsp-ui-sideline-diagnostic-max-lines)))
              (offset 1))
         (dolist (line (nreverse display-lines))
@@ -466,15 +500,15 @@ Push sideline overlays on `lsp-ui-sideline--ovs'."
 
 Argument HEIGHT is an actual image height in pixel."
   (--> (- (frame-char-height) 1)
-    (/ (float it) height)))
+       (/ (float it) height)))
 
 (defun lsp-ui-sideline--code-actions-make-image nil
   (let ((is-default (equal lsp-ui-sideline-actions-icon lsp-ui-sideline-actions-icon-default)))
     (--> `(image :type png :file ,lsp-ui-sideline-actions-icon :ascent center)
-      (append it `(:scale ,(->> (cond (is-default 128)
-                                      ((fboundp 'image-size) (cdr (image-size it t)))
-                                      (t (error "Function image-size undefined.  Use default icon")))
-                             (lsp-ui-sideline--scale-lightbulb)))))))
+         (append it `(:scale ,(->> (cond (is-default 128)
+                                         ((fboundp 'image-size) (cdr (image-size it t)))
+                                         (t (error "Function image-size undefined.  Use default icon")))
+                                   (lsp-ui-sideline--scale-lightbulb)))))))
 
 (defun lsp-ui-sideline--code-actions-image nil
   (when lsp-ui-sideline-actions-icon
@@ -495,10 +529,10 @@ Argument HEIGHT is an actual image height in pixel."
     (lsp-ui-sideline--delete-kind 'actions)
     (seq-doseq (action actions)
       (-let* ((title (->> (lsp:code-action-title action)
-                       (replace-regexp-in-string "[\n\t ]+" " ")
-                       (replace-regexp-in-string " " " ")
-                       (concat (unless lsp-ui-sideline-actions-icon
-                                 lsp-ui-sideline-code-actions-prefix))))
+                          (replace-regexp-in-string "[\n\t ]+" " ")
+                          (replace-regexp-in-string " " " ")
+                          (concat (unless lsp-ui-sideline-actions-icon
+                                    lsp-ui-sideline-code-actions-prefix))))
               (image (lsp-ui-sideline--code-actions-image))
               (margin (lsp-ui-sideline--margin-width))
               (keymap (let ((map (make-sparse-keymap)))
@@ -525,18 +559,19 @@ Argument HEIGHT is an actual image height in pixel."
 
 (defun lsp-ui-sideline--calculate-tag nil
   "Calculate the tag used to determine whether to update sideline information."
-  (cons (line-number-at-pos) (point)))
+  (let ((inhibit-field-text-motion t))
+    (list (point) (line-beginning-position) (line-end-position) (current-buffer))))
 
 (defun lsp-ui-sideline--delete-kind (kind)
   (->> (--remove
         (when (eq (overlay-get it 'kind) kind)
           (--> (overlay-get it 'position)
-            (remq it lsp-ui-sideline--occupied-lines)
-            (setq lsp-ui-sideline--occupied-lines it))
+               (remq it lsp-ui-sideline--occupied-lines)
+               (setq lsp-ui-sideline--occupied-lines it))
           (delete-overlay it)
           t)
         lsp-ui-sideline--ovs)
-    (setq lsp-ui-sideline--ovs)))
+       (setq lsp-ui-sideline--ovs)))
 
 (defvar-local lsp-ui-sideline--last-tick-info nil)
 (defvar-local lsp-ui-sideline--previous-line nil)
@@ -544,19 +579,28 @@ Argument HEIGHT is an actual image height in pixel."
 (defun lsp-ui-sideline--get-line (bol eol)
   (buffer-substring-no-properties bol eol))
 
+(defun lsp-ui-sideline--line-diags (line)
+  (->> (--filter
+        (let ((range (lsp-get it :range)))
+          (or (-some-> range (lsp-get :start) (lsp-get :line) (= line))
+              (-some-> range (lsp-get :end) (lsp-get :line) (= line))))
+        (lsp--get-buffer-diagnostics))
+       (apply 'vector)))
+
 (defun lsp-ui-sideline--run (&optional buffer bol eol this-line)
   "Show information (flycheck + lsp).
 It loops on the symbols of the current line and requests information
 from the language server."
   (when buffer-file-name
-    (let* ((buffer (or buffer (current-buffer)))
-           (eol (or eol (line-end-position)))
-           (bol (or bol (line-beginning-position)))
+    (let* ((inhibit-field-text-motion t)
            (tag (lsp-ui-sideline--calculate-tag))
-           (line (car tag))
-           (line-widen (if (buffer-narrowed-p) (save-restriction (widen) (line-number-at-pos)) line))
+           (eol (or eol (nth 2 tag)))
+           (bol (or bol (nth 1 tag)))
            (this-tick (buffer-modified-tick))
-           (line-changed (not (equal line (car lsp-ui-sideline--tag))))
+           (line-changed (not (lsp-ui-sideline--valid-tag-p lsp-ui-sideline--tag 'line)))
+           (line-widen (or (and (not line-changed) lsp-ui-sideline--last-line-number)
+                           (and (buffer-narrowed-p) (save-restriction (widen) (line-number-at-pos)))
+                           (line-number-at-pos)))
            (new-tick (unless line-changed (not (equal this-tick lsp-ui-sideline--last-tick-info))))
            (this-line (or this-line (lsp-ui-sideline--get-line bol eol)))
            (line-modified (and new-tick (not (equal this-line lsp-ui-sideline--previous-line))))
@@ -564,6 +608,7 @@ from the language server."
            (inhibit-modification-hooks t)
            symbols)
       (setq lsp-ui-sideline--tag tag
+            lsp-ui-sideline--last-line-number line-widen
             lsp-ui-sideline--last-width (window-text-width))
       (when (and line-changed lsp-ui-sideline-show-diagnostics)
         (lsp-ui-sideline--diagnostics buffer bol eol))
@@ -572,11 +617,13 @@ from the language server."
                      (lsp--registered-capability "textDocument/codeAction")))
         (lsp-request-async
          "textDocument/codeAction"
-         (if (eq lsp-ui-sideline-update-mode 'line)
-             (list :textDocument doc-id
-                   :range (lsp--region-to-range bol eol)
-                   :context (list :diagnostics (lsp-cur-line-diagnostics)))
-           (lsp--text-document-code-action-params))
+         (-let (((start . end) (if (eq lsp-ui-sideline-update-mode 'line)
+                                   (cons 0 (- eol bol))
+                                 (--> (- (point) bol) (cons it it)))))
+           (list :textDocument doc-id
+                 :range (list :start (list :line (1- line-widen) :character start)
+                              :end (list :line (1- line-widen) :character end))
+                 :context (list :diagnostics (lsp-ui-sideline--line-diags (1- line-widen)))))
          (lambda (actions)
            (when (eq (current-buffer) buffer)
              (lsp-ui-sideline--code-actions actions bol eol)))
@@ -620,12 +667,12 @@ from the language server."
                      (cl-incf current-index)
                      (and info (push (list symbol bounds info) list-infos))
                      (when (or (= current-index length-symbols) (not lsp-ui-sideline-wait-for-all-symbols))
-                       (lsp-ui-sideline--display-all-info buffer list-infos tag bol eol)))
+                       (lsp-ui-sideline--display-all-info list-infos tag bol eol)))
                    :error-handler
                    (lambda (&rest _)
                      (cl-incf current-index)
                      (when (or (= current-index length-symbols) (not lsp-ui-sideline-wait-for-all-symbols))
-                       (lsp-ui-sideline--display-all-info buffer list-infos tag bol eol)))
+                       (lsp-ui-sideline--display-all-info list-infos tag bol eol)))
                    :mode 'tick))))))))))
 
 (defun lsp-ui-sideline--stop-p ()
@@ -644,8 +691,8 @@ COMMAND is `company-pseudo-tooltip-frontend' parameter."
   "Show information for the current line."
   (if (lsp-ui-sideline--stop-p)
       (lsp-ui-sideline--delete-ov)
-    (let* ((current-line (line-number-at-pos))
-           (same-line (equal current-line (car lsp-ui-sideline--tag)))
+    (let* ((inhibit-field-text-motion t)
+           (same-line (lsp-ui-sideline--valid-tag-p lsp-ui-sideline--tag 'line))
            (same-width (equal (window-text-width) lsp-ui-sideline--last-width))
            (new-tick (and same-line (not (equal (buffer-modified-tick) lsp-ui-sideline--last-tick-info))))
            (bol (and new-tick (line-beginning-position)))
@@ -681,6 +728,7 @@ This does not toggle display of flycheck diagnostics or code actions."
   "Handler for flycheck notifications."
   (when lsp-ui-sideline-show-diagnostics
     (let* ((buffer (current-buffer))
+           (inhibit-field-text-motion t)
            (eol (line-end-position))
            (bol (line-beginning-position)))
       (lsp-ui-sideline--diagnostics buffer bol eol))))

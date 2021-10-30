@@ -32,9 +32,15 @@
 
 ;;; Code:
 
-(defun lsp-ui-util--safe-kill-timer (timer)
+(require 'face-remap)
+
+(defun lsp-ui-util-safe-kill-timer (timer)
   "Safely kill the TIMER."
   (when (timerp timer) (cancel-timer timer)))
+
+(defun lsp-ui-util-safe-delete-overlay (overlay)
+  "Safely delete the OVERLAY."
+  (when (overlayp overlay) (delete-overlay overlay)))
 
 (defun lsp-ui-util-line-number-display-width ()
   "Safe way to get value from function `line-number-display-width'."
