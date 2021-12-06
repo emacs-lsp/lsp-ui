@@ -72,7 +72,7 @@
   :type 'boolean
   :group 'lsp-ui-doc)
 
-(defcustom lsp-ui-doc-show-with-cursor t
+(defcustom lsp-ui-doc-show-with-cursor nil
   "Move the cursor over a symbol to show its documentation."
   :type 'boolean
   :group 'lsp-ui-doc)
