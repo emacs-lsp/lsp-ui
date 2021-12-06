@@ -62,7 +62,7 @@
   :link '(custom-manual "(lsp-ui-doc) Top")
   :link '(info-link "(lsp-ui-doc) Customizing"))
 
-(defcustom lsp-ui-doc-enable nil
+(defcustom lsp-ui-doc-enable t
   "Whether or not to enable lsp-ui-doc."
   :type 'boolean
   :group 'lsp-ui)
@@ -72,7 +72,7 @@
   :type 'boolean
   :group 'lsp-ui-doc)
 
-(defcustom lsp-ui-doc-show-with-cursor t
+(defcustom lsp-ui-doc-show-with-cursor nil
   "Move the cursor over a symbol to show its documentation."
   :type 'boolean
   :group 'lsp-ui-doc)
