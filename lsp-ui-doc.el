@@ -62,7 +62,7 @@
   :link '(custom-manual "(lsp-ui-doc) Top")
   :link '(info-link "(lsp-ui-doc) Customizing"))
 
-(defcustom lsp-ui-doc-enable t
+(defcustom lsp-ui-doc-enable nil
   "Whether or not to enable lsp-ui-doc."
   :type 'boolean
   :group 'lsp-ui)

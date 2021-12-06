@@ -77,7 +77,7 @@
   :type 'boolean
   :group 'lsp-ui-sideline)
 
-(defcustom lsp-ui-sideline-show-code-actions t
+(defcustom lsp-ui-sideline-show-code-actions nil
   "Whether to show code actions in sideline."
   :type 'boolean
   :group 'lsp-ui-sideline)
