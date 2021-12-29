@@ -319,7 +319,12 @@ XREFS is a list of references/definitions."
                                 'face 'lsp-ui-peek-filename
                                 'file filename
                                 'xrefs xrefs)
-                    (propertize " " 'display `(space :align-to (- right-fringe ,(1+ (length len-str)))))
+                    (propertize " " 'display `(space :align-to (- right-fringe
+                                                                  ;; Account for Emacs TTY's window divider
+                                                                  ;; Without this leeway, the reference count
+                                                                  ;; string goes to next line - impairs readability
+                                                                  ,(if (display-graphic-p) 0 1)
+                                                                  ,(1+ (length len-str)))))
                     (propertize len-str 'face 'lsp-ui-peek-filename))
             lsp-ui-peek--list)))
   (setq lsp-ui-peek--list (nreverse lsp-ui-peek--list))
