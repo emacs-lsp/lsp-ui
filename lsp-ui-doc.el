@@ -30,8 +30,6 @@
 
 ;;; Code:
 
-(require 'lsp-ui-util)
-
 (require 'lsp-protocol)
 (require 'lsp-mode)
 (require 'dash)
@@ -53,6 +51,10 @@
 (declare-function xwidget-webkit-execute-script "ext:xwidget" (xwidget script &optional callback))
 (declare-function xwidget-webkit-execute-script-rv "ext:xwidget" (xwidget script &optional default))
 (declare-function xwidget-resize "ext:xwidget" (xwidget new-width new-height))
+
+(declare-function lsp-ui--with-no-redisplay 'lsp-ui)
+(declare-function lsp-ui--safe-kill-timer 'lsp-ui)
+(declare-function lsp-ui--safe-delete-overlay 'lsp-ui)
 
 (defgroup lsp-ui-doc nil
   "Display informations of the current line."
@@ -246,19 +248,18 @@ Because some variables are buffer local.")
 (defmacro lsp-ui-doc--with-buffer (&rest body)
   "Execute BODY in the lsp-ui-doc buffer."
   (declare (indent 0) (debug t))
-  `(let ((parent-vars (list :buffer (current-buffer)
-                            :window (get-buffer-window)))
-         (buffer-list-update-hook nil))
-     (with-current-buffer (get-buffer-create (lsp-ui-doc--make-buffer-name))
-       (setq lsp-ui-doc--parent-vars parent-vars)
-       (prog1 (let ((buffer-read-only nil)
-                    (inhibit-modification-hooks t)
-                    (inhibit-point-motion-hooks t)
-                    (inhibit-redisplay t))
-                ,@body)
-         (setq buffer-read-only t)
-         (let ((text-scale-mode-step 1.1))
-           (text-scale-set lsp-ui-doc-text-scale-level))))))
+  `(lsp-ui--with-no-redisplay
+     (let ((parent-vars (list :buffer (current-buffer) :window (get-buffer-window))))
+       (with-current-buffer (get-buffer-create (lsp-ui-doc--make-buffer-name))
+         (setq lsp-ui-doc--parent-vars parent-vars)
+         (prog1 (let ((inhibit-redisplay t)
+                      (inhibit-modification-hooks t)
+                      (inhibit-point-motion-hooks t)
+                      buffer-read-only)
+                  ,@body)
+           (setq buffer-read-only t)
+           (let ((text-scale-mode-step 1.1))
+             (text-scale-set lsp-ui-doc-text-scale-level)))))))
 
 (defmacro lsp-ui-doc--get-parent (var)
   "Return VAR in `lsp-ui-doc--parent-vars'."
@@ -312,7 +313,7 @@ Because some variables are buffer local.")
                              (or (lsp:marked-string-language marked-string)
                                  (lsp:markup-content-kind marked-string)))
                         language))
-          (markdown-hr-display-char nil))
+          markdown-hr-display-char)
      (cond
       (lsp-ui-doc-use-webkit
        (if (and language
@@ -419,11 +420,10 @@ We don't extract the string that `lps-line' is already displaying."
   "Hide the frame."
   (setq lsp-ui-doc--bounds nil
         lsp-ui-doc--from-mouse nil)
-  (lsp-ui-util-safe-delete-overlay lsp-ui-doc--inline-ov)
-  (lsp-ui-util-safe-delete-overlay lsp-ui-doc--highlight-ov)
+  (lsp-ui--safe-delete-overlay lsp-ui-doc--inline-ov)
+  (lsp-ui--safe-delete-overlay lsp-ui-doc--highlight-ov)
   (when-let ((frame (lsp-ui-doc--get-frame)))
-    (when (frame-visible-p frame)
-      (make-frame-invisible frame))))
+    (when (frame-visible-p frame) (make-frame-invisible frame))))
 
 (defun lsp-ui-doc--buffer-width ()
   "Calcul the max width of the buffer."
@@ -532,12 +532,12 @@ FRAME just below the symbol at point."
                                               height
                                               10))))))
           (frame-resize-pixelwise t)
-          (move-frame-functions nil)
-          (window-size-change-functions nil)
-          (window-state-change-hook nil)
-          (window-state-change-functions nil)
-          (window-configuration-change-hook nil)
-          (inhibit-redisplay t))
+          (inhibit-redisplay t)
+          move-frame-functions
+          window-size-change-functions
+          window-state-change-hook
+          window-state-change-functions
+          window-configuration-change-hook)
     ;; Dirty way to fix unused variable in emacs 26
     (and window-state-change-functions
          window-state-change-hook)
@@ -913,7 +913,7 @@ HEIGHT is the documentation number of lines."
                          (and (looking-at "[[:graph:]]") (cons (point) (1+ (point))))))
         (unless (equal lsp-ui-doc--bounds bounds)
           (lsp-ui-doc--hide-frame)
-          (lsp-ui-util-safe-kill-timer lsp-ui-doc--timer)
+          (lsp-ui--safe-kill-timer lsp-ui-doc--timer)
           (setq lsp-ui-doc--timer
                 (run-with-idle-timer
                  lsp-ui-doc-delay nil

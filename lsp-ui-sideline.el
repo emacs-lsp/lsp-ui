@@ -30,7 +30,6 @@
 
 ;;; Code:
 
-(require 'lsp-ui-util)
 (require 'lsp-protocol)
 (require 'lsp-mode)
 (require 'flycheck nil 'noerror)
@@ -43,6 +42,8 @@
 (declare-function flycheck-overlay-errors-in "ext:flycheck.el")
 (declare-function flycheck-error-format-message-and-id "ext:flycheck.el")
 (declare-function flycheck-error-level "ext:flycheck.el")
+
+(declare-function lsp-ui--line-number-display-width 'lsp-ui)
 
 (defgroup lsp-ui-sideline nil
   "Display information for the current line."
@@ -349,7 +350,7 @@ is set to t."
      (if (< emacs-major-version 27)
          ;; This was necessary with emacs < 27, recent versions take
          ;; into account the display-line width with :align-to
-         (lsp-ui-util-line-number-display-width)
+         (lsp-ui--line-number-display-width)
        0)
      (if (or
           (bound-and-true-p whitespace-mode)
@@ -363,7 +364,7 @@ is set to t."
      (or (and (>= emacs-major-version 27)
               ;; We still need this number when calculating available space
               ;; even with emacs >= 27
-              (lsp-ui-util-line-number-display-width))
+              (lsp-ui--line-number-display-width))
          0)))
 
 (defun lsp-ui-sideline--valid-tag-p (tag mode)
@@ -593,6 +594,7 @@ It loops on the symbols of the current line and requests information
 from the language server."
   (when buffer-file-name
     (let* ((inhibit-field-text-motion t)
+           (inhibit-modification-hooks t)
            (tag (lsp-ui-sideline--calculate-tag))
            (eol (or eol (nth 2 tag)))
            (bol (or bol (nth 1 tag)))
@@ -605,7 +607,6 @@ from the language server."
            (this-line (or this-line (lsp-ui-sideline--get-line bol eol)))
            (line-modified (and new-tick (not (equal this-line lsp-ui-sideline--previous-line))))
            (doc-id (lsp--text-document-identifier))
-           (inhibit-modification-hooks t)
            symbols)
       (setq lsp-ui-sideline--tag tag
             lsp-ui-sideline--last-line-number line-widen
