@@ -47,6 +47,10 @@
        (and (file-directory-p it) it))
   "Resource folder for package `lsp-ui'.")
 
+(defun lsp-ui--safe-delete-overlay (overlay)
+  "Safely delete the OVERLAY."
+  (when (overlayp overlay) (delete-overlay overlay)))
+
 (require 'lsp-ui-sideline)
 (require 'lsp-ui-peek)
 (require 'lsp-ui-imenu)
@@ -190,10 +194,6 @@ Both should have the form (FILENAME LINE COLUMN)."
 (defun lsp-ui--safe-kill-timer (timer)
   "Safely kill the TIMER."
   (when (timerp timer) (cancel-timer timer)))
-
-(defun lsp-ui--safe-delete-overlay (overlay)
-  "Safely delete the OVERLAY."
-  (when (overlayp overlay) (delete-overlay overlay)))
 
 (defun lsp-ui--line-number-display-width ()
   "Safe way to get value from function `line-number-display-width'."
