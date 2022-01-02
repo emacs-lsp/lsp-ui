@@ -47,10 +47,6 @@
        (and (file-directory-p it) it))
   "Resource folder for package `lsp-ui'.")
 
-(defun lsp-ui--safe-delete-overlay (overlay)
-  "Safely delete the OVERLAY."
-  (when (overlayp overlay) (delete-overlay overlay)))
-
 (require 'lsp-ui-sideline)
 (require 'lsp-ui-peek)
 (require 'lsp-ui-imenu)

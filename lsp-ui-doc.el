@@ -54,7 +54,6 @@
 
 (declare-function lsp-ui--with-no-redisplay 'lsp-ui)
 (declare-function lsp-ui--safe-kill-timer 'lsp-ui)
-(declare-function lsp-ui--safe-delete-overlay 'lsp-ui)
 
 (defgroup lsp-ui-doc nil
   "Display informations of the current line."
@@ -415,8 +414,8 @@ We don't extract the string that `lps-line' is already displaying."
   "Hide the frame."
   (setq lsp-ui-doc--bounds nil
         lsp-ui-doc--from-mouse nil)
-  (lsp-ui--safe-delete-overlay lsp-ui-doc--inline-ov)
-  (lsp-ui--safe-delete-overlay lsp-ui-doc--highlight-ov)
+  (when (overlayp lsp-ui-doc--inline-ov) (delete-overlay lsp-ui-doc--inline-ov))
+  (when (overlayp lsp-ui-doc--highlight-ov) (delete-overlay lsp-ui-doc--highlight-ov))
   (when-let ((frame (lsp-ui-doc--get-frame)))
     (when (frame-visible-p frame) (make-frame-invisible frame))))
 
