@@ -43,6 +43,7 @@
 (declare-function flycheck-error-format-message-and-id "ext:flycheck.el")
 (declare-function flycheck-error-level "ext:flycheck.el")
 
+(declare-function lsp-ui--with-no-redisplay 'lsp-ui)
 (declare-function lsp-ui--line-number-display-width 'lsp-ui)
 
 (defgroup lsp-ui-sideline nil
