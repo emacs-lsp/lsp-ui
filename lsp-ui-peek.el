@@ -687,9 +687,9 @@ LOCATION can be either a LSP Location or SymbolInformation."
     (unless buffer-file-name
       (make-local-variable 'delay-mode-hooks)
       (let ((buffer-file-name filename)
-            (enable-local-variables nil)
             (inhibit-message t)
-            (delay-mode-hooks t))
+            (delay-mode-hooks t)
+            enable-local-variables)
         (set-auto-mode)))
     (font-lock-ensure)))
 
