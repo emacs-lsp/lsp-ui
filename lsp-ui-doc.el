@@ -252,11 +252,7 @@ Because some variables are buffer local.")
      (let ((parent-vars (list :buffer (current-buffer) :window (get-buffer-window))))
        (with-current-buffer (get-buffer-create (lsp-ui-doc--make-buffer-name))
          (setq lsp-ui-doc--parent-vars parent-vars)
-         (prog1 (let ((inhibit-redisplay t)
-                      (inhibit-modification-hooks t)
-                      (inhibit-point-motion-hooks t)
-                      buffer-read-only)
-                  ,@body)
+         (prog1 (let (buffer-read-only) ,@body)
            (setq buffer-read-only t)
            (let ((text-scale-mode-step 1.1))
              (text-scale-set lsp-ui-doc-text-scale-level)))))))
@@ -403,8 +399,7 @@ We don't extract the string that `lps-line' is already displaying."
 
 (defun lsp-ui-doc--webkit-get-xwidget ()
   "Return Xwidget instance."
-  (lsp-ui-doc--with-buffer
-    (xwidget-at 1)))
+  (lsp-ui-doc--with-buffer (xwidget-at 1)))
 
 (defun lsp-ui-doc--webkit-execute-script (script &optional fn)
   "Execute SCRIPT in embedded Xwidget and run optional callback FN."
@@ -1193,8 +1188,7 @@ It is supposed to be called from `lsp-ui--toggle'"
               (visible (lsp-ui-doc--frame-visible-p)))
     (set-frame-parameter frame 'lsp-ui-doc--no-focus nil)
     (set-frame-parameter frame 'cursor-type t)
-    (lsp-ui-doc--with-buffer
-      (setq cursor-type 'box))
+    (lsp-ui-doc--with-buffer (setq cursor-type 'box))
     (select-frame-set-input-focus frame)))
 
 (defun lsp-ui-doc-unfocus-frame ()
@@ -1204,10 +1198,8 @@ It is supposed to be called from `lsp-ui--toggle'"
   (when-let* ((frame (lsp-ui-doc--get-frame)))
     (set-frame-parameter frame 'lsp-ui-doc--no-focus t)
     (set-frame-parameter frame 'cursor-type nil)
-    (lsp-ui-doc--with-buffer
-      (setq cursor-type nil))
-    (when lsp-ui-doc--from-mouse
-      (make-frame-invisible frame))))
+    (lsp-ui-doc--with-buffer (setq cursor-type nil))
+    (when lsp-ui-doc--from-mouse (make-frame-invisible frame))))
 
 (provide 'lsp-ui-doc)
 ;;; lsp-ui-doc.el ends here
