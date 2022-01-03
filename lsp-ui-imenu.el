@@ -33,10 +33,10 @@
 
 ;;; Code:
 
+(require 'lsp-ui-util)
+
 (require 'lsp-mode)
 (require 'dash)
-
-(declare-function lsp-ui--safe-kill-timer 'lsp-ui)
 
 (defgroup lsp-ui-imenu nil
   "Display imenu entries."

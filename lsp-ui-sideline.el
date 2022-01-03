@@ -30,6 +30,8 @@
 
 ;;; Code:
 
+(require 'lsp-ui-util)
+
 (require 'lsp-protocol)
 (require 'lsp-mode)
 (require 'flycheck nil 'noerror)
@@ -42,9 +44,6 @@
 (declare-function flycheck-overlay-errors-in "ext:flycheck.el")
 (declare-function flycheck-error-format-message-and-id "ext:flycheck.el")
 (declare-function flycheck-error-level "ext:flycheck.el")
-
-(declare-function lsp-ui--with-no-redisplay 'lsp-ui)
-(declare-function lsp-ui--line-number-display-width 'lsp-ui)
 
 (defgroup lsp-ui-sideline nil
   "Display information for the current line."

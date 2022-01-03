@@ -34,12 +34,12 @@
 
 ;;; Code:
 
+(require 'lsp-ui-util)
+
 (require 'lsp-protocol)
 (require 'lsp-mode)
 (require 'xref)
 (require 'dash)
-
-(declare-function lsp-ui--mute-apply 'lsp-ui)
 
 (defgroup lsp-ui-peek nil
   "Improve version of xref with peek feature."

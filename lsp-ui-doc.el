@@ -30,6 +30,8 @@
 
 ;;; Code:
 
+(require 'lsp-ui-util)
+
 (require 'lsp-protocol)
 (require 'lsp-mode)
 (require 'dash)
@@ -51,9 +53,6 @@
 (declare-function xwidget-webkit-execute-script "ext:xwidget" (xwidget script &optional callback))
 (declare-function xwidget-webkit-execute-script-rv "ext:xwidget" (xwidget script &optional default))
 (declare-function xwidget-resize "ext:xwidget" (xwidget new-width new-height))
-
-(declare-function lsp-ui--with-no-redisplay 'lsp-ui)
-(declare-function lsp-ui--safe-kill-timer 'lsp-ui)
 
 (defgroup lsp-ui-doc nil
   "Display informations of the current line."
