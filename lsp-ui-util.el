@@ -34,6 +34,8 @@
 
 (require 'face-remap)
 
+(defvar after-focus-change-function)
+
 (defmacro lsp-ui--mute-apply (&rest body)
   "Execute BODY without message."
   (declare (indent 0) (debug t))
