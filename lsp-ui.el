@@ -33,8 +33,10 @@
 
 ;;; Code:
 
-(require 'dash)
 (require 'lsp-protocol)
+
+(require 'dash)
+(require 'face-remap)
 (require 'find-func)
 
 (defconst lsp-ui-resources-dir
@@ -63,14 +65,6 @@
 (with-eval-after-load 'winum
   (when (and (boundp 'winum-ignored-buffers-regexp) lsp-ui-doc-winum-ignore)
     (add-to-list 'winum-ignored-buffers-regexp lsp-ui-doc--buffer-prefix)))
-
-(defun lsp-ui-peek--render (major string)
-  (with-temp-buffer
-    (insert string)
-    (delay-mode-hooks
-      (let ((inhibit-message t)) (funcall major))
-      (ignore-errors (font-lock-ensure)))
-    (buffer-string)))
 
 (defun lsp-ui--workspace-path (path)
   "Return the PATH relative to the workspace.
@@ -172,6 +166,42 @@ Both should have the form (FILENAME LINE COLUMN)."
           (cons idx (length refs)))
       (cons 0 0))))
 
+;;; Util
+
+(defmacro lsp-ui--mute-apply (&rest body)
+  "Execute BODY without message."
+  (declare (indent 0) (debug t))
+  `(let (message-log-max)
+     (with-temp-message (or (current-message) nil)
+       (let ((inhibit-message t)) ,@body))))
+
+(defmacro lsp-ui--with-no-redisplay (&rest body)
+  "Execute BODY without any redisplay execution."
+  (declare (indent 0) (debug t))
+  `(let ((inhibit-redisplay t)
+         (inhibit-modification-hooks t)
+         (inhibit-point-motion-hooks t)
+         buffer-list-update-hook
+         display-buffer-alist
+         window-configuration-change-hook
+         after-focus-change-function)
+     ,@body))
+
+(defun lsp-ui--safe-kill-timer (timer)
+  "Safely kill the TIMER."
+  (when (timerp timer) (cancel-timer timer)))
+
+(defun lsp-ui--line-number-display-width ()
+  "Safe way to get value from function `line-number-display-width'."
+  (if (bound-and-true-p display-line-numbers-mode)
+      ;; For some reason, function `line-number-display-width' gave
+      ;; us error `args-out-of-range' even we do not pass anything towards
+      ;; to it function. See the following links,
+      ;;
+      ;; - https://github.com/emacs-lsp/lsp-ui/issues/294
+      ;; - https://github.com/emacs-lsp/lsp-ui/issues/533 (duplicate)
+      (+ (or (ignore-errors (line-number-display-width)) 0) 2)
+    0))
 
 (provide 'lsp-ui)
 ;;; lsp-ui.el ends here

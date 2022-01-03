@@ -50,14 +50,12 @@ whole workspace."
 (defvar-local lsp-ui-flycheck--save-mode nil)
 
 (defun lsp-ui-flycheck-list--post-command ()
-  (when (eobp)
-    (forward-line -1)))
+  (when (eobp) (forward-line -1)))
 
 (defun lsp-ui-flycheck-list--update (window workspace)
   "Update flycheck buffer in WINDOW belonging to WORKSPACE.
 Use `lsp-diagnostics' to receive diagnostics from your LSP server."
-  (let ((buffer-read-only nil)
-        (lsp--cur-workspace workspace))
+  (let ((lsp--cur-workspace workspace) buffer-read-only)
     (erase-buffer)
     (remove-overlays)
     (maphash (lambda (file diagnostic)
@@ -161,8 +159,8 @@ Use `lsp-diagnostics' to receive diagnostics from your LSP server."
 
 (define-derived-mode lsp-ui-flycheck-list-mode special-mode "lsp-ui-flycheck-list"
   "Mode showing flycheck diagnostics for the whole workspace."
-  (setq truncate-lines t)
-  (setq mode-line-format nil)
+  (setq truncate-lines t
+        mode-line-format nil)
   (add-hook 'post-command-hook 'lsp-ui-flycheck-list--post-command nil t))
 
 (declare-function lsp-ui--workspace-path "lsp-ui" (path))
