@@ -33,8 +33,7 @@
 ;;; Code:
 
 (require 'face-remap)
-
-(defvar after-focus-change-function)
+(require 'frame)
 
 (defmacro lsp-ui--mute-apply (&rest body)
   "Execute BODY without message."
