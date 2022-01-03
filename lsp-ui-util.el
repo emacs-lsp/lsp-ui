@@ -41,6 +41,10 @@
      (with-temp-message (or (current-message) nil)
        (let ((inhibit-message t)) ,@body))))
 
+(defun lsp-ui--safe-delete-overlay (overlay)
+  "Safely delete the OVERLAY."
+  (when (overlayp overlay) (delete-overlay overlay)))
+
 (defmacro lsp-ui--with-no-redisplay (&rest body)
   "Execute BODY without any redisplay execution."
   (declare (indent 0) (debug t))
