@@ -35,8 +35,7 @@
 
 (require 'lsp-mode)
 (require 'dash)
-
-(declare-function lsp-ui--safe-kill-timer 'lsp-ui)
+(require 'lsp-ui-util)
 
 (defgroup lsp-ui-imenu nil
   "Display imenu entries."
@@ -380,7 +379,7 @@ ITEMS are used when the kind position is 'left."
 
 (defun lsp-ui-imenu--start-refresh (&rest _)
   "Starts the auto refresh timer."
-  (lsp-ui--safe-kill-timer lsp-ui-imenu--refresh-timer)
+  (lsp-ui-util-safe-kill-timer lsp-ui-imenu--refresh-timer)
   (setq lsp-ui-imenu--refresh-timer
         (run-with-idle-timer lsp-ui-imenu-auto-refresh-delay nil #'lsp-ui-imenu--refresh)))
 
