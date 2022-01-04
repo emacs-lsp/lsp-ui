@@ -35,7 +35,7 @@
 (require 'face-remap)
 (require 'frame)
 
-(defvar after-focus-change-function)
+(ignore after-focus-change-function)
 
 (defmacro lsp-ui--mute-apply (&rest body)
   "Execute BODY without message."
@@ -43,10 +43,6 @@
   `(let (message-log-max)
      (with-temp-message (or (current-message) nil)
        (let ((inhibit-message t)) ,@body))))
-
-(defun lsp-ui--safe-delete-overlay (overlay)
-  "Safely delete the OVERLAY."
-  (when (overlayp overlay) (delete-overlay overlay)))
 
 (defmacro lsp-ui--with-no-redisplay (&rest body)
   "Execute BODY without any redisplay execution."
@@ -63,6 +59,10 @@
 (defun lsp-ui--safe-kill-timer (timer)
   "Safely kill the TIMER."
   (when (timerp timer) (cancel-timer timer)))
+
+(defun lsp-ui--safe-delete-overlay (overlay)
+  "Safely delete the OVERLAY."
+  (when (overlayp overlay) (delete-overlay overlay)))
 
 (defun lsp-ui--line-number-display-width ()
   "Safe way to get value from function `line-number-display-width'."
