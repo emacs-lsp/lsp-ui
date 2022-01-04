@@ -45,6 +45,8 @@
 (declare-function flycheck-error-format-message-and-id "ext:flycheck.el")
 (declare-function flycheck-error-level "ext:flycheck.el")
 
+(defvar after-focus-change-function)
+
 (defgroup lsp-ui-sideline nil
   "Display information for the current line."
   :group 'tools

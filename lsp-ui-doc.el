@@ -54,6 +54,8 @@
 (declare-function xwidget-webkit-execute-script-rv "ext:xwidget" (xwidget script &optional default))
 (declare-function xwidget-resize "ext:xwidget" (xwidget new-width new-height))
 
+(defvar after-focus-change-function)
+
 (defgroup lsp-ui-doc nil
   "Display informations of the current line."
   :group 'tools
@@ -241,13 +243,13 @@ Because some variables are buffer local.")
   "Execute BODY in the lsp-ui-doc buffer."
   (declare (indent 0) (debug t))
   `(lsp-ui--with-no-redisplay
-    (let ((parent-vars (list :buffer (current-buffer) :window (get-buffer-window))))
-      (with-current-buffer (get-buffer-create (lsp-ui-doc--make-buffer-name))
-        (setq lsp-ui-doc--parent-vars parent-vars)
-        (prog1 (let (buffer-read-only) ,@body)
-          (setq buffer-read-only t)
-          (let ((text-scale-mode-step 1.1))
-            (text-scale-set lsp-ui-doc-text-scale-level)))))))
+     (let ((parent-vars (list :buffer (current-buffer) :window (get-buffer-window))))
+       (with-current-buffer (get-buffer-create (lsp-ui-doc--make-buffer-name))
+         (setq lsp-ui-doc--parent-vars parent-vars)
+         (prog1 (let (buffer-read-only) ,@body)
+           (setq buffer-read-only t)
+           (let ((text-scale-mode-step 1.1))
+             (text-scale-set lsp-ui-doc-text-scale-level)))))))
 
 (defmacro lsp-ui-doc--get-parent (var)
   "Return VAR in `lsp-ui-doc--parent-vars'."
@@ -500,56 +502,56 @@ FRAME just below the symbol at point."
 (defun lsp-ui-doc--move-frame (frame)
   "Place our FRAME on screen."
   (lsp-ui--with-no-redisplay
-   (-let* (((left top right _bottom) (window-edges nil t nil t))
-           (window (frame-root-window frame))
-           (char-h (frame-char-height frame))
-           (char-w (frame-char-width frame))
-           ((width . height) (window-text-pixel-size window nil nil 10000 10000 t))
-           (width (+ width (* char-w 1))) ;; margins
-           (height (min (- (* lsp-ui-doc-max-height char-h) (/ char-h 2)) height))
-           (width (min width (* lsp-ui-doc-max-width char-w)))
-           (frame-right (pcase lsp-ui-doc-alignment
-                          ('frame (frame-pixel-width))
-                          ('window right)))
-           ((left . top) (if (eq lsp-ui-doc-position 'at-point)
-                             (lsp-ui-doc--mv-at-point width height left top)
-                           (cons (max (- frame-right width char-w) 10)
-                                 (pcase lsp-ui-doc-position
-                                   ('top (+ top char-w))
-                                   ('bottom (- (lsp-ui-doc--line-height 'mode-line)
-                                               height
-                                               10))))))
-           (frame-resize-pixelwise t)
-           move-frame-functions
-           window-size-change-functions
-           window-state-change-hook
-           window-state-change-functions)
-     ;; Dirty way to fix unused variable in emacs 26
-     (and window-state-change-functions
-          window-state-change-hook)
-     ;; Make frame invisible before moving/resizing it to avoid flickering:
-     ;; We set the position and size in 1 call, modify-frame-parameters, but
-     ;; internally emacs makes 2 different calls, which can be visible
-     ;; to the user
-     (and (frame-visible-p frame)
-          (lsp-ui-doc--size-and-pos-changed frame left top width height)
-          (make-frame-invisible frame))
-     (modify-frame-parameters
-      frame
-      `((width                     . (text-pixels . ,width))
-        (height                    . (text-pixels . ,height))
-        (user-size                 . t)
-        (left                      . (+ ,left))
-        (top                       . (+ ,top))
-        (user-position             . t)
-        (lsp-ui-doc--window-origin . ,(selected-window))
-        (lsp-ui-doc--buffer-origin . ,(current-buffer))
-        (lsp-ui-doc--no-focus      . t)
-        (right-fringe              . 0)
-        (left-fringe               . 0)))
-     ;; Insert hr lines after width is computed
-     (lsp-ui-doc--fix-hr-props)
-     (unless (frame-visible-p frame) (make-frame-visible frame)))))
+    (-let* (((left top right _bottom) (window-edges nil t nil t))
+            (window (frame-root-window frame))
+            (char-h (frame-char-height frame))
+            (char-w (frame-char-width frame))
+            ((width . height) (window-text-pixel-size window nil nil 10000 10000 t))
+            (width (+ width (* char-w 1))) ;; margins
+            (height (min (- (* lsp-ui-doc-max-height char-h) (/ char-h 2)) height))
+            (width (min width (* lsp-ui-doc-max-width char-w)))
+            (frame-right (pcase lsp-ui-doc-alignment
+                           ('frame (frame-pixel-width))
+                           ('window right)))
+            ((left . top) (if (eq lsp-ui-doc-position 'at-point)
+                              (lsp-ui-doc--mv-at-point width height left top)
+                            (cons (max (- frame-right width char-w) 10)
+                                  (pcase lsp-ui-doc-position
+                                    ('top (+ top char-w))
+                                    ('bottom (- (lsp-ui-doc--line-height 'mode-line)
+                                                height
+                                                10))))))
+            (frame-resize-pixelwise t)
+            move-frame-functions
+            window-size-change-functions
+            window-state-change-hook
+            window-state-change-functions)
+      ;; Dirty way to fix unused variable in emacs 26
+      (and window-state-change-functions
+           window-state-change-hook)
+      ;; Make frame invisible before moving/resizing it to avoid flickering:
+      ;; We set the position and size in 1 call, modify-frame-parameters, but
+      ;; internally emacs makes 2 different calls, which can be visible
+      ;; to the user
+      (and (frame-visible-p frame)
+           (lsp-ui-doc--size-and-pos-changed frame left top width height)
+           (make-frame-invisible frame))
+      (modify-frame-parameters
+       frame
+       `((width                     . (text-pixels . ,width))
+         (height                    . (text-pixels . ,height))
+         (user-size                 . t)
+         (left                      . (+ ,left))
+         (top                       . (+ ,top))
+         (user-position             . t)
+         (lsp-ui-doc--window-origin . ,(selected-window))
+         (lsp-ui-doc--buffer-origin . ,(current-buffer))
+         (lsp-ui-doc--no-focus      . t)
+         (right-fringe              . 0)
+         (left-fringe               . 0)))
+      ;; Insert hr lines after width is computed
+      (lsp-ui-doc--fix-hr-props)
+      (unless (frame-visible-p frame) (make-frame-visible frame)))))
 
 (defun lsp-ui-doc--visit-file (filename)
   "Visit FILENAME in the parent frame."
