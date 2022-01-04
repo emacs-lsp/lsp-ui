@@ -242,14 +242,13 @@ Because some variables are buffer local.")
 (defmacro lsp-ui-doc--with-buffer (&rest body)
   "Execute BODY in the lsp-ui-doc buffer."
   (declare (indent 0) (debug t))
-  `(lsp-ui--with-no-redisplay
-     (let ((parent-vars (list :buffer (current-buffer) :window (get-buffer-window))))
-       (with-current-buffer (get-buffer-create (lsp-ui-doc--make-buffer-name))
-         (setq lsp-ui-doc--parent-vars parent-vars)
-         (prog1 (let (buffer-read-only) ,@body)
-           (setq buffer-read-only t)
-           (let ((text-scale-mode-step 1.1))
-             (text-scale-set lsp-ui-doc-text-scale-level)))))))
+  `(let ((parent-vars (list :buffer (current-buffer) :window (get-buffer-window))))
+     (with-current-buffer (get-buffer-create (lsp-ui-doc--make-buffer-name))
+       (setq lsp-ui-doc--parent-vars parent-vars)
+       (prog1 (let (buffer-read-only) ,@body)
+         (setq buffer-read-only t)
+         (let ((text-scale-mode-step 1.1))
+           (text-scale-set lsp-ui-doc-text-scale-level))))))
 
 (defmacro lsp-ui-doc--get-parent (var)
   "Return VAR in `lsp-ui-doc--parent-vars'."
@@ -455,7 +454,6 @@ We don't extract the string that `lps-line' is already displaying."
       (lsp-ui-doc--webkit-execute-script
        "[document.querySelector('#lsp-ui-webkit').offsetWidth, document.querySelector('#lsp-ui-webkit').offsetHeight];"
        'lsp-ui-doc--webkit-resize-callback)
-
     (let* ((frame-width (frame-width))
            (fill-column (min lsp-ui-doc-max-width (- frame-width 5))))
       (when (> (lsp-ui-doc--buffer-width) (min lsp-ui-doc-max-width frame-width))
@@ -621,14 +619,12 @@ FN is the function to call on click."
       (when (< fill-column (length first-line))
         (fill-region start (point-max))))))
 
-(defun lsp-ui-doc--make-smaller-empty-lines nil
+(defun lsp-ui-doc--make-smaller-empty-lines ()
   "Make empty lines half normal lines."
-  (progn  ; Customize line before header
-    (goto-char 1)
-    (insert (propertize "\n" 'face '(:height 0.3))))
-  (progn  ; Customize line after header
-    (forward-line 1)
-    (insert (propertize " " 'face '(:height 0.1))))
+  (goto-char 1)  ; Customize line before header
+  (insert (propertize "\n" 'face '(:height 0.3)))
+  (forward-line 1)  ; Customize line after header
+  (insert (propertize " " 'face '(:height 0.1)))
   (while (not (eobp))
     (when (and (eolp) (not (bobp)))
       (save-excursion
@@ -641,7 +637,7 @@ FN is the function to call on click."
     (forward-line))
   (insert (propertize "\n\n" 'face '(:height 0.3))))
 
-(defun lsp-ui-doc--fix-hr-props nil
+(defun lsp-ui-doc--fix-hr-props ()
   ;; We insert the right display prop after window-text-pixel-size
   (lsp-ui-doc--with-buffer
     (let (next)
@@ -652,7 +648,7 @@ FN is the function to call on click."
           (put-text-property (1+ next) (+ next 2) 'display
                              '(space :align-to right-fringe :height (1))))))))
 
-(defun lsp-ui-doc--handle-hr-lines nil
+(defun lsp-ui-doc--handle-hr-lines ()
   (let (bolp next before after)
     (goto-char 1)
     (while (setq next (next-single-property-change (or next 1) 'markdown-hr))
@@ -678,12 +674,11 @@ FN is the function to call on click."
   "Set the buffer with STRING and SYMBOL."
   (lsp-ui-doc--with-buffer
     (if lsp-ui-doc-use-webkit
-        (progn
-          (lsp-ui-doc--webkit-execute-script
-           (format "renderMarkdown('%s', '%s');"
-                   symbol
-                   (url-hexify-string string))
-           'lsp-ui-doc--webkit-resize-callback))
+        (lsp-ui-doc--webkit-execute-script
+         (format "renderMarkdown('%s', '%s');"
+                 symbol
+                 (url-hexify-string string))
+         'lsp-ui-doc--webkit-resize-callback)
       (erase-buffer)
       (insert (s-trim string))
       (unless (or (lsp-ui-doc--inline-p) (not lsp-ui-doc-enhanced-markdown))
@@ -726,7 +721,7 @@ FN is the function to call on click."
 
 (defvar-local lsp-ui-doc--inline-width nil)
 
-(defun lsp-ui-doc--inline-window-width nil
+(defun lsp-ui-doc--inline-window-width ()
   (- (min (window-text-width) (window-body-width))
      (if (bound-and-true-p display-line-numbers-mode)
          (+ 2 (line-number-display-width))
@@ -1029,9 +1024,8 @@ Argument WIN is current applying window."
 (defvar-local lsp-ui-doc--timer-mouse-movement nil)
 (defvar-local lsp-ui-doc--last-event nil)
 
-(defun lsp-ui-doc--mouse-display nil
-  (when (and lsp-ui-doc--last-event
-             (lsp-feature? "textDocument/hover"))
+(defun lsp-ui-doc--mouse-display ()
+  (when (and lsp-ui-doc--last-event (lsp-feature? "textDocument/hover"))
     (save-excursion
       (goto-char lsp-ui-doc--last-event)
       (-when-let* ((valid (not (eolp)))
@@ -1072,7 +1066,7 @@ Argument WIN is current applying window."
               lsp-ui-doc--timer-mouse-movement
               (run-with-idle-timer 0.5 nil 'lsp-ui-doc--mouse-display))))))
 
-(defun lsp-ui-doc--disable-mouse-on-prefix nil
+(defun lsp-ui-doc--disable-mouse-on-prefix ()
   (and (bound-and-true-p lsp-ui-doc-mode)
        (bound-and-true-p lsp-ui-doc--mouse-tracked-by-us)
        track-mouse
@@ -1085,7 +1079,7 @@ Argument WIN is current applying window."
   "Nil if `track-mouse' was set by another package.
 If nil, do not prevent mouse on prefix keys.")
 
-(defun lsp-ui-doc--setup-mouse nil
+(defun lsp-ui-doc--setup-mouse ()
   (when lsp-ui-doc-show-with-mouse
     (setq lsp-ui-doc--mouse-tracked-by-us (not track-mouse))
     (setq-local track-mouse t)
