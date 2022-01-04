@@ -694,10 +694,10 @@ FN is the function to call on click."
     (lsp-ui-doc-frame-mode 1)
     (setq wrap-prefix '(space :height (1) :width 1)
           line-prefix '(space :height (1) :width 1))
-    (setq-local face-remapping-alist `((header-line lsp-ui-doc-header)))
-    (setq-local window-min-height 1)
-    (setq-local show-trailing-whitespace nil)
-    (setq-local window-configuration-change-hook nil)
+    (setq-local face-remapping-alist `((header-line lsp-ui-doc-header))
+                window-min-height 1
+                show-trailing-whitespace nil
+                window-configuration-change-hook nil)
     (add-hook 'pre-command-hook 'lsp-ui-doc--buffer-pre-command nil t)
     (when (boundp 'window-state-change-functions)
       (setq-local window-state-change-functions nil))
@@ -838,19 +838,20 @@ HEIGHT is the documentation number of lines."
 (defun lsp-ui-doc--make-frame ()
   "Create the child frame and return it."
   (lsp-ui-doc--delete-frame)
-  (let* ((after-make-frame-functions nil)
-         (before-make-frame-hook nil)
+  (let* (after-make-frame-functions
+         before-make-frame-hook
          (name-buffer (lsp-ui-doc--make-buffer-name))
          (buffer (get-buffer name-buffer))
-         (params (append lsp-ui-doc-frame-parameters
-                         `((name . "")
-                           (default-minibuffer-frame . ,(selected-frame))
-                           (minibuffer . ,(minibuffer-window))
-                           (left-fringe . 0)
-                           (right-fringe . 0)
-                           (cursor-type . nil)
-                           (lsp-ui-doc--no-focus . t)
-                           (background-color . ,(face-background 'lsp-ui-doc-background nil t)))))
+         (params (append
+                  lsp-ui-doc-frame-parameters
+                  `((name                     . "")
+                    (default-minibuffer-frame . ,(selected-frame))
+                    (minibuffer               . ,(minibuffer-window))
+                    (left-fringe              . 0)
+                    (right-fringe             . 0)
+                    (cursor-type              . nil)
+                    (lsp-ui-doc--no-focus     . t)
+                    (background-color         . ,(face-background 'lsp-ui-doc-background nil t)))))
          (window (display-buffer-in-child-frame
                   buffer
                   `((child-frame-parameters . ,params))))
@@ -885,9 +886,10 @@ HEIGHT is the documentation number of lines."
     keyboard-quit
     ignore
     handle-switch-frame
-    mwheel-scroll))
+    mwheel-scroll)
+  "List of commands use to ignore make request.")
 
-(defun lsp-ui-doc--make-request nil
+(defun lsp-ui-doc--make-request ()
   "Request the documentation to the LS."
   (and (not track-mouse) lsp-ui-doc-show-with-mouse (setq-local track-mouse t))
   (when (and lsp-ui-doc-show-with-cursor
