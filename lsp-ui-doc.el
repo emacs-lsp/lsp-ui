@@ -242,13 +242,14 @@ Because some variables are buffer local.")
 (defmacro lsp-ui-doc--with-buffer (&rest body)
   "Execute BODY in the lsp-ui-doc buffer."
   (declare (indent 0) (debug t))
-  `(let ((parent-vars (list :buffer (current-buffer) :window (get-buffer-window))))
-     (with-current-buffer (get-buffer-create (lsp-ui-doc--make-buffer-name))
-       (setq lsp-ui-doc--parent-vars parent-vars)
-       (prog1 (let (buffer-read-only) ,@body)
-         (setq buffer-read-only t)
-         (let ((text-scale-mode-step 1.1))
-           (text-scale-set lsp-ui-doc-text-scale-level))))))
+  `(lsp-ui--with-no-redisplay
+     (let ((parent-vars (list :buffer (current-buffer) :window (get-buffer-window))))
+       (with-current-buffer (get-buffer-create (lsp-ui-doc--make-buffer-name))
+         (setq lsp-ui-doc--parent-vars parent-vars)
+         (prog1 (let (buffer-read-only) ,@body)
+           (setq buffer-read-only t)
+           (let ((text-scale-mode-step 1.1))
+             (text-scale-set lsp-ui-doc-text-scale-level)))))))
 
 (defmacro lsp-ui-doc--get-parent (var)
   "Return VAR in `lsp-ui-doc--parent-vars'."
