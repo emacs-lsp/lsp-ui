@@ -109,7 +109,7 @@ This only takes effect when `lsp-ui-doc-position' is 'top or 'bottom."
   :group 'lsp-ui-doc)
 
 (defcustom lsp-ui-doc-max-width 150
-  "Maximum number of columns of the frame."
+  "Maximum number of columns of the frame or nil for `frame-width'."
   :type 'integer
   :group 'lsp-ui-doc)
 
@@ -468,6 +468,7 @@ We don't extract the string that `lps-line' is already displaying."
        'lsp-ui-doc--webkit-resize-callback)
 
     (let* ((frame-width (frame-width))
+           (lsp-ui-doc-max-width (or lsp-ui-doc-max-width frame-width))
            (fill-column (min lsp-ui-doc-max-width (- frame-width 5))))
       (when (> (lsp-ui-doc--buffer-width) (min lsp-ui-doc-max-width frame-width))
         (lsp-ui-doc--with-buffer
