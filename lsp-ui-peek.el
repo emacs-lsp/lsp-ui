@@ -549,6 +549,7 @@ XREFS is a list of references/definitions."
     (define-key map (kbd "p") 'lsp-ui-peek--select-prev)
     (define-key map (kbd "<up>") 'lsp-ui-peek--select-prev)
     (define-key map (kbd "TAB") 'lsp-ui-peek--toggle-file)
+    (define-key map (kbd "<tab>") 'lsp-ui-peek--toggle-file)
     (define-key map (kbd "q") 'lsp-ui-peek--abort)
     (define-key map (kbd "RET") 'lsp-ui-peek--goto-xref)
     (define-key map (kbd "M-RET") 'lsp-ui-peek--goto-xref-other-window)
