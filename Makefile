@@ -13,26 +13,12 @@ build:
 	EMACS=$(EMACS) cask build
 	EMACS=$(EMACS) cask clean-elc
 
-# FIXME: Add `unix-test`
-unix-ci: build unix-compile clean
+# FIXME: Add `unix-test` and `windows-test`
+ci: build compile clean
 
-# FIXME: Add `windows-test`
-windows-ci: CASK=
-windows-ci: windows-compile clean
-
-unix-compile:
+compile:
 	@echo "Compiling..."
 	@$(CASK) $(EMACS) -Q --batch \
-		-L . \
-		--eval '(setq byte-compile-error-on-warn t)' \
-		-f batch-byte-compile \
-		*.el
-
-windows-compile:
-	@echo "Compiling..."
-	@$(CASK) $(EMACS) -Q --batch \
-		--eval '(setq emacs-lsp-ci t)' \
-		-l test/windows-bootstrap.el \
 		-L . \
 		--eval '(setq byte-compile-error-on-warn t)' \
 		-f batch-byte-compile \
@@ -53,4 +39,4 @@ windows-test:
 clean:
 	rm -rf .cask *.elc
 
-.PHONY: build ci unix-compile unix-test windows-compile windows-test clean
+.PHONY: build ci compile unix-test windows-test clean

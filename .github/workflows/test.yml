@@ -34,7 +34,7 @@ jobs:
 
       - uses: conao3/setup-cask@master
         with:
-          version: 0.8.4
+          version: 'snapshot'
 
       - name: Install Rust toolchain
         uses: actions-rs/toolchain@v1
@@ -53,7 +53,7 @@ jobs:
           chmod +x $HOME/bin/rust-analyzer
 
       - name: Run tests
-        run: 'make unix-ci'
+        run: 'make ci'
 
   windows-test:
     runs-on: windows-latest
@@ -77,5 +77,9 @@ jobs:
         with:
           version: ${{ matrix.emacs-version }}
 
+      - uses: conao3/setup-cask@master
+        with:
+          version: 'snapshot'
+
       - name: Run tests
-        run: 'make windows-ci'
+        run: 'make ci'
