@@ -450,7 +450,8 @@ CURRENT is non-nil when the point is on the symbol."
 (defun lsp-ui-sideline--diagnostics (buffer bol eol)
   "Show diagnostics belonging to the current line.
 Loop over flycheck errors with `flycheck-overlay-errors-in'.
-Find appropriate position for sideline overlays with `lsp-ui-sideline--find-line'.
+Find appropriate position for sideline overlays with
+`lsp-ui-sideline--find-line'.
 Push sideline overlays on `lsp-ui-sideline--ovs'."
   (when (and (bound-and-true-p flycheck-mode)
              (bound-and-true-p lsp-ui-sideline-mode)
