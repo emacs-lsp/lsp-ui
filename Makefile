@@ -3,7 +3,7 @@ SHELL := /usr/bin/env bash
 EMACS ?= emacs
 CASK ?= cask
 
-TEST-FILES := test/windows-bootstrap.el test/test-helper.el \
+TEST-FILES := test/test-helper.el \
 	$(shell ls test/lsp-ui-*.el)
 LOAD-FILE = -l $(test-file)
 LOAD-TEST-FILES := $(foreach test-file, $(TEST-FILES), $(LOAD-FILE))
