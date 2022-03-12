@@ -635,7 +635,8 @@ EXTRA is a plist of extra parameters."
                            (append extra (lsp--text-document-position-params))))
 
 (defun lsp-ui-peek--extract-chunk-from-buffer (pos start end)
-  "Return the chunk of code pointed to by POS (a Position object) in the current buffer.
+  "Return the chunk of code pointed to by POS (a Position object) in the current
+buffer.
 START and END are delimiters."
   (let* ((point (lsp--position-to-point pos))
          (inhibit-field-text-motion t)
