@@ -79,7 +79,7 @@ jobs:
 
       - uses: conao3/setup-cask@master
         with:
-          version: 'snapshot'
+          version: '0.8.6'
 
       - name: Run tests
         run: 'make ci'
