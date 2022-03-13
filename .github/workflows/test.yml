@@ -60,7 +60,6 @@ jobs:
     strategy:
       matrix:
         emacs-version:
-          - 26.3
           - 27.1
           - 27.2
           - snapshot
