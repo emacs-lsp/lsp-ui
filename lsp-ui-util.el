@@ -33,16 +33,38 @@
 ;;; Code:
 
 (require 'face-remap)
+(require 'frame)
 
-(defun lsp-ui-util-safe-kill-timer (timer)
+(defvar after-focus-change-function)
+
+(defmacro lsp-ui--mute-apply (&rest body)
+  "Execute BODY without message."
+  (declare (indent 0) (debug t))
+  `(let (message-log-max)
+     (with-temp-message (or (current-message) nil)
+       (let ((inhibit-message t)) ,@body))))
+
+(defmacro lsp-ui--with-no-redisplay (&rest body)
+  "Execute BODY without any redisplay execution."
+  (declare (indent 0) (debug t))
+  `(let ((inhibit-redisplay t)
+         (inhibit-modification-hooks t)
+         (inhibit-point-motion-hooks t)
+         buffer-list-update-hook
+         display-buffer-alist
+         window-configuration-change-hook
+         after-focus-change-function)
+     ,@body))
+
+(defun lsp-ui--safe-kill-timer (timer)
   "Safely kill the TIMER."
   (when (timerp timer) (cancel-timer timer)))
 
-(defun lsp-ui-util-safe-delete-overlay (overlay)
+(defun lsp-ui--safe-delete-overlay (overlay)
   "Safely delete the OVERLAY."
   (when (overlayp overlay) (delete-overlay overlay)))
 
-(defun lsp-ui-util-line-number-display-width ()
+(defun lsp-ui--line-number-display-width ()
   "Safe way to get value from function `line-number-display-width'."
   (if (bound-and-true-p display-line-numbers-mode)
       ;; For some reason, function `line-number-display-width' gave
@@ -53,19 +75,6 @@
       ;; - https://github.com/emacs-lsp/lsp-ui/issues/533 (duplicate)
       (+ (or (ignore-errors (line-number-display-width)) 0) 2)
     0))
-
-(defun lsp-ui-util-line-string (pos)
-  "Return string at POS."
-  (when (integerp pos) (save-excursion (goto-char pos) (thing-at-point 'line))))
-
-(defun lsp-ui-util-column (&optional pos)
-  "Return column at POS."
-  (setq pos (or pos (point)))
-  (save-excursion (goto-char pos) (current-column)))
-
-(defun lsp-ui-util-text-scale-factor ()
-  "Return the factor effect by `text-scale-mode'."
-  (or (plist-get (cdr text-scale-mode-remapping) :height) 1))
 
 (provide 'lsp-ui-util)
 ;;; lsp-ui-util.el ends here

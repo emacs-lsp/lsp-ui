@@ -33,8 +33,9 @@
 
 ;;; Code:
 
-(require 'dash)
 (require 'lsp-protocol)
+
+(require 'dash)
 (require 'find-func)
 
 (defconst lsp-ui-resources-dir
@@ -63,14 +64,6 @@
 (with-eval-after-load 'winum
   (when (and (boundp 'winum-ignored-buffers-regexp) lsp-ui-doc-winum-ignore)
     (add-to-list 'winum-ignored-buffers-regexp lsp-ui-doc--buffer-prefix)))
-
-(defun lsp-ui-peek--render (major string)
-  (with-temp-buffer
-    (insert string)
-    (delay-mode-hooks
-      (let ((inhibit-message t)) (funcall major))
-      (ignore-errors (font-lock-ensure)))
-    (buffer-string)))
 
 (defun lsp-ui--workspace-path (path)
   "Return the PATH relative to the workspace.
@@ -171,7 +164,6 @@ Both should have the form (FILENAME LINE COLUMN)."
           (forward-char (caddr res))
           (cons idx (length refs)))
       (cons 0 0))))
-
 
 (provide 'lsp-ui)
 ;;; lsp-ui.el ends here

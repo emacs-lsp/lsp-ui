@@ -34,6 +34,8 @@
 
 ;;; Code:
 
+(require 'lsp-ui-util)
+
 (require 'lsp-protocol)
 (require 'lsp-mode)
 (require 'xref)
@@ -181,12 +183,12 @@ will cause performances issues.")
   (eval '(progn
            (evil-define-motion lsp-ui-peek-jump-backward (count)
                                (lsp-ui-peek--with-evil-jumps
-                                (evil--jump-backward count)
-                                (run-hooks 'xref-after-return-hook)))
+                                   (evil--jump-backward count)
+                                 (run-hooks 'xref-after-return-hook)))
            (evil-define-motion lsp-ui-peek-jump-forward (count)
                                (lsp-ui-peek--with-evil-jumps
-                                (evil--jump-forward count)
-                                (run-hooks 'xref-after-return-hook))))
+                                   (evil--jump-forward count)
+                                 (run-hooks 'xref-after-return-hook))))
         t))
 
 (defmacro lsp-ui-peek--prop (prop &optional string)
@@ -346,10 +348,8 @@ XREFS is a list of references/definitions."
   (with-temp-buffer
     (insert string)
     (delay-mode-hooks
-      (let ((inhibit-message t))
-        (funcall major))
-      (ignore-errors
-        (font-lock-ensure)))
+      (lsp-ui--mute-apply (funcall major))
+      (ignore-errors (font-lock-ensure)))
     (buffer-string)))
 
 (defun lsp-ui-peek--peek ()
@@ -688,9 +688,9 @@ LOCATION can be either a LSP Location or SymbolInformation."
     (unless buffer-file-name
       (make-local-variable 'delay-mode-hooks)
       (let ((buffer-file-name filename)
-            (enable-local-variables nil)
             (inhibit-message t)
-            (delay-mode-hooks t))
+            (delay-mode-hooks t)
+            enable-local-variables)
         (set-auto-mode)))
     (font-lock-ensure)))
 

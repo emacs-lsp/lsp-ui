@@ -54,6 +54,8 @@
 (declare-function xwidget-webkit-execute-script-rv "ext:xwidget" (xwidget script &optional default))
 (declare-function xwidget-resize "ext:xwidget" (xwidget new-width new-height))
 
+(defvar after-focus-change-function)
+
 (defgroup lsp-ui-doc nil
   "Display informations of the current line."
   :group 'tools
@@ -180,36 +182,30 @@ Only the `background' is used in this face."
   :group 'lsp-ui-doc)
 
 (defvar lsp-ui-doc-frame-parameters
-  '((left . -1)
-    (no-focus-on-map . t)
-    (min-width  . 0)
-    (width  . 0)
-    (min-height  . 0)
-    (height  . 0)
-    (internal-border-width . 1)
-    (vertical-scroll-bars . nil)
-    (horizontal-scroll-bars . nil)
-    (right-fringe . 0)
-    (menu-bar-lines . 0)
-    (tool-bar-lines . 0)
-    (line-spacing . 0)
-    (unsplittable . t)
-    (undecorated . t)
-    (top . -1)
-    (visibility . nil)
-    (mouse-wheel-frame . nil)
-    (no-other-frame . t)
+  '((left                     . -1)
+    (no-focus-on-map          . t)
+    (min-width                . 0)
+    (width                    . 0)
+    (min-height               . 0)
+    (height                   . 0)
+    (internal-border-width    . 1)
+    (vertical-scroll-bars     . nil)
+    (horizontal-scroll-bars   . nil)
+    (right-fringe             . 0)
+    (menu-bar-lines           . 0)
+    (tool-bar-lines           . 0)
+    (line-spacing             . 0)
+    (unsplittable             . t)
+    (undecorated              . t)
+    (top                      . -1)
+    (visibility               . nil)
+    (mouse-wheel-frame        . nil)
+    (no-other-frame           . t)
     (inhibit-double-buffering . t)
-    (drag-internal-border . t)
-    (no-special-glyphs . t)
-    (desktop-dont-save . t))
+    (drag-internal-border     . t)
+    (no-special-glyphs        . t)
+    (desktop-dont-save        . t))
   "Frame parameters used to create the frame.")
-
-(defvar lsp-ui-doc-render-function nil
-  "Function called to format the documentation.
-The function takes a string as parameter and should return a string.
-If this variable is nil (the default), the documentation will be rendered
-as markdown.")
 
 (defvar lsp-ui-doc-frame-hook nil
   "Hooks run on child-frame creation.
@@ -246,19 +242,14 @@ Because some variables are buffer local.")
 (defmacro lsp-ui-doc--with-buffer (&rest body)
   "Execute BODY in the lsp-ui-doc buffer."
   (declare (indent 0) (debug t))
-  `(let ((parent-vars (list :buffer (current-buffer)
-                            :window (get-buffer-window)))
-         (buffer-list-update-hook nil))
-     (with-current-buffer (get-buffer-create (lsp-ui-doc--make-buffer-name))
-       (setq lsp-ui-doc--parent-vars parent-vars)
-       (prog1 (let ((buffer-read-only nil)
-                    (inhibit-modification-hooks t)
-                    (inhibit-point-motion-hooks t)
-                    (inhibit-redisplay t))
-                ,@body)
-         (setq buffer-read-only t)
-         (let ((text-scale-mode-step 1.1))
-           (text-scale-set lsp-ui-doc-text-scale-level))))))
+  `(lsp-ui--with-no-redisplay
+     (let ((parent-vars (list :buffer (current-buffer) :window (get-buffer-window))))
+       (with-current-buffer (get-buffer-create (lsp-ui-doc--make-buffer-name))
+         (setq lsp-ui-doc--parent-vars parent-vars)
+         (prog1 (let (buffer-read-only) ,@body)
+           (setq buffer-read-only t)
+           (let ((text-scale-mode-step 1.1))
+             (text-scale-set lsp-ui-doc-text-scale-level)))))))
 
 (defmacro lsp-ui-doc--get-parent (var)
   "Return VAR in `lsp-ui-doc--parent-vars'."
@@ -312,7 +303,7 @@ Because some variables are buffer local.")
                              (or (lsp:marked-string-language marked-string)
                                  (lsp:markup-content-kind marked-string)))
                         language))
-          (markdown-hr-display-char nil))
+          markdown-hr-display-char)
      (cond
       (lsp-ui-doc-use-webkit
        (if (and language
@@ -402,8 +393,7 @@ We don't extract the string that `lps-line' is already displaying."
 
 (defun lsp-ui-doc--webkit-get-xwidget ()
   "Return Xwidget instance."
-  (lsp-ui-doc--with-buffer
-    (xwidget-at 1)))
+  (lsp-ui-doc--with-buffer (xwidget-at 1)))
 
 (defun lsp-ui-doc--webkit-execute-script (script &optional fn)
   "Execute SCRIPT in embedded Xwidget and run optional callback FN."
@@ -419,11 +409,10 @@ We don't extract the string that `lps-line' is already displaying."
   "Hide the frame."
   (setq lsp-ui-doc--bounds nil
         lsp-ui-doc--from-mouse nil)
-  (lsp-ui-util-safe-delete-overlay lsp-ui-doc--inline-ov)
-  (lsp-ui-util-safe-delete-overlay lsp-ui-doc--highlight-ov)
+  (lsp-ui--safe-delete-overlay lsp-ui-doc--inline-ov)
+  (lsp-ui--safe-delete-overlay lsp-ui-doc--highlight-ov)
   (when-let ((frame (lsp-ui-doc--get-frame)))
-    (when (frame-visible-p frame)
-      (make-frame-invisible frame))))
+    (when (frame-visible-p frame) (make-frame-invisible frame))))
 
 (defun lsp-ui-doc--buffer-width ()
   "Calcul the max width of the buffer."
@@ -466,7 +455,6 @@ We don't extract the string that `lps-line' is already displaying."
       (lsp-ui-doc--webkit-execute-script
        "[document.querySelector('#lsp-ui-webkit').offsetWidth, document.querySelector('#lsp-ui-webkit').offsetHeight];"
        'lsp-ui-doc--webkit-resize-callback)
-
     (let* ((frame-width (frame-width))
            (fill-column (min lsp-ui-doc-max-width (- frame-width 5))))
       (when (> (lsp-ui-doc--buffer-width) (min lsp-ui-doc-max-width frame-width))
@@ -512,59 +500,57 @@ FRAME just below the symbol at point."
 
 (defun lsp-ui-doc--move-frame (frame)
   "Place our FRAME on screen."
-  (-let* (((left top right _bottom) (window-edges nil t nil t))
-          (window (frame-root-window frame))
-          (char-h (frame-char-height frame))
-          (char-w (frame-char-width frame))
-          ((width . height) (window-text-pixel-size window nil nil 10000 10000 t))
-          (width (+ width (* char-w 1))) ;; margins
-          (height (min (- (* lsp-ui-doc-max-height char-h) (/ char-h 2)) height))
-          (width (min width (* lsp-ui-doc-max-width char-w)))
-          (frame-right (pcase lsp-ui-doc-alignment
-                         ('frame (frame-pixel-width))
-                         ('window right)))
-          ((left . top) (if (eq lsp-ui-doc-position 'at-point)
-                            (lsp-ui-doc--mv-at-point width height left top)
-                          (cons (max (- frame-right width char-w) 10)
-                                (pcase lsp-ui-doc-position
-                                  ('top (+ top char-w))
-                                  ('bottom (- (lsp-ui-doc--line-height 'mode-line)
-                                              height
-                                              10))))))
-          (frame-resize-pixelwise t)
-          (move-frame-functions nil)
-          (window-size-change-functions nil)
-          (window-state-change-hook nil)
-          (window-state-change-functions nil)
-          (window-configuration-change-hook nil)
-          (inhibit-redisplay t))
-    ;; Dirty way to fix unused variable in emacs 26
-    (and window-state-change-functions
-         window-state-change-hook)
-    ;; Make frame invisible before moving/resizing it to avoid flickering:
-    ;; We set the position and size in 1 call, modify-frame-parameters, but
-    ;; internally emacs makes 2 different calls, which can be visible
-    ;; to the user
-    (and (frame-visible-p frame)
-         (lsp-ui-doc--size-and-pos-changed frame left top width height)
-         (make-frame-invisible frame))
-    (modify-frame-parameters
-     frame
-     `((width . (text-pixels . ,width))
-       (height . (text-pixels . ,height))
-       (user-size . t)
-       (left . (+ ,left))
-       (top . (+ ,top))
-       (user-position . t)
-       (lsp-ui-doc--window-origin . ,(selected-window))
-       (lsp-ui-doc--buffer-origin . ,(current-buffer))
-       (lsp-ui-doc--no-focus . t)
-       (right-fringe . 0)
-       (left-fringe . 0)))
-    ;; Insert hr lines after width is computed
-    (lsp-ui-doc--fix-hr-props)
-    (unless (frame-visible-p frame)
-      (make-frame-visible frame))))
+  (lsp-ui--with-no-redisplay
+    (-let* (((left top right _bottom) (window-edges nil t nil t))
+            (window (frame-root-window frame))
+            (char-h (frame-char-height frame))
+            (char-w (frame-char-width frame))
+            ((width . height) (window-text-pixel-size window nil nil 10000 10000 t))
+            (width (+ width (* char-w 1))) ;; margins
+            (height (min (- (* lsp-ui-doc-max-height char-h) (/ char-h 2)) height))
+            (width (min width (* lsp-ui-doc-max-width char-w)))
+            (frame-right (pcase lsp-ui-doc-alignment
+                           ('frame (frame-pixel-width))
+                           ('window right)))
+            ((left . top) (if (eq lsp-ui-doc-position 'at-point)
+                              (lsp-ui-doc--mv-at-point width height left top)
+                            (cons (max (- frame-right width char-w) 10)
+                                  (pcase lsp-ui-doc-position
+                                    ('top (+ top char-w))
+                                    ('bottom (- (lsp-ui-doc--line-height 'mode-line)
+                                                height
+                                                10))))))
+            (frame-resize-pixelwise t)
+            move-frame-functions
+            window-size-change-functions
+            window-state-change-hook
+            window-state-change-functions)
+      ;; Dirty way to fix unused variable in emacs 26
+      (and window-state-change-functions
+           window-state-change-hook)
+      ;; Make frame invisible before moving/resizing it to avoid flickering:
+      ;; We set the position and size in 1 call, modify-frame-parameters, but
+      ;; internally emacs makes 2 different calls, which can be visible
+      ;; to the user
+      (and (frame-visible-p frame)
+           (lsp-ui-doc--size-and-pos-changed frame left top width height)
+           (make-frame-invisible frame))
+      (modify-frame-parameters
+       frame
+       `((width                     . (text-pixels . ,width))
+         (height                    . (text-pixels . ,height))
+         (user-size                 . t)
+         (left                      . (+ ,left))
+         (top                       . (+ ,top))
+         (user-position             . t)
+         (lsp-ui-doc--window-origin . ,(selected-window))
+         (lsp-ui-doc--buffer-origin . ,(current-buffer))
+         (lsp-ui-doc--no-focus      . t)
+         (right-fringe              . 0)
+         (left-fringe               . 0)))
+      ;; Insert hr lines after width is computed
+      (lsp-ui-doc--fix-hr-props)
+      (unless (frame-visible-p frame) (make-frame-visible frame)))))
 
 (defun lsp-ui-doc--visit-file (filename)
   "Visit FILENAME in the parent frame."
@@ -634,14 +620,12 @@ FN is the function to call on click."
       (when (< fill-column (length first-line))
         (fill-region start (point-max))))))
 
-(defun lsp-ui-doc--make-smaller-empty-lines nil
+(defun lsp-ui-doc--make-smaller-empty-lines ()
   "Make empty lines half normal lines."
-  (progn  ; Customize line before header
-    (goto-char 1)
-    (insert (propertize "\n" 'face '(:height 0.3))))
-  (progn  ; Customize line after header
-    (forward-line 1)
-    (insert (propertize " " 'face '(:height 0.1))))
+  (goto-char 1)  ; Customize line before header
+  (insert (propertize "\n" 'face '(:height 0.3)))
+  (forward-line 1)  ; Customize line after header
+  (insert (propertize " " 'face '(:height 0.1)))
   (while (not (eobp))
     (when (and (eolp) (not (bobp)))
       (save-excursion
@@ -654,7 +638,7 @@ FN is the function to call on click."
     (forward-line))
   (insert (propertize "\n\n" 'face '(:height 0.3))))
 
-(defun lsp-ui-doc--fix-hr-props nil
+(defun lsp-ui-doc--fix-hr-props ()
   ;; We insert the right display prop after window-text-pixel-size
   (lsp-ui-doc--with-buffer
     (let (next)
@@ -665,7 +649,7 @@ FN is the function to call on click."
           (put-text-property (1+ next) (+ next 2) 'display
                              '(space :align-to right-fringe :height (1))))))))
 
-(defun lsp-ui-doc--handle-hr-lines nil
+(defun lsp-ui-doc--handle-hr-lines ()
   (let (bolp next before after)
     (goto-char 1)
     (while (setq next (next-single-property-change (or next 1) 'markdown-hr))
@@ -691,12 +675,11 @@ FN is the function to call on click."
   "Set the buffer with STRING and SYMBOL."
   (lsp-ui-doc--with-buffer
     (if lsp-ui-doc-use-webkit
-        (progn
-          (lsp-ui-doc--webkit-execute-script
-           (format "renderMarkdown('%s', '%s');"
-                   symbol
-                   (url-hexify-string string))
-           'lsp-ui-doc--webkit-resize-callback))
+        (lsp-ui-doc--webkit-execute-script
+         (format "renderMarkdown('%s', '%s');"
+                 symbol
+                 (url-hexify-string string))
+         'lsp-ui-doc--webkit-resize-callback)
       (erase-buffer)
       (insert (s-trim string))
       (unless (or (lsp-ui-doc--inline-p) (not lsp-ui-doc-enhanced-markdown))
@@ -709,10 +692,10 @@ FN is the function to call on click."
     (lsp-ui-doc-frame-mode 1)
     (setq wrap-prefix '(space :height (1) :width 1)
           line-prefix '(space :height (1) :width 1))
-    (setq-local face-remapping-alist `((header-line lsp-ui-doc-header)))
-    (setq-local window-min-height 1)
-    (setq-local show-trailing-whitespace nil)
-    (setq-local window-configuration-change-hook nil)
+    (setq-local face-remapping-alist `((header-line lsp-ui-doc-header))
+                window-min-height 1
+                show-trailing-whitespace nil
+                window-configuration-change-hook nil)
     (add-hook 'pre-command-hook 'lsp-ui-doc--buffer-pre-command nil t)
     (when (boundp 'window-state-change-functions)
       (setq-local window-state-change-functions nil))
@@ -739,7 +722,7 @@ FN is the function to call on click."
 
 (defvar-local lsp-ui-doc--inline-width nil)
 
-(defun lsp-ui-doc--inline-window-width nil
+(defun lsp-ui-doc--inline-window-width ()
   (- (min (window-text-width) (window-body-width))
      (if (bound-and-true-p display-line-numbers-mode)
          (+ 2 (line-number-display-width))
@@ -853,19 +836,20 @@ HEIGHT is the documentation number of lines."
 (defun lsp-ui-doc--make-frame ()
   "Create the child frame and return it."
   (lsp-ui-doc--delete-frame)
-  (let* ((after-make-frame-functions nil)
-         (before-make-frame-hook nil)
+  (let* (after-make-frame-functions
+         before-make-frame-hook
          (name-buffer (lsp-ui-doc--make-buffer-name))
          (buffer (get-buffer name-buffer))
-         (params (append lsp-ui-doc-frame-parameters
-                         `((name . "")
-                           (default-minibuffer-frame . ,(selected-frame))
-                           (minibuffer . ,(minibuffer-window))
-                           (left-fringe . 0)
-                           (right-fringe . 0)
-                           (cursor-type . nil)
-                           (lsp-ui-doc--no-focus . t)
-                           (background-color . ,(face-background 'lsp-ui-doc-background nil t)))))
+         (params (append
+                  lsp-ui-doc-frame-parameters
+                  `((name                     . "")
+                    (default-minibuffer-frame . ,(selected-frame))
+                    (minibuffer               . ,(minibuffer-window))
+                    (left-fringe              . 0)
+                    (right-fringe             . 0)
+                    (cursor-type              . nil)
+                    (lsp-ui-doc--no-focus     . t)
+                    (background-color         . ,(face-background 'lsp-ui-doc-background nil t)))))
          (window (display-buffer-in-child-frame
                   buffer
                   `((child-frame-parameters . ,params))))
@@ -900,9 +884,10 @@ HEIGHT is the documentation number of lines."
     keyboard-quit
     ignore
     handle-switch-frame
-    mwheel-scroll))
+    mwheel-scroll)
+  "List of commands use to ignore make request.")
 
-(defun lsp-ui-doc--make-request nil
+(defun lsp-ui-doc--make-request ()
   "Request the documentation to the LS."
   (and (not track-mouse) lsp-ui-doc-show-with-mouse (setq-local track-mouse t))
   (when (and lsp-ui-doc-show-with-cursor
@@ -913,7 +898,7 @@ HEIGHT is the documentation number of lines."
                          (and (looking-at "[[:graph:]]") (cons (point) (1+ (point))))))
         (unless (equal lsp-ui-doc--bounds bounds)
           (lsp-ui-doc--hide-frame)
-          (lsp-ui-util-safe-kill-timer lsp-ui-doc--timer)
+          (lsp-ui--safe-kill-timer lsp-ui-doc--timer)
           (setq lsp-ui-doc--timer
                 (run-with-idle-timer
                  lsp-ui-doc-delay nil
@@ -1040,9 +1025,8 @@ Argument WIN is current applying window."
 (defvar-local lsp-ui-doc--timer-mouse-movement nil)
 (defvar-local lsp-ui-doc--last-event nil)
 
-(defun lsp-ui-doc--mouse-display nil
-  (when (and lsp-ui-doc--last-event
-             (lsp-feature? "textDocument/hover"))
+(defun lsp-ui-doc--mouse-display ()
+  (when (and lsp-ui-doc--last-event (lsp-feature? "textDocument/hover"))
     (save-excursion
       (goto-char lsp-ui-doc--last-event)
       (-when-let* ((valid (not (eolp)))
@@ -1083,7 +1067,7 @@ Argument WIN is current applying window."
               lsp-ui-doc--timer-mouse-movement
               (run-with-idle-timer lsp-ui-doc-delay nil 'lsp-ui-doc--mouse-display))))))
 
-(defun lsp-ui-doc--disable-mouse-on-prefix nil
+(defun lsp-ui-doc--disable-mouse-on-prefix ()
   (and (bound-and-true-p lsp-ui-doc-mode)
        (bound-and-true-p lsp-ui-doc--mouse-tracked-by-us)
        track-mouse
@@ -1096,7 +1080,7 @@ Argument WIN is current applying window."
   "Nil if `track-mouse' was set by another package.
 If nil, do not prevent mouse on prefix keys.")
 
-(defun lsp-ui-doc--setup-mouse nil
+(defun lsp-ui-doc--setup-mouse ()
   (when lsp-ui-doc-show-with-mouse
     (setq lsp-ui-doc--mouse-tracked-by-us (not track-mouse))
     (setq-local track-mouse t)
@@ -1193,8 +1177,7 @@ It is supposed to be called from `lsp-ui--toggle'"
               (visible (lsp-ui-doc--frame-visible-p)))
     (set-frame-parameter frame 'lsp-ui-doc--no-focus nil)
     (set-frame-parameter frame 'cursor-type t)
-    (lsp-ui-doc--with-buffer
-      (setq cursor-type 'box))
+    (lsp-ui-doc--with-buffer (setq cursor-type 'box))
     (select-frame-set-input-focus frame)))
 
 (defun lsp-ui-doc-unfocus-frame ()
@@ -1204,10 +1187,8 @@ It is supposed to be called from `lsp-ui--toggle'"
   (when-let* ((frame (lsp-ui-doc--get-frame)))
     (set-frame-parameter frame 'lsp-ui-doc--no-focus t)
     (set-frame-parameter frame 'cursor-type nil)
-    (lsp-ui-doc--with-buffer
-      (setq cursor-type nil))
-    (when lsp-ui-doc--from-mouse
-      (make-frame-invisible frame))))
+    (lsp-ui-doc--with-buffer (setq cursor-type nil))
+    (when lsp-ui-doc--from-mouse (make-frame-invisible frame))))
 
 (provide 'lsp-ui-doc)
 ;;; lsp-ui-doc.el ends here
