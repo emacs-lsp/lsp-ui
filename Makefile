@@ -9,7 +9,7 @@ LOAD-FILE = -l $(test-file)
 LOAD-TEST-FILES := $(foreach test-file, $(TEST-FILES), $(LOAD-FILE))
 
 # FIXME: Add `unix-test`
-ci: build compile 
+ci: build compile
 
 build:
 	$(EASK) package
