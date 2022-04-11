@@ -50,6 +50,7 @@ jobs:
           components: rust-src
 
       - name: Install Rust Analyzer
+        if: matrix.os == 'ubuntu-latest' || matrix.os == 'macos-latest'
         env:
           RUST_ANALYZER_VERSION: 2020-04-20
         run: |
