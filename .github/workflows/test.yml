@@ -22,11 +22,6 @@ jobs:
           - snapshot
 
     steps:
-      - uses: actions/setup-python@v2
-        with:
-          python-version: '3.6'
-          architecture: 'x64'
-
       - uses: purcell/setup-emacs@master
         if: matrix.os == 'ubuntu-latest' || matrix.os == 'macos-latest'
         with:

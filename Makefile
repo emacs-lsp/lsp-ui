@@ -27,4 +27,4 @@ test:
 clean:
 	@$(EASK) clean-all
 
-.PHONY: build ci unix-compile test compile test clean
+.PHONY: ci build compile test clean
