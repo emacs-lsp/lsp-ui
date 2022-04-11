@@ -8,7 +8,8 @@ TEST-FILES := test/windows-bootstrap.el test/test-helper.el \
 LOAD-FILE = -l $(test-file)
 LOAD-TEST-FILES := $(foreach test-file, $(TEST-FILES), $(LOAD-FILE))
 
-ci: build compile test
+# FIXME: add `test`
+ci: build compile clean
 
 build:
 	$(EASK) package
