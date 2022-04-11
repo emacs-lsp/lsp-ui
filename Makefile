@@ -21,8 +21,8 @@ compile:
 
 test:
 	@echo "Testing..."
-	@$(EASK) install-deps --dev
-	@$(EASK) exec ert-runner --no-win
+	$(EASK) install-deps --dev
+	$(EASK) exec ert-runner -L . $(LOAD-TEST-FILES) -t '!no-win' -t '!org'
 
 clean:
 	@$(EASK) clean-all
