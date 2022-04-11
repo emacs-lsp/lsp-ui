@@ -22,7 +22,7 @@ compile:
 test:
 	@echo "Testing..."
 	@$(EASK) install-deps --dev
-	@$(EASK) exec ert-runner
+	@$(EASK) exec ert-runner --no-win
 
 clean:
 	@$(EASK) clean-all
