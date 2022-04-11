@@ -20,7 +20,8 @@ compile:
 	@$(EASK) compile
 
 test:
-	@(EASK) install-deps --dev
+	@echo "Testing..."
+	@$(EASK) install-deps --dev
 	@$(EASK) exec ert-runner
 
 clean:
