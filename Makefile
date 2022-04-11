@@ -1,56 +1,30 @@
 SHELL := /usr/bin/env bash
 
 EMACS ?= emacs
-CASK ?= cask
+EASK ?= eask
 
 TEST-FILES := test/windows-bootstrap.el test/test-helper.el \
 	$(shell ls test/lsp-ui-*.el)
 LOAD-FILE = -l $(test-file)
 LOAD-TEST-FILES := $(foreach test-file, $(TEST-FILES), $(LOAD-FILE))
 
-build:
-	EMACS=$(EMACS) cask install
-	EMACS=$(EMACS) cask build
-	EMACS=$(EMACS) cask clean-elc
-
 # FIXME: Add `unix-test`
-unix-ci: build unix-compile clean
+ci: build compile 
 
-# FIXME: Add `windows-test`
-windows-ci: CASK=
-windows-ci: windows-compile clean
+build:
+	$(EASK) package
+	$(EASK) install
+	$(EASK) clean-elc
 
-unix-compile:
+compile:
 	@echo "Compiling..."
-	@$(CASK) $(EMACS) -Q --batch \
-		-L . \
-		--eval '(setq byte-compile-error-on-warn t)' \
-		-f batch-byte-compile \
-		*.el
+	@$(EASK) compile
 
-windows-compile:
-	@echo "Compiling..."
-	@$(CASK) $(EMACS) -Q --batch \
-		--eval '(setq emacs-lsp-ci t)' \
-		-l test/windows-bootstrap.el \
-		-L . \
-		--eval '(setq byte-compile-error-on-warn t)' \
-		-f batch-byte-compile \
-		*.el
-
-unix-test:
-	EMACS=$(EMACS) cask exec ert-runner
-
-windows-test:
-	@$(EMACS) -Q --batch \
-		--eval '(setq emacs-lsp-ci t)' \
-		-l test/windows-bootstrap.el \
-		-L . \
-		$(LOAD-TEST-FILES) \
-		--eval "(ert-run-tests-batch-and-exit \
-		'(and (not (tag no-win)) (not (tag org))))"
+test:
+	@(EASK) install-deps --dev
+	@$(EASK) exec ert-runner
 
 clean:
-	rm -rf .cask *.elc
+	@$(EASK) clean-all
 
-.PHONY: build ci unix-compile unix-test windows-compile windows-test clean
+.PHONY: build ci unix-compile test compile test clean
