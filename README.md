@@ -31,7 +31,7 @@ You only have to put `(use-package lsp-ui)` in your config and the package will 
 Or use the builtin package manager.
 
 ```
-M-x ~package-install~ [RET] ~lsp-ui~ [RET]
+M-x package-install [RET] lsp-ui [RET]
 ```
 
 ## lsp-ui-sideline:
