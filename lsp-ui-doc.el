@@ -192,6 +192,8 @@ Only the `background' is used in this face."
     (right-fringe . 0)
     (menu-bar-lines . 0)
     (tool-bar-lines . 0)
+    (tab-bar-lines . 0)
+    (tab-bar-lines-keep-state . 0)
     (line-spacing . 0)
     (unsplittable . t)
     (undecorated . t)
