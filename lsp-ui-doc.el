@@ -961,7 +961,10 @@ BUFFER is the buffer where the request has been made."
            (-some->> contents
              lsp-ui-doc--extract
              (replace-regexp-in-string "\r" "")
-             (replace-regexp-in-string " " " "))))
+             (replace-regexp-in-string " " " ")))
+          (when lsp-ui-doc--unfocus-frame-timer
+            (cancel-timer lsp-ui-doc--unfocus-frame-timer))
+          (add-hook 'post-command-hook 'lsp-ui-doc--glance-hide-frame))
       (lsp-ui-doc--hide-frame))))
 
 (defun lsp-ui-doc--delete-frame ()
@@ -1179,10 +1182,7 @@ It is supposed to be called from `lsp-ui--toggle'"
   "Trigger display hover information popup and hide it on next typing."
   (interactive)
   (let ((lsp-ui-doc-show-with-cursor t))
-    (lsp-ui-doc--make-request))
-  (when lsp-ui-doc--unfocus-frame-timer
-    (cancel-timer lsp-ui-doc--unfocus-frame-timer))
-  (add-hook 'post-command-hook 'lsp-ui-doc--glance-hide-frame))
+    (lsp-ui-doc--make-request)))
 
 (define-minor-mode lsp-ui-doc-frame-mode
   "Marker mode to add additional key bind for lsp-ui-doc-frame."
