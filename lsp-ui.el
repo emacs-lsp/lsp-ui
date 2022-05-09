@@ -34,8 +34,60 @@
 ;;; Code:
 
 (require 'dash)
-(require 'lsp-protocol)
 (require 'find-func)
+(require 'face-remap)
+
+(require 'lsp-protocol)
+
+;;
+;;; Util
+
+(defmacro lsp-ui--mute-apply (&rest body)
+  "Execute BODY without message."
+  (declare (indent 0) (debug t))
+  `(let (message-log-max)
+     (with-temp-message (or (current-message) nil)
+       (let ((inhibit-message t)) ,@body))))
+
+(defmacro lsp-ui--with-no-redisplay (&rest body)
+  "Execute BODY without any redisplay execution."
+  (declare (indent 0) (debug t))
+  `(let ((inhibit-redisplay t)
+         (inhibit-modification-hooks t)
+         (inhibit-point-motion-hooks t)
+         buffer-list-update-hook
+         display-buffer-alist
+         window-configuration-change-hook
+         after-focus-change-function)
+     ,@body))
+
+(defun lsp-ui-safe-kill-timer (timer)
+  "Safely kill the TIMER."
+  (when (timerp timer) (cancel-timer timer)))
+
+(defun lsp-ui-safe-delete-overlay (overlay)
+  "Safely delete the OVERLAY."
+  (when (overlayp overlay) (delete-overlay overlay)))
+
+(defun lsp-ui-line-number-display-width ()
+  "Safe way to get value from function `line-number-display-width'."
+  (if (bound-and-true-p display-line-numbers-mode)
+      ;; For some reason, function `line-number-display-width' gave
+      ;; us error `args-out-of-range' even we do not pass anything towards
+      ;; to it function. See the following links,
+      ;;
+      ;; - https://github.com/emacs-lsp/lsp-ui/issues/294
+      ;; - https://github.com/emacs-lsp/lsp-ui/issues/533 (duplicate)
+      (+ (or (ignore-errors (line-number-display-width)) 0) 2)
+    0))
+
+;;
+;;; Core
+
+(require 'lsp-ui-sideline)
+(require 'lsp-ui-peek)
+(require 'lsp-ui-imenu)
+(require 'lsp-ui-doc)
 
 (defconst lsp-ui-resources-dir
   (--> (or load-file-name (buffer-file-name))
@@ -158,56 +210,6 @@ Both should have the form (FILENAME LINE COLUMN)."
           (forward-char (caddr res))
           (cons idx (length refs)))
       (cons 0 0))))
-
-;;
-;;; Util
-
-(defmacro lsp-ui--mute-apply (&rest body)
-  "Execute BODY without message."
-  (declare (indent 0) (debug t))
-  `(let (message-log-max)
-     (with-temp-message (or (current-message) nil)
-       (let ((inhibit-message t)) ,@body))))
-
-(defmacro lsp-ui--with-no-redisplay (&rest body)
-  "Execute BODY without any redisplay execution."
-  (declare (indent 0) (debug t))
-  `(let ((inhibit-redisplay t)
-         (inhibit-modification-hooks t)
-         (inhibit-point-motion-hooks t)
-         buffer-list-update-hook
-         display-buffer-alist
-         window-configuration-change-hook
-         after-focus-change-function)
-     ,@body))
-
-(defun lsp-ui-safe-kill-timer (timer)
-  "Safely kill the TIMER."
-  (when (timerp timer) (cancel-timer timer)))
-
-(defun lsp-ui-safe-delete-overlay (overlay)
-  "Safely delete the OVERLAY."
-  (when (overlayp overlay) (delete-overlay overlay)))
-
-(defun lsp-ui-line-number-display-width ()
-  "Safe way to get value from function `line-number-display-width'."
-  (if (bound-and-true-p display-line-numbers-mode)
-      ;; For some reason, function `line-number-display-width' gave
-      ;; us error `args-out-of-range' even we do not pass anything towards
-      ;; to it function. See the following links,
-      ;;
-      ;; - https://github.com/emacs-lsp/lsp-ui/issues/294
-      ;; - https://github.com/emacs-lsp/lsp-ui/issues/533 (duplicate)
-      (+ (or (ignore-errors (line-number-display-width)) 0) 2)
-    0))
-
-;;
-;;; Core
-
-(require 'lsp-ui-sideline)
-(require 'lsp-ui-peek)
-(require 'lsp-ui-imenu)
-(require 'lsp-ui-doc)
 
 (provide 'lsp-ui)
 ;;; lsp-ui.el ends here
