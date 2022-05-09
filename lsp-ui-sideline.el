@@ -348,7 +348,7 @@ is set to t."
      (if (< emacs-major-version 27)
          ;; This was necessary with emacs < 27, recent versions take
          ;; into account the display-line width with :align-to
-         (lsp-ui-util-line-number-display-width)
+         (lsp-ui-line-number-display-width)
        0)
      (if (or
           (bound-and-true-p whitespace-mode)
@@ -362,7 +362,7 @@ is set to t."
      (or (and (>= emacs-major-version 27)
               ;; We still need this number when calculating available space
               ;; even with emacs >= 27
-              (lsp-ui-util-line-number-display-width))
+              (lsp-ui-line-number-display-width))
          0)))
 
 (defun lsp-ui-sideline--valid-tag-p (tag mode)
