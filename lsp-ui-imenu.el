@@ -35,7 +35,6 @@
 
 (require 'lsp-mode)
 (require 'dash)
-(require 'lsp-ui-util)
 
 (defgroup lsp-ui-imenu nil
   "Display imenu entries."
