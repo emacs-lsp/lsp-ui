@@ -9,7 +9,7 @@ LOAD-FILE = -l $(test-file)
 LOAD-TEST-FILES := $(foreach test-file, $(TEST-FILES), $(LOAD-FILE))
 
 # FIXME: add `test`, and `lint`
-ci: clean build compile check
+ci: clean build compile checkdoc
 
 build:
 	$(EASK) package
