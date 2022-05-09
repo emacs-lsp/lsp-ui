@@ -30,7 +30,6 @@
 
 ;;; Code:
 
-(require 'lsp-ui-util)
 (require 'lsp-protocol)
 (require 'lsp-mode)
 (require 'flycheck nil 'noerror)
@@ -43,6 +42,8 @@
 (declare-function flycheck-overlay-errors-in "ext:flycheck.el")
 (declare-function flycheck-error-format-message-and-id "ext:flycheck.el")
 (declare-function flycheck-error-level "ext:flycheck.el")
+
+(declare-function lsp-ui-line-number-display-width 'lsp-ui)
 
 (defgroup lsp-ui-sideline nil
   "Display information for the current line."
@@ -325,8 +326,8 @@ CURRENT is non-nil when the point is on the symbol."
      (propertize str 'display (lsp-ui-sideline--compute-height)))))
 
 (defun lsp-ui-sideline--check-duplicate (symbol info)
-  "Check if there's already a SYMBOL containing INFO, unless `lsp-ui-sideline-ignore-duplicate'
-is set to t."
+  "Check if there's already a SYMBOL containing INFO, unless
+`lsp-ui-sideline-ignore-duplicate' is set to t."
   (not (when lsp-ui-sideline-ignore-duplicate
          (--any (and (string= (overlay-get it 'symbol) symbol)
                      (string= (overlay-get it 'info) info))
@@ -349,7 +350,7 @@ is set to t."
      (if (< emacs-major-version 27)
          ;; This was necessary with emacs < 27, recent versions take
          ;; into account the display-line width with :align-to
-         (lsp-ui-util-line-number-display-width)
+         (lsp-ui-line-number-display-width)
        0)
      (if (or
           (bound-and-true-p whitespace-mode)
@@ -363,7 +364,7 @@ is set to t."
      (or (and (>= emacs-major-version 27)
               ;; We still need this number when calculating available space
               ;; even with emacs >= 27
-              (lsp-ui-util-line-number-display-width))
+              (lsp-ui-line-number-display-width))
          0)))
 
 (defun lsp-ui-sideline--valid-tag-p (tag mode)
@@ -435,7 +436,8 @@ is set to t."
           (lsp-ui-sideline--toggle-current ov nil))))))
 
 (defun lsp-ui-sideline--split-long-lines (lines)
-  "Fill LINES so that they are not longer than `lsp-ui-sideline-diagnostic-max-line-length' characters."
+  "Fill LINES so that they are not longer than
+`lsp-ui-sideline-diagnostic-max-line-length' characters."
   (cl-mapcan (lambda (line)
                (if (< (length line) lsp-ui-sideline-diagnostic-max-line-length)
                    (list line)
@@ -449,7 +451,8 @@ is set to t."
 (defun lsp-ui-sideline--diagnostics (buffer bol eol)
   "Show diagnostics belonging to the current line.
 Loop over flycheck errors with `flycheck-overlay-errors-in'.
-Find appropriate position for sideline overlays with `lsp-ui-sideline--find-line'.
+Find appropriate position for sideline overlays with
+`lsp-ui-sideline--find-line'.
 Push sideline overlays on `lsp-ui-sideline--ovs'."
   (when (and (bound-and-true-p flycheck-mode)
              (bound-and-true-p lsp-ui-sideline-mode)
