@@ -36,6 +36,8 @@
 (require 'lsp-mode)
 (require 'dash)
 
+(declare-function lsp-ui-kill-timer 'lsp-ui)
+
 (defgroup lsp-ui-imenu nil
   "Display imenu entries."
   :group 'tools

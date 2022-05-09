@@ -9,7 +9,7 @@ LOAD-FILE = -l $(test-file)
 LOAD-TEST-FILES := $(foreach test-file, $(TEST-FILES), $(LOAD-FILE))
 
 # FIXME: add `test`
-ci: build compile clean
+ci: build compile clean checkdoc lint
 
 build:
 	$(EASK) package
@@ -24,6 +24,14 @@ test:
 	@echo "Testing..."
 	$(EASK) install-deps --dev
 	$(EASK) exec ert-runner -L . $(LOAD-TEST-FILES) -t '!no-win' -t '!org'
+
+checkdoc:
+	@echo "Run checkdoc..."
+	@$(EASK) checkdoc
+
+lint:
+	@echo "Run package-lint..."
+	@$(EASK) lint
 
 clean:
 	@$(EASK) clean-all
