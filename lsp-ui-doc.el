@@ -62,7 +62,8 @@
 
 (defcustom lsp-ui-doc-enable t
   "Whether or not to enable lsp-ui-doc.
-Displays documentation of the symbol at point on hover. This only takes effect when a buffer is started."
+Displays documentation of the symbol at point on hover. This only takes effect
+when a buffer is started."
   :type 'boolean
   :group 'lsp-ui)
 
@@ -420,8 +421,8 @@ We don't extract the string that `lps-line' is already displaying."
   "Hide the frame."
   (setq lsp-ui-doc--bounds nil
         lsp-ui-doc--from-mouse nil)
-  (lsp-ui-safe-delete-overlay lsp-ui-doc--inline-ov)
-  (lsp-ui-safe-delete-overlay lsp-ui-doc--highlight-ov)
+  (lsp-ui-delete-overlay lsp-ui-doc--inline-ov)
+  (lsp-ui-delete-overlay lsp-ui-doc--highlight-ov)
   (when-let ((frame (lsp-ui-doc--get-frame)))
     (when (frame-visible-p frame)
       (make-frame-invisible frame))))
@@ -918,7 +919,7 @@ HEIGHT is the documentation number of lines."
                          (and (looking-at "[[:graph:]]") (cons (point) (1+ (point))))))
         (unless (equal lsp-ui-doc--bounds bounds)
           (lsp-ui-doc--hide-frame)
-          (lsp-ui-util-safe-kill-timer lsp-ui-doc--timer)
+          (lsp-ui-kill-timer lsp-ui-doc--timer)
           (setq lsp-ui-doc--timer
                 (run-with-idle-timer
                  lsp-ui-doc-delay nil

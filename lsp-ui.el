@@ -61,11 +61,11 @@
          after-focus-change-function)
      ,@body))
 
-(defun lsp-ui-safe-kill-timer (timer)
+(defun lsp-ui-kill-timer (timer)
   "Safely kill the TIMER."
   (when (timerp timer) (cancel-timer timer)))
 
-(defun lsp-ui-safe-delete-overlay (overlay)
+(defun lsp-ui-delete-overlay (overlay)
   "Safely delete the OVERLAY."
   (when (overlayp overlay) (delete-overlay overlay)))
 
