@@ -45,11 +45,6 @@
        (and (file-directory-p it) it))
   "Resource folder for package `lsp-ui'.")
 
-(require 'lsp-ui-sideline)
-(require 'lsp-ui-peek)
-(require 'lsp-ui-imenu)
-(require 'lsp-ui-doc)
-
 (defgroup lsp-ui nil
   "‘lsp-ui’ contains a series of useful UI integrations for ‘lsp-mode’."
   :group 'tools
@@ -63,14 +58,6 @@
 (with-eval-after-load 'winum
   (when (and (boundp 'winum-ignored-buffers-regexp) lsp-ui-doc-winum-ignore)
     (add-to-list 'winum-ignored-buffers-regexp lsp-ui-doc--buffer-prefix)))
-
-(defun lsp-ui-peek--render (major string)
-  (with-temp-buffer
-    (insert string)
-    (delay-mode-hooks
-      (let ((inhibit-message t)) (funcall major))
-      (ignore-errors (font-lock-ensure)))
-    (buffer-string)))
 
 (defun lsp-ui--workspace-path (path)
   "Return the PATH relative to the workspace.
@@ -172,6 +159,46 @@ Both should have the form (FILENAME LINE COLUMN)."
           (cons idx (length refs)))
       (cons 0 0))))
 
+;;
+;;; Util
+
+(defun lsp-ui-safe-kill-timer (timer)
+  "Safely kill the TIMER."
+  (when (timerp timer) (cancel-timer timer)))
+
+(defun lsp-ui-safe-delete-overlay (overlay)
+  "Safely delete the OVERLAY."
+  (when (overlayp overlay) (delete-overlay overlay)))
+
+(defun lsp-ui-util-line-number-display-width ()
+  "Safe way to get value from function `line-number-display-width'."
+  (if (bound-and-true-p display-line-numbers-mode)
+      ;; For some reason, function `line-number-display-width' gave
+      ;; us error `args-out-of-range' even we do not pass anything towards
+      ;; to it function. See the following links,
+      ;;
+      ;; - https://github.com/emacs-lsp/lsp-ui/issues/294
+      ;; - https://github.com/emacs-lsp/lsp-ui/issues/533 (duplicate)
+      (+ (or (ignore-errors (line-number-display-width)) 0) 2)
+    0))
+
+(defun lsp-ui-line-string (pos)
+  "Return string at POS."
+  (when (integerp pos) (save-excursion (goto-char pos) (thing-at-point 'line))))
+
+(defun lsp-ui-column (&optional pos)
+  "Return column at POS."
+  (setq pos (or pos (point)))
+  (save-excursion (goto-char pos) (current-column)))
+
+(defun lsp-ui-text-scale-factor ()
+  "Return the factor effect by `text-scale-mode'."
+  (or (plist-get (cdr text-scale-mode-remapping) :height) 1))
+
+(require 'lsp-ui-sideline)
+(require 'lsp-ui-peek)
+(require 'lsp-ui-imenu)
+(require 'lsp-ui-doc)
 
 (provide 'lsp-ui)
 ;;; lsp-ui.el ends here

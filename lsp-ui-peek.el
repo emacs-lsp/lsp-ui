@@ -346,10 +346,8 @@ XREFS is a list of references/definitions."
   (with-temp-buffer
     (insert string)
     (delay-mode-hooks
-      (let ((inhibit-message t))
-        (funcall major))
-      (ignore-errors
-        (font-lock-ensure)))
+      (let ((inhibit-message t)) (funcall major))
+      (ignore-errors (font-lock-ensure)))
     (buffer-string)))
 
 (defun lsp-ui-peek--peek ()

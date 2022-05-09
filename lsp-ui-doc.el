@@ -422,8 +422,8 @@ We don't extract the string that `lps-line' is already displaying."
   "Hide the frame."
   (setq lsp-ui-doc--bounds nil
         lsp-ui-doc--from-mouse nil)
-  (lsp-ui-util-safe-delete-overlay lsp-ui-doc--inline-ov)
-  (lsp-ui-util-safe-delete-overlay lsp-ui-doc--highlight-ov)
+  (lsp-ui-safe-delete-overlay lsp-ui-doc--inline-ov)
+  (lsp-ui-safe-delete-overlay lsp-ui-doc--highlight-ov)
   (when-let ((frame (lsp-ui-doc--get-frame)))
     (when (frame-visible-p frame)
       (make-frame-invisible frame))))
@@ -889,15 +889,15 @@ HEIGHT is the documentation number of lines."
     (run-hook-with-args 'lsp-ui-doc-frame-hook frame window)
     (when lsp-ui-doc-use-webkit
       (define-key (current-global-map) [xwidget-event]
-        (lambda ()
-          (interactive)
-          (let ((xwidget-event-type (nth 1 last-input-event)))
-            ;; (when (eq xwidget-event-type 'load-changed)
-            ;;   (lsp-ui-doc--move-frame (lsp-ui-doc--get-frame)))
-            (when (eq xwidget-event-type 'javascript-callback)
-              (let ((proc (nth 3 last-input-event))
-                    (arg (nth 4 last-input-event)))
-                (funcall proc arg))))))
+                  (lambda ()
+                    (interactive)
+                    (let ((xwidget-event-type (nth 1 last-input-event)))
+                      ;; (when (eq xwidget-event-type 'load-changed)
+                      ;;   (lsp-ui-doc--move-frame (lsp-ui-doc--get-frame)))
+                      (when (eq xwidget-event-type 'javascript-callback)
+                        (let ((proc (nth 3 last-input-event))
+                              (arg (nth 4 last-input-event)))
+                          (funcall proc arg))))))
       (lsp-ui-doc--webkit-run-xwidget))
     frame))
 

@@ -30,7 +30,6 @@
 
 ;;; Code:
 
-(require 'lsp-ui-util)
 (require 'lsp-protocol)
 (require 'lsp-mode)
 (require 'flycheck nil 'noerror)
