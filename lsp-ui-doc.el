@@ -246,6 +246,8 @@ Because some variables are buffer local.")
 (defvar-local lsp-ui-doc--from-mouse-current nil
   "Non nil when the current call is triggered by a mouse event")
 
+(defvar-local lsp-ui-doc--unfocus-frame-timer nil)
+
 (defconst lsp-ui-doc--buffer-prefix " *lsp-ui-doc-")
 
 (defmacro lsp-ui-doc--with-buffer (&rest body)
@@ -1169,7 +1171,6 @@ It is supposed to be called from `lsp-ui--toggle'"
   (interactive)
   (lsp-ui-doc--hide-frame))
 
-(defvar-local lsp-ui-doc--unfocus-frame-timer nil)
 (defun lsp-ui-doc--glance-hide-frame ()
   "Hook to hide hover information popup for `lsp-ui-doc-glance'."
   (when (or (overlayp lsp-ui-doc--inline-ov)
