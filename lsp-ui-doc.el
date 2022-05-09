@@ -52,6 +52,9 @@
 (declare-function xwidget-webkit-execute-script-rv "ext:xwidget" (xwidget script &optional default))
 (declare-function xwidget-resize "ext:xwidget" (xwidget new-width new-height))
 
+(declare-function lsp-ui-kill-timer 'lsp-ui)
+(declare-function lsp-ui-delete-overlay 'lsp-ui)
+
 (defgroup lsp-ui-doc nil
   "Display informations of the current line."
   :group 'tools
