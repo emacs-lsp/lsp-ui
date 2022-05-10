@@ -34,11 +34,11 @@
 
 ;;; Code:
 
-(require 'lsp-protocol)
-(require 'lsp-mode)
 (require 'xref)
 (require 'dash)
 
+(require 'lsp-protocol)
+(require 'lsp-mode)
 (require 'lsp-ui)
 
 (defgroup lsp-ui-peek nil

@@ -30,14 +30,14 @@
 
 ;;; Code:
 
-(require 'lsp-protocol)
-(require 'lsp-mode)
-(require 'flycheck nil 'noerror)
 (require 'dash)
 (require 'seq)
 (require 'subr-x)
 (require 'face-remap)
 
+(require 'lsp-protocol)
+(require 'lsp-mode)
+(require 'flycheck nil 'noerror)
 (require 'lsp-ui)
 
 (defvar flycheck-display-errors-function)
