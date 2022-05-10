@@ -39,7 +39,7 @@
 (require 'xref)
 (require 'dash)
 
-(declare-function lsp-ui--mute-apply 'lsp-ui)
+(require 'lsp-ui)
 
 (defgroup lsp-ui-peek nil
   "Improve version of xref with peek feature."

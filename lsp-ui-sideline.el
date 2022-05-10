@@ -38,12 +38,12 @@
 (require 'subr-x)
 (require 'face-remap)
 
+(require 'lsp-ui)
+
 (defvar flycheck-display-errors-function)
 (declare-function flycheck-overlay-errors-in "ext:flycheck.el")
 (declare-function flycheck-error-format-message-and-id "ext:flycheck.el")
 (declare-function flycheck-error-level "ext:flycheck.el")
-
-(declare-function lsp-ui-line-number-display-width 'lsp-ui)
 
 (defgroup lsp-ui-sideline nil
   "Display information for the current line."

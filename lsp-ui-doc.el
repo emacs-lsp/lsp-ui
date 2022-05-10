@@ -40,6 +40,8 @@
 (require 'face-remap)
 (require 'subr-x)
 
+(require 'lsp-ui)
+
 (when (featurep 'xwidget-internal)
   (require 'xwidget))
 

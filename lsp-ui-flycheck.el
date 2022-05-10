@@ -31,6 +31,8 @@
 (require 'lsp-protocol)
 (require 'lsp-mode)
 
+(require 'lsp-ui)
+
 (defgroup lsp-ui-flycheck nil
   "The LSP extension to display syntax checking."
   :group 'tools
