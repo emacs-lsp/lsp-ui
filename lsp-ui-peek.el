@@ -39,8 +39,6 @@
 (require 'xref)
 (require 'dash)
 
-(declare-function lsp-ui--mute-apply 'lsp-ui)
-
 (defgroup lsp-ui-peek nil
   "Improve version of xref with peek feature."
   :group 'tools
@@ -183,12 +181,12 @@ will cause performances issues.")
   (eval '(progn
            (evil-define-motion lsp-ui-peek-jump-backward (count)
                                (lsp-ui-peek--with-evil-jumps
-                                   (evil--jump-backward count)
-                                 (run-hooks 'xref-after-return-hook)))
+                                (evil--jump-backward count)
+                                (run-hooks 'xref-after-return-hook)))
            (evil-define-motion lsp-ui-peek-jump-forward (count)
                                (lsp-ui-peek--with-evil-jumps
-                                   (evil--jump-forward count)
-                                 (run-hooks 'xref-after-return-hook))))
+                                (evil--jump-forward count)
+                                (run-hooks 'xref-after-return-hook))))
         t))
 
 (defmacro lsp-ui-peek--prop (prop &optional string)
@@ -348,8 +346,10 @@ XREFS is a list of references/definitions."
   (with-temp-buffer
     (insert string)
     (delay-mode-hooks
-      (lsp-ui--mute-apply (funcall major))
-      (ignore-errors (font-lock-ensure)))
+      (let ((inhibit-message t))
+        (funcall major))
+      (ignore-errors
+        (font-lock-ensure)))
     (buffer-string)))
 
 (defun lsp-ui-peek--peek ()
@@ -635,8 +635,7 @@ EXTRA is a plist of extra parameters."
                            (append extra (lsp--text-document-position-params))))
 
 (defun lsp-ui-peek--extract-chunk-from-buffer (pos start end)
-  "Return the chunk of code pointed to by POS (a Position object) in the current
-buffer.
+  "Return the chunk of code pointed to by POS (a Position object) in the current buffer.
 START and END are delimiters."
   (let* ((point (lsp--position-to-point pos))
          (inhibit-field-text-motion t)

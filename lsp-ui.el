@@ -81,14 +81,6 @@
       (+ (or (ignore-errors (line-number-display-width)) 0) 2)
     0))
 
-;;
-;;; Core
-
-(require 'lsp-ui-sideline)
-(require 'lsp-ui-peek)
-(require 'lsp-ui-imenu)
-(require 'lsp-ui-doc)
-
 (defconst lsp-ui-resources-dir
   (--> (or load-file-name (buffer-file-name))
        (file-name-directory it)

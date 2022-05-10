@@ -30,6 +30,8 @@
 
 ;;; Code:
 
+(require 'lsp-ui-util)
+
 (require 'lsp-protocol)
 (require 'lsp-mode)
 (require 'dash)
@@ -52,9 +54,6 @@
 (declare-function xwidget-webkit-execute-script-rv "ext:xwidget" (xwidget script &optional default))
 (declare-function xwidget-resize "ext:xwidget" (xwidget new-width new-height))
 
-(declare-function lsp-ui-kill-timer 'lsp-ui)
-(declare-function lsp-ui-delete-overlay 'lsp-ui)
-
 (defgroup lsp-ui-doc nil
   "Display informations of the current line."
   :group 'tools
@@ -65,8 +64,7 @@
 
 (defcustom lsp-ui-doc-enable t
   "Whether or not to enable lsp-ui-doc.
-Displays documentation of the symbol at point on hover. This only takes effect
-when a buffer is started."
+Displays documentation of the symbol at point on hover. This only takes effect when a buffer is started."
   :type 'boolean
   :group 'lsp-ui)
 
@@ -183,31 +181,31 @@ Only the `background' is used in this face."
   :group 'lsp-ui-doc)
 
 (defvar lsp-ui-doc-frame-parameters
-  '((left                     . -1)
-    (no-focus-on-map          . t)
-    (min-width                . 0)
-    (width                    . 0)
-    (min-height               . 0)
-    (height                   . 0)
-    (internal-border-width    . 1)
-    (vertical-scroll-bars     . nil)
-    (horizontal-scroll-bars   . nil)
-    (right-fringe             . 0)
-    (menu-bar-lines           . 0)
-    (tool-bar-lines           . 0)
-    (tab-bar-lines            . 0)
+  '((left . -1)
+    (no-focus-on-map . t)
+    (min-width  . 0)
+    (width  . 0)
+    (min-height  . 0)
+    (height  . 0)
+    (internal-border-width . 1)
+    (vertical-scroll-bars . nil)
+    (horizontal-scroll-bars . nil)
+    (right-fringe . 0)
+    (menu-bar-lines . 0)
+    (tool-bar-lines . 0)
+    (tab-bar-lines . 0)
     (tab-bar-lines-keep-state . 0)
-    (line-spacing             . 0)
-    (unsplittable             . t)
-    (undecorated              . t)
-    (top                      . -1)
-    (visibility               . nil)
-    (mouse-wheel-frame        . nil)
-    (no-other-frame           . t)
+    (line-spacing . 0)
+    (unsplittable . t)
+    (undecorated . t)
+    (top . -1)
+    (visibility . nil)
+    (mouse-wheel-frame . nil)
+    (no-other-frame . t)
     (inhibit-double-buffering . t)
-    (drag-internal-border     . t)
-    (no-special-glyphs        . t)
-    (desktop-dont-save        . t))
+    (drag-internal-border . t)
+    (no-special-glyphs . t)
+    (desktop-dont-save . t))
   "Frame parameters used to create the frame.")
 
 (defvar lsp-ui-doc-render-function nil
@@ -245,8 +243,6 @@ Because some variables are buffer local.")
   "Non nil when the doc was triggered by a mouse event.")
 (defvar-local lsp-ui-doc--from-mouse-current nil
   "Non nil when the current call is triggered by a mouse event")
-
-(defvar-local lsp-ui-doc--unfocus-frame-timer nil)
 
 (defconst lsp-ui-doc--buffer-prefix " *lsp-ui-doc-")
 
@@ -426,8 +422,8 @@ We don't extract the string that `lps-line' is already displaying."
   "Hide the frame."
   (setq lsp-ui-doc--bounds nil
         lsp-ui-doc--from-mouse nil)
-  (lsp-ui-delete-overlay lsp-ui-doc--inline-ov)
-  (lsp-ui-delete-overlay lsp-ui-doc--highlight-ov)
+  (lsp-ui-util-safe-delete-overlay lsp-ui-doc--inline-ov)
+  (lsp-ui-util-safe-delete-overlay lsp-ui-doc--highlight-ov)
   (when-let ((frame (lsp-ui-doc--get-frame)))
     (when (frame-visible-p frame)
       (make-frame-invisible frame))))
@@ -893,15 +889,15 @@ HEIGHT is the documentation number of lines."
     (run-hook-with-args 'lsp-ui-doc-frame-hook frame window)
     (when lsp-ui-doc-use-webkit
       (define-key (current-global-map) [xwidget-event]
-                  (lambda ()
-                    (interactive)
-                    (let ((xwidget-event-type (nth 1 last-input-event)))
-                      ;; (when (eq xwidget-event-type 'load-changed)
-                      ;;   (lsp-ui-doc--move-frame (lsp-ui-doc--get-frame)))
-                      (when (eq xwidget-event-type 'javascript-callback)
-                        (let ((proc (nth 3 last-input-event))
-                              (arg (nth 4 last-input-event)))
-                          (funcall proc arg))))))
+        (lambda ()
+          (interactive)
+          (let ((xwidget-event-type (nth 1 last-input-event)))
+            ;; (when (eq xwidget-event-type 'load-changed)
+            ;;   (lsp-ui-doc--move-frame (lsp-ui-doc--get-frame)))
+            (when (eq xwidget-event-type 'javascript-callback)
+              (let ((proc (nth 3 last-input-event))
+                    (arg (nth 4 last-input-event)))
+                (funcall proc arg))))))
       (lsp-ui-doc--webkit-run-xwidget))
     frame))
 
@@ -924,7 +920,7 @@ HEIGHT is the documentation number of lines."
                          (and (looking-at "[[:graph:]]") (cons (point) (1+ (point))))))
         (unless (equal lsp-ui-doc--bounds bounds)
           (lsp-ui-doc--hide-frame)
-          (lsp-ui-kill-timer lsp-ui-doc--timer)
+          (lsp-ui-util-safe-kill-timer lsp-ui-doc--timer)
           (setq lsp-ui-doc--timer
                 (run-with-idle-timer
                  lsp-ui-doc-delay nil
@@ -1171,6 +1167,7 @@ It is supposed to be called from `lsp-ui--toggle'"
   (interactive)
   (lsp-ui-doc--hide-frame))
 
+(defvar-local lsp-ui-doc--unfocus-frame-timer nil)
 (defun lsp-ui-doc--glance-hide-frame ()
   "Hook to hide hover information popup for `lsp-ui-doc-glance'."
   (when (or (overlayp lsp-ui-doc--inline-ov)
