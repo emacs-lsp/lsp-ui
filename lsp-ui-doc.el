@@ -420,10 +420,12 @@ We don't extract the string that `lps-line' is already displaying."
 
 (defun lsp-ui-doc--hide-frame (&optional _win)
   "Hide the frame."
-  (setq lsp-ui-doc--bounds nil
-        lsp-ui-doc--from-mouse nil)
   (lsp-ui-util-safe-delete-overlay lsp-ui-doc--inline-ov)
   (lsp-ui-util-safe-delete-overlay lsp-ui-doc--highlight-ov)
+  (setq lsp-ui-doc--bounds nil
+        lsp-ui-doc--from-mouse nil
+        lsp-ui-doc--inline-ov nil
+        lsp-ui-doc--highlight-ov nil)
   (when-let ((frame (lsp-ui-doc--get-frame)))
     (when (frame-visible-p frame)
       (make-frame-invisible frame))))
