@@ -1185,7 +1185,7 @@ It is supposed to be called from `lsp-ui--toggle'"
   (lsp-ui-doc-show)
   (when lsp-ui-doc--unfocus-frame-timer
     (cancel-timer lsp-ui-doc--unfocus-frame-timer))
-  (run-at-time 1 nil    ;; Since we want hiding after *next* command, not *this* command
+  (run-at-time 0 nil    ;; Since we want hiding after *next* command, not *this* command
                (lambda ()
                  (add-hook 'post-command-hook 'lsp-ui-doc--glance-hide-frame))))
 
