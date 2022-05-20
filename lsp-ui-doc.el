@@ -242,7 +242,10 @@ Because some variables are buffer local.")
 (defvar-local lsp-ui-doc--from-mouse nil
   "Non nil when the doc was triggered by a mouse event.")
 (defvar-local lsp-ui-doc--from-mouse-current nil
-  "Non nil when the current call is triggered by a mouse event")
+  "Non nil when the current call is triggered by a mouse event.")
+(defvar-local lsp-ui-doc--hide-on-next-command nil
+  "Non-nil when the current document should ask to hide after next command.")
+
 
 (defconst lsp-ui-doc--buffer-prefix " *lsp-ui-doc-")
 
@@ -422,17 +425,20 @@ We don't extract the string that `lps-line' is already displaying."
   (-when-let* ((xw (lsp-ui-doc--webkit-get-xwidget)))
     (xwidget-webkit-execute-script-rv xw script)))
 
+(defvar-local lsp-ui-doc--unfocus-frame-timer nil)
+
 (defun lsp-ui-doc--hide-frame (&optional _win)
   "Hide any documentation frame or overlay."
+  (setq lsp-ui-doc--bounds nil
+        lsp-ui-doc--from-mouse nil)
   (lsp-ui-util-safe-delete-overlay lsp-ui-doc--inline-ov)
   (lsp-ui-util-safe-delete-overlay lsp-ui-doc--highlight-ov)
-  (setq lsp-ui-doc--bounds nil
-        lsp-ui-doc--from-mouse nil
-        lsp-ui-doc--inline-ov nil
-        lsp-ui-doc--highlight-ov nil)
+  (remove-hook 'post-command-hook 'lsp-ui-doc--hide-frame)
   (when-let ((frame (lsp-ui-doc--get-frame)))
     (when (frame-visible-p frame)
-      (make-frame-invisible frame))))
+      (make-frame-invisible frame)))
+  (setq lsp-ui-doc--unfocus-frame-timer
+        (run-at-time 0 nil #'lsp-ui-doc-unfocus-frame)))
 
 (defun lsp-ui-doc--buffer-width ()
   "Calculate the max width of the buffer."
@@ -823,9 +829,11 @@ HEIGHT is the documentation number of lines."
   (-let* ((height (lsp-ui-doc--inline-height))
           ((start . end) (lsp-ui-doc--inline-pos height))
           (buffer-string (buffer-substring start end))
-          (ov (if (overlayp lsp-ui-doc--inline-ov) lsp-ui-doc--inline-ov
+          (ov (if (overlayp lsp-ui-doc--inline-ov)
+                  (progn
+                    (move-overlay lsp-ui-doc--inline-ov start end)
+                    lsp-ui-doc--inline-ov)
                 (setq lsp-ui-doc--inline-ov (make-overlay start end)))))
-    (move-overlay ov start end)
     (overlay-put ov 'face 'default)
     (overlay-put ov 'display (lsp-ui-doc--inline-merge buffer-string))
     (overlay-put ov 'lsp-ui-doc-inline t)
@@ -924,13 +932,14 @@ HEIGHT is the documentation number of lines."
              (lsp--capability "hoverProvider"))
     (-if-let (bounds (or (and (symbol-at-point) (bounds-of-thing-at-point 'symbol))
                          (and (looking-at "[[:graph:]]") (cons (point) (1+ (point))))))
-        (unless (equal lsp-ui-doc--bounds bounds)
+        (unless (and (equal lsp-ui-doc--bounds bounds) (not lsp-ui-doc--hide-on-next-command))
           (lsp-ui-doc--hide-frame)
           (lsp-ui-util-safe-kill-timer lsp-ui-doc--timer)
           (setq lsp-ui-doc--timer
                 (run-with-idle-timer
                  lsp-ui-doc-delay nil
-                 (let ((buf (current-buffer)))
+                 (let ((buf (current-buffer))
+                       (hide lsp-ui-doc--hide-on-next-command))
                    (lambda nil
                      (when (equal buf (current-buffer))
                        (lsp-request-async
@@ -938,7 +947,7 @@ HEIGHT is the documentation number of lines."
                         (lsp--text-document-position-params)
                         (lambda (hover)
                           (when (equal buf (current-buffer))
-                            (lsp-ui-doc--callback hover bounds (current-buffer))))
+                            (lsp-ui-doc--callback hover bounds (current-buffer) hide)))
                         :mode 'tick
                         :cancel-token :lsp-ui-doc-hover)))))))
       (lsp-ui-doc--hide-frame))))
@@ -950,17 +959,21 @@ HEIGHT is the documentation number of lines."
                (end (-some-> (lsp:range-end data) lsp--position-to-point)))
     (cons start end)))
 
-(lsp-defun lsp-ui-doc--callback ((hover &as &Hover? :contents) bounds buffer)
+(lsp-defun lsp-ui-doc--callback ((hover &as &Hover? :contents) bounds buffer hide)
   "Process the received documentation.
 HOVER is the doc returned by the LS.
 BOUNDS are points of the symbol that have been requested.
-BUFFER is the buffer where the request has been made."
+BUFFER is the buffer where the request has been made.
+When HIDE is non-nil, hide the doc on next command."
   (let ((bounds (or (lsp-ui-doc--extract-bounds hover) bounds)))
     (if (and hover
              (>= (point) (car bounds))
              (<= (point) (cdr bounds))
              (eq buffer (current-buffer)))
         (progn
+          (lsp-ui-util-safe-kill-timer lsp-ui-doc--unfocus-frame-timer)
+          (when hide
+            (add-hook 'post-command-hook 'lsp-ui-doc--hide-frame))
           (setq lsp-ui-doc--bounds bounds)
           (lsp-ui-doc--display
            (thing-at-point 'symbol t)
@@ -1011,8 +1024,7 @@ before, or if the new window is the minibuffer."
          (or (not (eq (selected-window) (frame-parameter frame 'lsp-ui-doc--window-origin)))
              (not (eq (window-buffer) (frame-parameter frame 'lsp-ui-doc--buffer-origin))))
          (if on-idle (lsp-ui-doc--hide-frame)
-           (and (timerp lsp-ui-doc--timer-on-changes)
-                (cancel-timer lsp-ui-doc--timer-on-changes))
+           (lsp-ui-util-safe-kill-timer lsp-ui-doc--timer-on-changes)
            (setq lsp-ui-doc--timer-on-changes
                  (run-with-idle-timer 0 nil (lambda nil (lsp-ui-doc--on-state-changed frame t))))))))
 
@@ -1069,7 +1081,7 @@ Argument WIN is current applying window."
                (goto-char lsp-ui-doc--last-event)
                (let ((lsp-ui-doc-position 'at-point)
                      (lsp-ui-doc--from-mouse-current t))
-                 (lsp-ui-doc--callback hover bounds (current-buffer)))))
+                 (lsp-ui-doc--callback hover bounds (current-buffer) nil))))
            :mode 'tick
            :cancel-token :lsp-ui-doc-hover))))))
 
@@ -1077,8 +1089,7 @@ Argument WIN is current applying window."
   "Show the documentation corresponding to the text under EVENT."
   (interactive "e")
   (when lsp-ui-doc-show-with-mouse
-    (and (timerp lsp-ui-doc--timer-mouse-movement)
-         (cancel-timer lsp-ui-doc--timer-mouse-movement))
+    (lsp-ui-util-safe-kill-timer lsp-ui-doc--timer-mouse-movement)
     (let* ((e (cadr event))
            (point (posn-point e))
            (same-win (eq (selected-window) (posn-window e))))
@@ -1160,34 +1171,20 @@ It is supposed to be called from `lsp-ui--toggle'"
 (defun lsp-ui-doc-show ()
   "Trigger display hover information popup."
   (interactive)
-  (lsp-ui-doc--callback (lsp-request "textDocument/hover" (lsp--text-document-position-params))
-                        (or (bounds-of-thing-at-point 'symbol) (cons (point) (1+ (point))))
-                        (current-buffer)))
+  (let ((lsp-ui-doc-show-with-cursor t)
+        (lsp-ui-doc-delay 0))
+    (lsp-ui-doc--make-request)))
 
 (defun lsp-ui-doc-hide ()
   "Hide hover information popup."
   (interactive)
   (lsp-ui-doc--hide-frame))
 
-(defvar-local lsp-ui-doc--unfocus-frame-timer nil)
-(defun lsp-ui-doc--glance-hide-frame ()
-  "Hook to hide hover information popup for `lsp-ui-doc-glance'."
-  (when (lsp-ui-doc--visible-p)
-    (lsp-ui-doc--hide-frame)
-    (remove-hook 'post-command-hook 'lsp-ui-doc--glance-hide-frame)
-    ;; make sure child frame is unfocused
-    (setq lsp-ui-doc--unfocus-frame-timer
-          (run-at-time 1 nil #'lsp-ui-doc-unfocus-frame))))
-
 (defun lsp-ui-doc-glance ()
   "Trigger display hover information popup and hide it on next typing."
   (interactive)
-  (lsp-ui-doc-show)
-  (when lsp-ui-doc--unfocus-frame-timer
-    (cancel-timer lsp-ui-doc--unfocus-frame-timer))
-  (run-at-time 0 nil    ;; Since we want hiding after *next* command, not *this* command
-               (lambda ()
-                 (add-hook 'post-command-hook 'lsp-ui-doc--glance-hide-frame))))
+  (let ((lsp-ui-doc--hide-on-next-command t))
+    (lsp-ui-doc-show)))
 
 (define-minor-mode lsp-ui-doc-frame-mode
   "Marker mode to add additional key bind for lsp-ui-doc-frame."
