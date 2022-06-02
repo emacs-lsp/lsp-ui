@@ -27,11 +27,11 @@ test:
 
 checkdoc:
 	@echo "Run checkdoc..."
-	@$(EASK) checkdoc
+	@$(EASK) lint checkdoc
 
 lint:
 	@echo "Run package-lint..."
-	@$(EASK) lint
+	@$(EASK) lint package
 
 clean:
 	@$(EASK) clean-all
