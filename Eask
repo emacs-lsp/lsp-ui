@@ -1,6 +1,6 @@
 (package "lsp-ui"
          "8.0.0"
-         "UI integrations for lsp-mode")
+         "UI modules for lsp-mode")
 
 (package-file "lsp-ui.el")
 
