@@ -56,6 +56,12 @@
                  (const :tag "Left" left))
   :group 'lsp-ui-imenu)
 
+(defcustom lsp-ui-imenu-buffer-position 'right
+  "Where to place the `lsp-ui-imenu' buffer."
+  :type '(choice (const :tag "Left" left)
+		 (const :tag "Right" right))
+  :group 'lsp-ui-imenu)
+
 (defcustom lsp-ui-imenu-colors '("deep sky blue" "green3")
   "Color list to cycle through for entry groups."
   :type '(repeat color)
@@ -295,7 +301,10 @@ ITEMS are used when the kind position is 'left."
   (imenu--make-index-alist)
   (let ((imenu-buffer (get-buffer-create lsp-ui-imenu-buffer-name)))
     (lsp-ui-imenu--refresh-content)
-    (let ((win (display-buffer-in-side-window imenu-buffer '((side . right)))))
+    (let ((win (display-buffer-in-side-window imenu-buffer
+					      `((side . ,(if (eq lsp-ui-imenu-buffer-position 'left)
+							     'left
+							   'right))))))
       (set-window-margins win 1)
       (select-window win)
       (set-window-start win 1)
