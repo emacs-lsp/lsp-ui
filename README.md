@@ -108,6 +108,8 @@ Show imenu entries.
 
 Customization:
 
+- `lsp-ui-imenu-kind-position` place to show entries kind
+- `lsp-ui-imenu-buffer-position` place to show the buffer window
 - `lsp-ui-imenu-window-width` set window width
 - `lsp-ui-imenu--custom-mode-line-format` mode line format
 - `lsp-ui-imenu-auto-refresh` auto refresh when necessary
