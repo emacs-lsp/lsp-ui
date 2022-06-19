@@ -2,6 +2,9 @@
 ** Unreleased
    - Disable sideline code actions and doc on cursor hover to reduce noise features.
 
+** 8.0.1
+   - Fix sideline alignment with text-scale (#719)
+
 ** 8.0.0
    - lsp-ui version working with lsp-mode v8.0.0
 
