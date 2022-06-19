@@ -299,13 +299,13 @@ MARKED-STRING is the string returned by `lsp-ui-sideline--extract-info'."
   (+ (apply '+ lengths)
      (if (display-graphic-p) 1 2)))
 
-(defun lsp-ui-sideline--compute-height nil
+(defun lsp-ui-sideline--compute-height ()
   "Return a fixed size for text in sideline."
   (if (null text-scale-mode-remapping)
       '(height 1)
     ;; Readjust height when text-scale-mode is used
     (list 'height
-          (/ 1 (or (plist-get (cdr text-scale-mode-remapping) :height)
+          (/ 1 (or (plist-get (cdar text-scale-mode-remapping) :height)
                    1)))))
 
 (defun lsp-ui-sideline--make-display-string (info symbol current)
