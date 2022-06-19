@@ -1,8 +1,8 @@
 * Changelog
+
 ** Unreleased
    - Disable sideline code actions and doc on cursor hover to reduce noise features.
-
-** 8.0.1
+   - Allow customisation for the imenu buffer position (#718)
    - Fix sideline alignment with text-scale (#719)
 
 ** 8.0.0
