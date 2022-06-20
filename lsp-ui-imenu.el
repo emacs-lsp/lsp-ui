@@ -202,7 +202,7 @@
   (let ((ov (make-overlay (point) (point)))
         (title-color (lsp-ui-imenu--get-color (+ color-index depth))))
     (overlay-put
-     ov 'after-string
+     ov 'before-string
      (concat (lsp-ui-imenu--pad " " padding bars depth color-index t is-last)
              (propertize title 'face `(:foreground ,title-color))
              (propertize "\n" 'face '(:height 1))))))
@@ -220,31 +220,30 @@ DEPTH is the depth of the items in the index tree, starting from 0.
 COLOR-INDEX is the index of the color of the leftmost bar.
 
 Return the updated COLOR-INDEX."
-  (let ((len (length items)))
-    (--each-indexed items
-      (let ((is-last (= (1+ it-index) len)))
-        (if (imenu--subalist-p it)
-            (-let* (((sub-title . entries) it))
-              (if (= depth 0)
-                  (lsp-ui-imenu--put-toplevel-title sub-title color-index)
-                (lsp-ui-imenu--put-subtitle sub-title padding bars depth color-index is-last))
-              (when (and is-last (> depth 0))
-                (aset bars (1- depth) nil))
-              (let ((lsp-ui-imenu-kind-position (if (> depth 0) 'top
-                                                  lsp-ui-imenu-kind-position)))
-                (lsp-ui-imenu--insert-items sub-title
-                                            entries
-                                            padding
-                                            bars
-                                            (1+ depth)
-                                            color-index))
-              (when (and is-last (> depth 0))
-                (aset bars (1- depth) t))
-              (when (= depth 0)
-                (setq color-index (1+ color-index))))
-          (insert (lsp-ui-imenu--make-line title it-index it
-                                           padding bars depth color-index
-                                           is-last))))))
+  (--each-indexed items
+    (let ((is-last (= (1+ it-index) (length items))))
+      (if (imenu--subalist-p it)
+          (-let* (((sub-title . entries) it))
+            (if (= depth 0)
+                (lsp-ui-imenu--put-toplevel-title sub-title color-index)
+              (lsp-ui-imenu--put-subtitle sub-title padding bars depth color-index is-last))
+            (when (and is-last (> depth 0))
+              (aset bars (1- depth) nil))
+            (let ((lsp-ui-imenu-kind-position (if (> depth 0) 'top
+                                                lsp-ui-imenu-kind-position)))
+              (lsp-ui-imenu--insert-items sub-title
+                                          entries
+                                          padding
+                                          bars
+                                          (1+ depth)
+                                          color-index))
+            (when (and is-last (> depth 0))
+              (aset bars (1- depth) t))
+            (when (= depth 0)
+              (setq color-index (1+ color-index))))
+        (insert (lsp-ui-imenu--make-line title it-index it
+                                         padding bars depth color-index
+                                         is-last)))))
   color-index)
 
 (defun lsp-ui-imenu--get-padding (items)
