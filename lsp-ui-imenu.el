@@ -183,7 +183,10 @@
 
 (defun lsp-ui-imenu--put-separator nil
   (let ((ov (make-overlay (point) (point))))
-    (overlay-put ov 'after-string (propertize "\n" 'face '(:height 0.6)))))
+    (overlay-put ov 'after-string (propertize "\n" 'face '(:height 0.6)))
+    (overlay-put ov 'priority 0)))
+
+(defvar-local overlay-priority 0)
 
 (defun lsp-ui-imenu--put-toplevel-title (title color-index)
   (if (eq lsp-ui-imenu-kind-position 'top)
@@ -194,7 +197,8 @@
          (concat (propertize "\n" 'face '(:height 0.6))
                  (propertize title 'face `(:foreground ,color))
                  "\n"
-                 (propertize "\n" 'face '(:height 0.6)))))
+                 (propertize "\n" 'face '(:height 0.6))))
+	(overlay-put ov 'priority (setq overlay-priority (1- overlay-priority))))
     ;; Left placement, title is put with the first sub item. Only put a separator here.
     (lsp-ui-imenu--put-separator)))
 
@@ -202,10 +206,11 @@
   (let ((ov (make-overlay (point) (point)))
         (title-color (lsp-ui-imenu--get-color (+ color-index depth))))
     (overlay-put
-     ov 'before-string
+     ov 'after-string
      (concat (lsp-ui-imenu--pad " " padding bars depth color-index t is-last)
              (propertize title 'face `(:foreground ,title-color))
-             (propertize "\n" 'face '(:height 1))))))
+             (propertize "\n" 'face '(:height 1))))
+    (overlay-put ov 'priority (setq overlay-priority (1- overlay-priority)))))
 
 (defun lsp-ui-imenu--insert-items (title items padding bars depth color-index)
   "Insert ITEMS for TITLE.
