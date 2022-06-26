@@ -83,6 +83,7 @@ If the PATH is not in the workspace, it returns the original PATH."
       path)))
 
 (defun lsp-ui--toggle (enable)
+  "Toggle enable for each lsp-ui module."
   (dolist (feature '(lsp-ui-peek lsp-ui-sideline lsp-ui-doc lsp-ui-imenu))
     (let* ((sym (--> (intern-soft (concat (symbol-name feature) "-enable"))
                      (and (boundp it) it)))
@@ -106,6 +107,10 @@ omitted or nil, and toggle it if ARG is ‘toggle’."
   :group lsp-ui
   :keymap lsp-ui-mode-map
   (lsp-ui--toggle lsp-ui-mode))
+
+;;;###autoload
+(define-global-minor-mode global-lsp-ui-mode lsp-ui-mode
+  (lambda () (lsp-ui-mode 1)))
 
 ;; The request is delegated to xref-backend-apropos defined in lsp-mode.
 ;; xref-find-apropos does similar job but is less appealing because it splits and
@@ -171,7 +176,6 @@ Both should have the form (FILENAME LINE COLUMN)."
           (forward-char (caddr res))
           (cons idx (length refs)))
       (cons 0 0))))
-
 
 (provide 'lsp-ui)
 ;;; lsp-ui.el ends here
