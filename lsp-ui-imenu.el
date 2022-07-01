@@ -62,6 +62,12 @@
 		 (const :tag "Right" right))
   :group 'lsp-ui-imenu)
 
+(defcustom lsp-ui-imenu-persistent-buffer nil
+  "If non-nil, the `lsp-ui-imenu' buffer will permanently maintain its size.
+ie. it will not be affected by `balance-windows' etc."
+  :type 'boolean
+  :group 'lsp-ui-imenu)
+
 (defcustom lsp-ui-imenu-colors '("deep sky blue" "green3")
   "Color list to cycle through for entry groups."
   :type '(repeat color)
@@ -314,13 +320,15 @@ ITEMS are used when the kind position is 'left."
       (set-window-start win 1)
       (lsp-ui-imenu--move-to-name-beginning)
       (set-window-dedicated-p win t)
-      ;; when `lsp-ui-imenu-window-width' is 0, fit window to buffer
-      (if (= lsp-ui-imenu-window-width 0)
-          (let ((fit-window-to-buffer-horizontally 'only))
-            (fit-window-to-buffer win)
-            (window-resize win 3 t))
-        (let ((x (- lsp-ui-imenu-window-width (window-width))))
-          (window-resize (selected-window) x t))))))
+      (let ((window-size-fixed)) ;; Temporarily set `window-size-fixed' to nil for resizing.
+	;; When `lsp-ui-imenu-window-width' is 0, fit window to buffer:
+	(if (= lsp-ui-imenu-window-width 0)
+            (let ((fit-window-to-buffer-horizontally 'only))
+              (fit-window-to-buffer win)
+              (window-resize win 3 t))
+          (let ((x (- lsp-ui-imenu-window-width (window-width))))
+            (window-resize (selected-window) x t))))
+      )))
 
 (defun lsp-ui-imenu--kill nil
   "Kill imenu window."
@@ -377,7 +385,8 @@ ITEMS are used when the kind position is 'left."
   "Keymap for ‘lsp-ui-peek-mode’.")
 
 (define-derived-mode lsp-ui-imenu-mode special-mode "lsp-ui-imenu"
-  "Mode showing imenu entries.")
+  "Mode showing imenu entries."
+  (setq window-size-fixed (if lsp-ui-imenu-persistent-buffer 'width nil)))
 
 (defun lsp-ui-imenu--refresh ()
   "Safe refresh imenu content."
