@@ -62,12 +62,6 @@
 		 (const :tag "Right" right))
   :group 'lsp-ui-imenu)
 
-(defcustom lsp-ui-imenu-persistent-buffer nil
-  "If non-nil, the `lsp-ui-imenu' buffer will permanently maintain its size.
-ie. it will not be affected by `balance-windows' etc."
-  :type 'boolean
-  :group 'lsp-ui-imenu)
-
 (defcustom lsp-ui-imenu-colors '("deep sky blue" "green3")
   "Color list to cycle through for entry groups."
   :type '(repeat color)
@@ -76,6 +70,12 @@ ie. it will not be affected by `balance-windows' etc."
 (defcustom lsp-ui-imenu-window-width 0
   "When not 0, don't fit window to buffer and use value as window-width."
   :type 'number
+  :group 'lsp-ui-imenu)
+
+(defcustom lsp-ui-imenu-window-fix-width nil
+  "If non-nil, the `lsp-ui-imenu' window will permanently maintain its width.
+ie. it will not be affected by `balance-windows' etc."
+  :type 'boolean
   :group 'lsp-ui-imenu)
 
 (defcustom lsp-ui-imenu-auto-refresh nil
@@ -386,7 +386,7 @@ ITEMS are used when the kind position is 'left."
 
 (define-derived-mode lsp-ui-imenu-mode special-mode "lsp-ui-imenu"
   "Mode showing imenu entries."
-  (setq window-size-fixed (if lsp-ui-imenu-persistent-buffer 'width nil)))
+  (setq window-size-fixed (if lsp-ui-imenu-window-fix-width 'width nil)))
 
 (defun lsp-ui-imenu--refresh ()
   "Safe refresh imenu content."

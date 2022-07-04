@@ -111,6 +111,7 @@ Customization:
 - `lsp-ui-imenu-kind-position` place to show entries kind
 - `lsp-ui-imenu-buffer-position` place to show the buffer window
 - `lsp-ui-imenu-window-width` set window width
+- `lsp-ui-imenu-window-fix-width` when non-nil, the window will not be resizable (eg. unaffected by `balance-windows`)
 - `lsp-ui-imenu--custom-mode-line-format` mode line format
 - `lsp-ui-imenu-auto-refresh` auto refresh when necessary
 - `lsp-ui-imenu-refresh-delay` delay to refresh imenu
