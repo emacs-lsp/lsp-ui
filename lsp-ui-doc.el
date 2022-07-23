@@ -90,8 +90,8 @@ Displays documentation of the symbol at point on hover. This only takes effect w
 
 (defcustom lsp-ui-doc-position 'top
   "Where to display the doc when moving the point cursor.
-This affect the position of the documentation when `lsp-ui-doc-show-with-cursor'
-is non-nil."
+This affects the position of the documentation when
+`lsp-ui-doc-show-with-cursor' is non-nil."
   :type '(choice (const :tag "Top" top)
                  (const :tag "Bottom" bottom)
                  (const :tag "At point" at-point))
