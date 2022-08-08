@@ -64,7 +64,8 @@
 
 (defcustom lsp-ui-doc-enable t
   "Whether or not to enable lsp-ui-doc.
-Displays documentation of the symbol at point on hover. This only takes effect when a buffer is started."
+Displays documentation of the symbol at point on hover.  This only
+takes effect when a buffer is started."
   :type 'boolean
   :group 'lsp-ui)
 
