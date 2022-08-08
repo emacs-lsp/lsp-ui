@@ -1178,6 +1178,7 @@ It is supposed to be called from `lsp-ui--toggle'"
 (defun lsp-ui-doc-hide ()
   "Hide hover information popup."
   (interactive)
+  (lsp-ui-doc-unfocus-frame) ;; In case focus is in doc frame
   (lsp-ui-doc--hide-frame))
 
 (defun lsp-ui-doc-glance ()
@@ -1200,6 +1201,7 @@ It is supposed to be called from `lsp-ui--toggle'"
   (interactive)
   (when-let* ((frame (lsp-ui-doc--get-frame))
               (visible (lsp-ui-doc--frame-visible-p)))
+    (remove-hook 'post-command-hook 'lsp-ui-doc--hide-frame)
     (set-frame-parameter frame 'lsp-ui-doc--no-focus nil)
     (set-frame-parameter frame 'cursor-type t)
     (lsp-ui-doc--with-buffer
