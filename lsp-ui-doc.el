@@ -1182,6 +1182,13 @@ It is supposed to be called from `lsp-ui--toggle'"
   (lsp-ui-doc-unfocus-frame) ;; In case focus is in doc frame
   (lsp-ui-doc--hide-frame))
 
+(defun lsp-ui-doc-toggle ()
+  "Toggle hover information popup."
+  (interactive)
+  (if (lsp-ui-doc--visible-p)
+      (lsp-ui-doc-hide)
+    (lsp-ui-doc-show)))
+
 (defun lsp-ui-doc-glance ()
   "Trigger display hover information popup and hide it on next typing."
   (interactive)
