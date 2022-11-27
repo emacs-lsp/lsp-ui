@@ -33,11 +33,11 @@ jobs:
 
       - uses: actions/setup-node@v2
         with:
-          node-version: '14'
+          node-version: '16'
 
       - uses: emacs-eask/setup-eask@master
         with:
-          version: '0.6.27'
+          version: 'snapshot'
 
       - name: Install Rust toolchain
         uses: actions-rs/toolchain@v1
