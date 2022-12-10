@@ -14,7 +14,7 @@ ci: clean build compile checkdoc
 build:
 	$(EASK) package
 	$(EASK) install
-	$(EASK) clean-elc
+	$(EASK) clean elc
 
 compile:
 	@echo "Compiling..."
