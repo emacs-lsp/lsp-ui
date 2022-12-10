@@ -1,10 +1,15 @@
 (package "lsp-ui"
-         "8.0.0"
+         "8.0.1"
          "UI modules for lsp-mode")
+
+(website-url "https://github.com/emacs-lsp/lsp-ui")
+(keywords "languages" "tools")
 
 (package-file "lsp-ui.el")
 
 (files "*.el" "lsp-ui-doc.html")
+
+(script "test" "echo \"Error: no test specified\" && exit 1")
 
 (source "gnu")
 (source "melpa")

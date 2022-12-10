@@ -14,7 +14,7 @@ ci: clean build compile checkdoc
 build:
 	$(EASK) package
 	$(EASK) install
-	$(EASK) clean-elc
+	$(EASK) clean elc
 
 compile:
 	@echo "Compiling..."
@@ -34,6 +34,6 @@ lint:
 	@$(EASK) lint package
 
 clean:
-	@$(EASK) clean-all
+	@$(EASK) clean all
 
 .PHONY: ci build compile test clean
