@@ -726,7 +726,10 @@ references.  The function returns a list of `ls-xref-item'."
 Returns item(s)."
   (-when-let* ((locs (lsp-request method params))
                (locs (if (listp locs)
-                         locs
+                         (if (symbolp (car locs))
+                             ;; A single plist was returned
+                             (list locs)
+                           locs)
                        (if (vectorp locs)
                            (append locs nil)
                          (list locs)))))
