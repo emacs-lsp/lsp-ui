@@ -314,7 +314,14 @@ XREFS is a list of references/definitions."
             (len-str (number-to-string count)))
       (setq lsp-ui-peek--size-list (+ lsp-ui-peek--size-list count))
       (push (concat (propertize (if lsp-ui-peek-show-directory
-                                    (lsp-ui--workspace-path filename)
+                                    (let ((path (lsp-ui--workspace-path filename)))
+                                      (if (> (length path) lsp-ui-peek-list-width)
+                                          (let* ((path (substring path (- (length path) lsp-ui-peek-list-width)))
+                                                 (dir-start (string-match-p (f-path-separator) path)))
+                                            (if dir-start
+                                              (concat "..." (substring path dir-start))
+                                              path))
+                                          path))
                                   (file-name-nondirectory filename))
                                 'face 'lsp-ui-peek-filename
                                 'file filename
