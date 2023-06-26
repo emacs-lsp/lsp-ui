@@ -356,16 +356,23 @@ ITEMS are used when the kind position is 'left."
   (while (not (= (get-text-property (point) 'index) 0))
     (forward-line -1)))
 
+(defun lsp-ui-imenu--position-at-point nil
+  ;; `semantic-create-imenu-index' uses overlays as position paramters.
+  (let ((marker (get-text-property (point) 'marker)))
+    (if (overlayp marker)
+        (setq marker (overlay-start marker)))
+    marker))
+
 (defun lsp-ui-imenu--visit nil
   (interactive)
-  (let ((marker (get-text-property (point) 'marker)))
+  (let ((marker (lsp-ui-imenu--position-at-point)))
     (select-window (get-buffer-window lsp-ui-imenu--origin))
     (goto-char marker)
     (pulse-momentary-highlight-one-line (point) 'next-error)))
 
 (defun lsp-ui-imenu--view nil
   (interactive)
-  (let ((marker (get-text-property (point) 'marker)))
+  (let ((marker (lsp-ui-imenu--position-at-point)))
     (with-selected-window (get-buffer-window lsp-ui-imenu--origin)
       (goto-char marker)
       (recenter)
