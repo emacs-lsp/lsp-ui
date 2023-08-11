@@ -14,7 +14,7 @@
 (source "gnu")
 (source "melpa")
 
-(depends-on "emacs" "26.3")
+(depends-on "emacs" "27.1")
 (depends-on "dash")
 (depends-on "flycheck")
 (depends-on "lsp-mode")
