@@ -601,8 +601,11 @@ PARAM is the request params."
       (lsp-ui-peek--show xrefs))))
 
 (defun lsp-ui-peek-find-references (&optional include-declaration extra)
-  "Find references to the IDENTIFIER at point."
-  (interactive)
+  "Find references to the IDENTIFIER at point.
+
+With a prefix argument, or if INCLUDE-DECLARATION is non-nil,
+includes the declaration of the identifier in the results."
+  (interactive "P")
   (lsp-ui-peek--find-xrefs (symbol-at-point) "textDocument/references"
                            (append extra (lsp--make-reference-params
                                           nil
