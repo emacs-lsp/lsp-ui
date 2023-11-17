@@ -604,7 +604,9 @@ PARAM is the request params."
   "Find references to the IDENTIFIER at point."
   (interactive)
   (lsp-ui-peek--find-xrefs (symbol-at-point) "textDocument/references"
-                           (append extra (lsp--make-reference-params nil include-declaration))))
+                           (append extra (lsp--make-reference-params
+                                          nil
+                                          (not include-declaration)))))
 
 (defun lsp-ui-peek-find-definitions (&optional extra)
   "Find definitions to the IDENTIFIER at point."
