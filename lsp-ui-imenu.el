@@ -323,12 +323,22 @@ ITEMS are used when the kind position is `left."
 	  (let ((window-size-fixed)) ;; Temporarily set `window-size-fixed' to nil for resizing.
 	;; When `lsp-ui-imenu-window-width' is 0, fit window to buffer:
 	(if (= lsp-ui-imenu-window-width 0)
-			(let ((fit-window-to-buffer-horizontally 'only))
-			  (fit-window-to-buffer win)
-			  (window-resize win 3 t))
-		  (let ((x (- lsp-ui-imenu-window-width (window-width))))
-			(window-resize (selected-window) x t))))
-	  )))
+            (let ((actual-width (if (fboundp 'buffer-line-statistics)
+                                    ;; since Emacs-28
+                                    (cadr (buffer-line-statistics))
+                                  (save-excursion
+                                    (goto-char (point-min))
+                                    (let ((max 0)
+                                          (to (point-max)))
+                                      (while (< (point) to)
+                                        (end-of-line)
+                                        (setq max (max max (current-column)))
+                                        (forward-line))
+                                      max)))))
+              (enlarge-window-horizontally
+               (- (1+ actual-width) (window-width win))))
+          (let ((x (- lsp-ui-imenu-window-width (window-width))))
+            (window-resize (selected-window) x t)))))))
 
 (defun lsp-ui-imenu--kill nil
   "Kill imenu window."
