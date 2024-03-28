@@ -70,10 +70,10 @@
 
 (defcustom lsp-ui-peek-fontify 'on-demand
   "Whether to fontify chunks of code (use semantics colors).
-WARNING: 'always can heavily slow the processing when
+WARNING: `always can heavily slow the processing when
 `lsp-ui-peek-expand-function' expands more than 1 file.
 It is recommended to keep the default value of `lsp-ui-peek-expand-function'
-when this variable is set to 'always."
+when this variable is set to `always."
   :type '(choice (const :tag "Never" never)
                  (const :tag "On demand" on-demand)
                  (const :tag "Always" always))
@@ -147,7 +147,7 @@ The function takes one parameter: a list of cons where the car is the
 filename and the cdr is the number of references in that file.
 It should returns a list of filenames to expand.
 WARNING: If you change this variable and expand more than 1 file, it is
-recommended to set `lsp-ui-peek-fontify' to 'never or 'on-demand, otherwise it
+recommended to set `lsp-ui-peek-fontify' to `never or `on-demand, otherwise it
 will cause performances issues.")
 
 (defvar-local lsp-ui-peek--overlay nil)
@@ -635,8 +635,8 @@ EXTRA is a plist of extra parameters."
                            (append extra (lsp--text-document-position-params))))
 
 (defun lsp-ui-peek--extract-chunk-from-buffer (pos start end)
-  "Return the chunk of code pointed to by POS (a Position object) in the current buffer.
-START and END are delimiters."
+  "Return the chunk of code pointed to by POS (a Position object) in the
+current buffer.  START and END are delimiters."
   (let* ((point (lsp--position-to-point pos))
          (inhibit-field-text-motion t)
          (line-start (1+ (- 1 (/ lsp-ui-peek-peek-height 2))))

@@ -16,12 +16,12 @@
 
 (depends-on "emacs" "27.1")
 (depends-on "dash")
-(depends-on "flycheck")
 (depends-on "lsp-mode")
 (depends-on "markdown-mode")
-(depends-on "rustic")
 
 (development
- (depends-on "ert-runner"))
+ (depends-on "ert-runner")
+ (depends-on "rustic")
+ (depends-on "flycheck"))
 
 (setq network-security-level 'low)  ; see https://github.com/jcs090218/setup-emacs-windows/issues/156#issuecomment-932956432
