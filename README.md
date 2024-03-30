@@ -94,8 +94,9 @@ Focus into lsp-ui-doc-frame
 
 Customization:
 
-- `lsp-ui-doc-enable` enable lsp-ui-doc
-- `lsp-ui-doc-position` Where to display the doc
+- `lsp-ui-doc-enable` Enable lsp-ui-doc
+- `lsp-ui-doc-position` Where to display the doc (top, bottom or at-point)
+- `lsp-ui-doc-side` Where to display the doc (left or right)
 - `lsp-ui-doc-delay` Number of seconds before showing the doc
 - `lsp-ui-doc-show-with-cursor` When non-nil, move the cursor over a symbol to show the doc
 - `lsp-ui-doc-show-with-mouse` When non-nil, move the mouse pointer over a symbol to show the doc

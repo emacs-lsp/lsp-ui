@@ -98,6 +98,12 @@ This affects the position of the documentation when
                  (const :tag "At point" at-point))
   :group 'lsp-ui-doc)
 
+(defcustom lsp-ui-doc-side 'right
+  "Which side to display the doc."
+  :type '(choice (const :tag "Left" left)
+                 (const :tag "Right" right))
+  :group 'lsp-ui-doc)
+
 (defcustom lsp-ui-doc-alignment 'frame
   "How to align the doc.
 This only takes effect when `lsp-ui-doc-position' is `top or `bottom."
@@ -545,7 +551,9 @@ FRAME just below the symbol at point."
                          ('window right)))
           ((left . top) (if (eq lsp-ui-doc-position 'at-point)
                             (lsp-ui-doc--mv-at-point width height left top)
-                          (cons (max (- frame-right width char-w) 10)
+                          (cons (pcase lsp-ui-doc-side
+                                  ('right (max (- frame-right width char-w) 10))
+                                  ('left 10))
                                 (pcase lsp-ui-doc-position
                                   ('top (+ top char-w))
                                   ('bottom (- (lsp-ui-doc--line-height 'mode-line)
