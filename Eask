@@ -1,5 +1,5 @@
 (package "lsp-ui"
-         "8.0.1"
+         "9.0.0"
          "UI modules for lsp-mode")
 
 (website-url "https://github.com/emacs-lsp/lsp-ui")
