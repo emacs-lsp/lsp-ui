@@ -265,6 +265,8 @@ Because some variables are buffer local.")
          (buffer-list-update-hook nil))
      (with-current-buffer (get-buffer-create (lsp-ui-doc--make-buffer-name))
        (setq lsp-ui-doc--parent-vars parent-vars)
+       (setq left-margin-width 0)
+       (setq right-margin-width 0)
        (prog1 (let ((buffer-read-only nil)
                     (inhibit-modification-hooks t)
                     (inhibit-redisplay t))
@@ -591,6 +593,11 @@ FRAME just below the symbol at point."
        (left-fringe . 0)))
     ;; Insert hr lines after width is computed
     (lsp-ui-doc--fix-hr-props)
+    ;; Force window to use buffer's margin settings instead of the
+    ;; parent window's settings.
+    (let ((window (frame-root-window frame))
+          (buffer (get-buffer (lsp-ui-doc--make-buffer-name))))
+      (set-window-buffer window buffer))
     (unless (frame-visible-p frame)
       (make-frame-visible frame))))
 
