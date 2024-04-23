@@ -189,7 +189,7 @@ Only the `background' is used in this face."
 
 (defvar lsp-ui-doc-frame-parameters
   '((left                     . -1)
-    (no-focus-on-map          . t)
+    (no-focus-on-map          . nil)
     (min-width                . 0)
     (width                    . 0)
     (min-height               . 0)
@@ -516,9 +516,12 @@ FRAME just below the symbol at point."
                             (if (< (car it) (window-start))
                                 (cons 0 0)
                               (posn-x-y (posn-at-point (1- (window-end))))))))
-          (frame-relative-symbol-x (+ start-x x (* (frame-char-width) 2)))
-          (frame-relative-symbol-y (+ start-y y))
+          (char-width (frame-char-width))
           (char-height (frame-char-height))
+          (sbw (or (window-scroll-bar-width) 0))
+          (sbh (or (window-scroll-bar-height) 0))
+          (frame-relative-symbol-x (+ start-x x (* char-width 2) sbw))
+          (frame-relative-symbol-y (+ start-y y (- 0 sbh)))
           ;; Make sure the frame is positioned horizontally such that
           ;; it does not go beyond the frame boundaries.
           (frame-x (or (and (<= (frame-outer-width) (+ frame-relative-symbol-x width))
@@ -526,7 +529,7 @@ FRAME just below the symbol at point."
                                     (frame-outer-width))))
                        x))
           (frame-y (+ (or (and (<= height frame-relative-symbol-y)
-                               (- y height))
+                               (- y height sbh))
                           (+ y char-height))
                       (if (fboundp 'window-tab-line-height) (window-tab-line-height) 0))))
     (cons (+ start-x frame-x) (+ start-y frame-y))))
