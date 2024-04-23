@@ -1247,6 +1247,7 @@ It is supposed to be called from `lsp-ui--toggle'"
   (interactive)
   (when-let* ((frame (lsp-ui-doc--get-frame))
               (visible (lsp-ui-doc--frame-visible-p)))
+    (remove-hook 'post-command-hook 'lsp-ui-doc--unfocus-frame-post-command)
     (remove-hook 'post-command-hook 'lsp-ui-doc--hide-frame)
     (set-frame-parameter frame 'lsp-ui-doc--no-focus nil)
     (set-frame-parameter frame 'cursor-type t)
@@ -1263,8 +1264,14 @@ It is supposed to be called from `lsp-ui--toggle'"
     (set-frame-parameter frame 'cursor-type nil)
     (lsp-ui-doc--with-buffer
       (setq cursor-type nil))
-    (when lsp-ui-doc--from-mouse
-      (make-frame-invisible frame))))
+    (if lsp-ui-doc--from-mouse
+        (make-frame-invisible frame)
+      (add-hook'post-command-hook 'lsp-ui-doc--unfocus-frame-post-command))))
+
+(defun lsp-ui-doc--unfocus-frame-post-command ()
+  "Hide frame on the next post command after unfocus frame."
+  (add-hook 'post-command-hook 'lsp-ui-doc--hide-frame)
+  (remove-hook 'post-command-hook 'lsp-ui-doc--unfocus-frame-post-command))
 
 (provide 'lsp-ui-doc)
 ;;; lsp-ui-doc.el ends here
