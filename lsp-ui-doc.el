@@ -189,7 +189,7 @@ Only the `background' is used in this face."
 
 (defvar lsp-ui-doc-frame-parameters
   '((left                     . -1)
-    (no-focus-on-map          . nil)
+    (no-focus-on-map          . t)
     (min-width                . 0)
     (width                    . 0)
     (min-height               . 0)
