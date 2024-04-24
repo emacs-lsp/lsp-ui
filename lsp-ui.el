@@ -172,6 +172,5 @@ Both should have the form (FILENAME LINE COLUMN)."
           (cons idx (length refs)))
       (cons 0 0))))
 
-
 (provide 'lsp-ui)
 ;;; lsp-ui.el ends here
