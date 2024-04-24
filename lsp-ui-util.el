@@ -1,11 +1,6 @@
 ;;; lsp-ui-util.el --- Utility module for Lsp-Ui  -*- lexical-binding: t -*-
 
-;; Copyright (C) 2020 Shen, Jen-Chieh
-
-;; Author: Jen-Chieh Shen <jcs090218@gmail.com>
-;; URL: https://github.com/emacs-lsp/lsp-ui
-;; Keywords: languages, tools
-;; Version: 6.2
+;; Copyright (C) 2020-2024 Shen, Jen-Chieh
 
 ;;; License
 ;;

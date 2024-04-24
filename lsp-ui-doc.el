@@ -501,7 +501,7 @@ We don't extract the string that `lps-line' is already displaying."
         (lsp-ui-doc--with-buffer
           (fill-region (point-min) (point-max)))))))
 
-(defun lsp-ui-doc--mv-at-point (width height start-x start-y)
+(defun lsp-ui-doc--mv-at-point (frame width height start-x start-y)
   "Return position of FRAME to be where the point is.
 WIDTH is the child frame width.
 HEIGHT is the child frame height.
@@ -518,8 +518,8 @@ FRAME just below the symbol at point."
                               (posn-x-y (posn-at-point (1- (window-end))))))))
           (char-width (frame-char-width))
           (char-height (frame-char-height))
-          (sbw (or (window-scroll-bar-width) 0))
-          (sbh (or (window-scroll-bar-height) 0))
+          (sbw (with-selected-frame frame (or (window-scroll-bar-width) 0)))
+          (sbh (with-selected-frame frame (or (window-scroll-bar-height) 0)))
           (frame-relative-symbol-x (+ start-x x (* char-width 2) sbw))
           (frame-relative-symbol-y (+ start-y y (- 0 sbh)))
           ;; Make sure the frame is positioned horizontally such that
@@ -555,7 +555,7 @@ FRAME just below the symbol at point."
                          ('frame (frame-pixel-width))
                          ('window right)))
           ((left . top) (if (eq lsp-ui-doc-position 'at-point)
-                            (lsp-ui-doc--mv-at-point width height left top)
+                            (lsp-ui-doc--mv-at-point frame width height left top)
                           (cons (pcase lsp-ui-doc-side
                                   ('right (max (- frame-right width char-w) 10))
                                   ('left 10))
