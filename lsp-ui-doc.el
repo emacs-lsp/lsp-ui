@@ -1037,17 +1037,16 @@ before, or if the new window is the minibuffer."
 (defvar-local lsp-ui-doc--timer-on-changes nil)
 
 (defun lsp-ui-doc--on-state-changed (_frame &optional on-idle)
-  "On state changed."
-  (when-let* ((frame (lsp-ui-doc--get-frame))
-              ((frame-live-p frame))
-              ((frame-visible-p frame))
-              ((not (minibufferp (window-buffer))))
-              ((or (not (eq (selected-window) (frame-parameter frame 'lsp-ui-doc--window-origin)))
-                   (not (eq (window-buffer) (frame-parameter frame 'lsp-ui-doc--buffer-origin))))))
-    (if on-idle (lsp-ui-doc--hide-frame)
-      (lsp-ui-util-safe-kill-timer lsp-ui-doc--timer-on-changes)
-      (setq lsp-ui-doc--timer-on-changes
-            (run-with-idle-timer 0 nil (lambda nil (lsp-ui-doc--on-state-changed frame t)))))))
+  (-when-let* ((frame (lsp-ui-doc--get-frame)))
+    (and (frame-live-p frame)
+         (frame-visible-p frame)
+         (not (minibufferp (window-buffer)))
+         (or (not (eq (selected-window) (frame-parameter frame 'lsp-ui-doc--window-origin)))
+             (not (eq (window-buffer) (frame-parameter frame 'lsp-ui-doc--buffer-origin))))
+         (if on-idle (lsp-ui-doc--hide-frame)
+           (lsp-ui-util-safe-kill-timer lsp-ui-doc--timer-on-changes)
+           (setq lsp-ui-doc--timer-on-changes
+                 (run-with-idle-timer 0 nil (lambda nil (lsp-ui-doc--on-state-changed frame t))))))))
 
 (advice-add 'load-theme :before (lambda (&rest _) (lsp-ui-doc--delete-frame)))
 
