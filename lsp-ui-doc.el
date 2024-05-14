@@ -1037,16 +1037,17 @@ before, or if the new window is the minibuffer."
 (defvar-local lsp-ui-doc--timer-on-changes nil)
 
 (defun lsp-ui-doc--on-state-changed (_frame &optional on-idle)
-  (-when-let* ((frame (lsp-ui-doc--get-frame)))
-    (and (frame-live-p frame)
-         (frame-visible-p frame)
-         (not (minibufferp (window-buffer)))
-         (or (not (eq (selected-window) (frame-parameter frame 'lsp-ui-doc--window-origin)))
-             (not (eq (window-buffer) (frame-parameter frame 'lsp-ui-doc--buffer-origin))))
-         (if on-idle (lsp-ui-doc--hide-frame)
-           (lsp-ui-util-safe-kill-timer lsp-ui-doc--timer-on-changes)
-           (setq lsp-ui-doc--timer-on-changes
-                 (run-with-idle-timer 0 nil (lambda nil (lsp-ui-doc--on-state-changed frame t))))))))
+  "On state changed."
+  (when-let* ((frame (lsp-ui-doc--get-frame))
+              ((frame-live-p frame))
+              ((frame-visible-p frame))
+              ((not (minibufferp (window-buffer))))
+              ((or (not (eq (selected-window) (frame-parameter frame 'lsp-ui-doc--window-origin)))
+                   (not (eq (window-buffer) (frame-parameter frame 'lsp-ui-doc--buffer-origin))))))
+    (if on-idle (lsp-ui-doc--hide-frame)
+      (lsp-ui-util-safe-kill-timer lsp-ui-doc--timer-on-changes)
+      (setq lsp-ui-doc--timer-on-changes
+            (run-with-idle-timer 0 nil (lambda nil (lsp-ui-doc--on-state-changed frame t)))))))
 
 (advice-add 'load-theme :before (lambda (&rest _) (lsp-ui-doc--delete-frame)))
 
@@ -1247,7 +1248,6 @@ It is supposed to be called from `lsp-ui--toggle'"
   (interactive)
   (when-let* ((frame (lsp-ui-doc--get-frame))
               (visible (lsp-ui-doc--frame-visible-p)))
-    (remove-hook 'post-command-hook 'lsp-ui-doc--unfocus-frame-post-command)
     (remove-hook 'post-command-hook 'lsp-ui-doc--hide-frame)
     (set-frame-parameter frame 'lsp-ui-doc--no-focus nil)
     (set-frame-parameter frame 'cursor-type t)
@@ -1264,14 +1264,8 @@ It is supposed to be called from `lsp-ui--toggle'"
     (set-frame-parameter frame 'cursor-type nil)
     (lsp-ui-doc--with-buffer
       (setq cursor-type nil))
-    (if lsp-ui-doc--from-mouse
-        (make-frame-invisible frame)
-      (add-hook'post-command-hook 'lsp-ui-doc--unfocus-frame-post-command))))
-
-(defun lsp-ui-doc--unfocus-frame-post-command ()
-  "Hide frame on the next post command after unfocus frame."
-  (add-hook 'post-command-hook 'lsp-ui-doc--hide-frame)
-  (remove-hook 'post-command-hook 'lsp-ui-doc--unfocus-frame-post-command))
+    (when lsp-ui-doc--from-mouse
+      (make-frame-invisible frame))))
 
 (provide 'lsp-ui-doc)
 ;;; lsp-ui-doc.el ends here
