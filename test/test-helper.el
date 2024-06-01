@@ -34,5 +34,6 @@
       (save-buffer))
     dir))
 
+(provide 'test-helper)
 
 ;;; test-helper.el ends here
