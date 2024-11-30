@@ -351,7 +351,7 @@ Because some variables are buffer local.")
                             (append list-marked-string nil))))
     (if lsp-ui-doc-include-signature
         list-marked-string
-      (cadr groups))))
+      (cdar groups))))
 
 (defun lsp-ui-doc--extract (contents)
   "Extract the documentation from CONTENTS.
