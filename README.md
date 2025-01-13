@@ -50,6 +50,9 @@ When set to 'line' the information will be updated when user
 changes current line otherwise the information will be updated
 when user changes current point
 - `lsp-ui-sideline-delay` seconds to wait before showing sideline
+- `lsp-ui-sideline-diagnostic-max-lines` default to showing only the
+  first line of diagnostic messages, increase for more verbose
+  messages, decrease if flickering occurs
 
 ## lsp-ui-peek:
 
