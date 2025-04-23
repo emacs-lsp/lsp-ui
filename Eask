@@ -1,3 +1,5 @@
+;; -*- mode: eask; lexical-binding: t -*-
+
 (package "lsp-ui"
          "9.0.0"
          "UI modules for lsp-mode")
