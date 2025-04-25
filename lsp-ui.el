@@ -127,10 +127,10 @@ Both should have the form (FILENAME LINE COLUMN)."
         (< (cadr x) (cadr y))
       (< (caddr x) (caddr y)))))
 
-(defun lsp-ui--reference-triples (include-declaration)
+(defun lsp-ui--reference-triples (exclude-declaration)
   "Return references as a list of (FILENAME LINE COLUMN) triples given EXTRA."
   (let ((refs (lsp-request "textDocument/references"
-                           (lsp--make-reference-params nil include-declaration))))
+                           (lsp--make-reference-params nil exclude-declaration))))
     (sort
      (mapcar
       (-lambda ((&Location :uri :range (&Range :start (&Position :line :character))))
@@ -139,11 +139,11 @@ Both should have the form (FILENAME LINE COLUMN)."
      #'lsp-ui--location<)))
 
 ;; TODO Make it efficient
-(defun lsp-ui-find-next-reference (&optional include-declaration)
+(defun lsp-ui-find-next-reference (&optional exclude-declaration)
   "Find next reference of the symbol at point."
   (interactive)
   (let* ((cur (list buffer-file-name (1- (line-number-at-pos)) (- (point) (line-beginning-position))))
-         (refs (lsp-ui--reference-triples include-declaration))
+         (refs (lsp-ui--reference-triples exclude-declaration))
          (idx -1)
          (res (-first (lambda (ref) (cl-incf idx) (lsp-ui--location< cur ref)) refs)))
     (if res
@@ -156,11 +156,11 @@ Both should have the form (FILENAME LINE COLUMN)."
       (cons 0 0))))
 
 ;; TODO Make it efficient
-(defun lsp-ui-find-prev-reference (&optional include-declaration)
+(defun lsp-ui-find-prev-reference (&optional exclude-declaration)
   "Find previous reference of the symbol at point."
   (interactive)
   (let* ((cur (list buffer-file-name (1- (line-number-at-pos)) (- (point) (line-beginning-position))))
-         (refs (lsp-ui--reference-triples include-declaration))
+         (refs (lsp-ui--reference-triples exclude-declaration))
          (idx -1)
          (res (-last (lambda (ref) (and (lsp-ui--location< ref cur) (cl-incf idx))) refs)))
     (if res
