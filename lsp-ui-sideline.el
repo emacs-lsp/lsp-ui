@@ -512,7 +512,7 @@ Argument HEIGHT is an actual image height in pixel."
                                          (t (error "Function image-size undefined.  Use default icon")))
                                    (lsp-ui-sideline--scale-lightbulb)))))))
 
-(defun lsp-ui-sideline--code-actions-image nil
+(defun lsp-ui-sideline--code-actions-image (action)
   (when lsp-ui-sideline-actions-icon
     (with-demoted-errors "[lsp-ui-sideline]: Error with actions icon: %s"
       (concat
@@ -535,7 +535,7 @@ Argument HEIGHT is an actual image height in pixel."
                           (replace-regexp-in-string " " " ")
                           (concat (unless lsp-ui-sideline-actions-icon
                                     lsp-ui-sideline-code-actions-prefix))))
-              (image (lsp-ui-sideline--code-actions-image))
+              (image (lsp-ui-sideline--code-actions-image action))
               (margin (lsp-ui-sideline--margin-width))
               (keymap (let ((map (make-sparse-keymap)))
                         (define-key map [down-mouse-1] (lambda () (interactive)
