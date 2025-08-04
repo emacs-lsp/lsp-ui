@@ -12,14 +12,6 @@ jobs:
       - name: Checkout
         uses: actions/checkout@v4
 
-      - uses: purcell/setup-emacs@master
-        with:
-          version: 28.1
-
-      - uses: conao3/setup-cask@master
-        with:
-          version: 0.8.4
-
       - name: MkDocs
         run: |
           cp -rf README.md images docs
