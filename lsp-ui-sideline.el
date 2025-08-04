@@ -619,26 +619,26 @@ from the language server."
                      (lsp--registered-capability "textDocument/codeAction")))
         (lsp-request-async
          "textDocument/codeAction"
-         (-let* ((diags (lsp-ui-sideline--line-diags (1- line-widen)))
+         (-let* ((diagnostics (lsp-ui-sideline--line-diags (1- line-widen)))
                  ((start . end) (cond ((eq lsp-ui-sideline-update-mode 'line)
                                        (cons 0 (- eol bol)))
-                                      (diags
+                                      (diagnostics
                                        (let* ((start (- (point) bol))
                                               (end start))
-                                         (seq-doseq (diag diags)
-                                           (when-let* ((diag-range (gethash "range" diag))
-                                                       (diag-start (gethash "start" diag-range))
-                                                       (c1 (gethash "character" diag-start))
-                                                       (diag-end (gethash "end" diag-range))
-                                                       (c2 (gethash "character" diag-end)))
-                                             (setq start (min c1 start))
-                                             (setq end (max c2 end))))
+                                         (mapc
+                                          (-lambda
+                                            ((&Diagnostic
+                                              :range (&Range :start (&Position :character c1)
+                                                             :end (&Position :character c2))))
+                                            (setq start (min c1 start))
+                                            (setq end (max c2 end)))
+                                          diagnostics)
                                          (cons start end)))
                                       (t (--> (- (point) bol) (cons it it))))))
            (list :textDocument doc-id
                  :range (list :start (list :line (1- line-widen) :character start)
                               :end (list :line (1- line-widen) :character end))
-                 :context (list :diagnostics diags)))
+                 :context (list :diagnostics diagnostics)))
          (lambda (actions)
            (when (eq (current-buffer) buffer)
              (lsp-ui-sideline--code-actions actions bol eol)))
