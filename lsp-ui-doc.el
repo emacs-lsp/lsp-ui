@@ -945,7 +945,7 @@ HEIGHT is the documentation number of lines."
 
 (defun lsp-ui-doc--make-request ()
   "Request the documentation to the LS."
-  (and (not track-mouse) lsp-ui-doc-show-with-mouse (setq-local track-mouse t))
+  ;; Note: track-mouse is managed by lsp-ui-doc--setup-mouse, not here
   (when (and lsp-ui-doc-show-with-cursor
              (not (memq this-command lsp-ui-doc--ignore-commands))
              (not (bound-and-true-p lsp-ui-peek-mode))
@@ -1165,7 +1165,10 @@ If nil, do not prevent mouse on prefix keys.")
       (setq lsp-ui-doc--timer-mouse-idle
             (run-with-idle-timer 0 t 'lsp-ui-doc--disable-mouse-on-prefix))))
    (t
-    (define-key lsp-ui-doc-mode-map (kbd "<mouse-movement>") nil))))
+    (define-key lsp-ui-doc-mode-map (kbd "<mouse-movement>") nil)
+    ;; Clear track-mouse when mouse tracking is disabled
+    (when (and lsp-ui-doc--mouse-tracked-by-us track-mouse)
+      (setq-local track-mouse nil)))))
 
 (defun lsp-ui-doc--prevent-focus-doc (e)
   (not (frame-parameter (cadr e) 'lsp-ui-doc--no-focus)))
@@ -1200,7 +1203,10 @@ If nil, do not prevent mouse on prefix keys.")
       (remove-hook 'window-state-change-functions 'lsp-ui-doc--on-state-changed))
     (remove-hook 'window-scroll-functions 'lsp-ui-doc--handle-scroll t)
     (remove-hook 'post-command-hook 'lsp-ui-doc--make-request t)
-    (remove-hook 'delete-frame-functions 'lsp-ui-doc--on-delete t))))
+    (remove-hook 'delete-frame-functions 'lsp-ui-doc--on-delete t)
+    ;; Clean up track-mouse if it was set by us
+    (when (and lsp-ui-doc--mouse-tracked-by-us track-mouse)
+      (setq-local track-mouse nil)))))
 
 (defun lsp-ui-doc-enable (enable)
   "Enable/disable ‘lsp-ui-doc-mode’.
