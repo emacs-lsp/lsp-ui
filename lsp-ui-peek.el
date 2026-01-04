@@ -1,6 +1,7 @@
 ;;; lsp-ui-peek.el --- Lsp-Ui-Peek  -*- lexical-binding: t -*-
 
 ;; Copyright (C) 2017 Sebastien Chapuis
+;; Copyright (C) 2017-2026 emacs-lsp maintainers
 
 ;; Author: Sebastien Chapuis <sebastien@chapu.is>
 ;; URL: https://github.com/emacs-lsp/lsp-ui

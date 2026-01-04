@@ -1,6 +1,7 @@
 ;;; lsp-ui-flycheck.el --- Flycheck support for lsp-mode -*- lexical-binding: t; -*-
 
 ;; Copyright (C) 2017  fmdkdd
+;; Copyright (C) 2017-2026 emacs-lsp maintainers
 ;; URL: https://github.com/emacs-lsp/lsp-ui
 ;; Keywords: languagues, tools
 ;; Version: 6.2

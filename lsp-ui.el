@@ -2,6 +2,7 @@
 
 ;; Copyright (C) 2017 Tobias Pisani
 ;; Copyright (C) 2018 Sebastien Chapuis, Fangrui Song
+;; Copyright (C) 2017-2026 emacs-lsp maintainers
 
 ;; Author: Sebastien Chapuis <sebastien@chapu.is>, Fangrui Song <i@maskray.me>
 ;; Keywords: languages, tools

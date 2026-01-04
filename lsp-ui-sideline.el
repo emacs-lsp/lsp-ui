@@ -1,6 +1,7 @@
 ;;; lsp-ui-sideline.el --- Lsp-Ui-Sideline  -*- lexical-binding: t -*-
 
 ;; Copyright (C) 2017 Sebastien Chapuis
+;; Copyright (C) 2017-2026 emacs-lsp maintainers
 
 ;; Author: Sebastien Chapuis <sebastien@chapu.is>
 ;; URL: https://github.com/emacs-lsp/lsp-ui

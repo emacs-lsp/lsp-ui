@@ -1,6 +1,7 @@
 ;;; lsp-ui-util.el --- Utility module for Lsp-Ui  -*- lexical-binding: t -*-
 
 ;; Copyright (C) 2020-2024 Shen, Jen-Chieh
+;; Copyright (C) 2020-2026 emacs-lsp maintainers
 
 ;;; License
 ;;
