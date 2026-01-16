@@ -1171,6 +1171,11 @@ If nil, do not prevent mouse on prefix keys.")
 (defun lsp-ui-doc--prevent-focus-doc (e)
   (not (frame-parameter (cadr e) 'lsp-ui-doc--no-focus)))
 
+(defvar lsp-ui-doc-mode--was-already-enabled nil
+  "Whether the minor mode was previously enabled.
+This is used to notice if the mode is enabled again when it was already
+enabled, to avoid re-copying previous state.")
+
 (define-minor-mode lsp-ui-doc-mode
   "Minor mode for showing hover information in child frame."
   :init-value nil
@@ -1190,7 +1195,10 @@ If nil, do not prevent mouse on prefix keys.")
         (push '(lsp-ui-doc-frame . :never) frameset-filter-alist)))
     (when (boundp 'window-state-change-functions)
       (add-hook 'window-state-change-functions 'lsp-ui-doc--on-state-changed))
-    (lsp-ui-doc--setup-mouse)
+    (unless lsp-ui-doc-mode--was-already-enabled
+      ;; This function is not idempotent, avoid running twice in a
+      ;; row.
+      (lsp-ui-doc--setup-mouse))
     (advice-add 'handle-switch-frame :before-while 'lsp-ui-doc--prevent-focus-doc)
     (add-hook 'post-command-hook 'lsp-ui-doc--make-request nil t)
     (add-hook 'window-scroll-functions 'lsp-ui-doc--handle-scroll nil t)
@@ -1201,7 +1209,8 @@ If nil, do not prevent mouse on prefix keys.")
       (remove-hook 'window-state-change-functions 'lsp-ui-doc--on-state-changed))
     (remove-hook 'window-scroll-functions 'lsp-ui-doc--handle-scroll t)
     (remove-hook 'post-command-hook 'lsp-ui-doc--make-request t)
-    (remove-hook 'delete-frame-functions 'lsp-ui-doc--on-delete t))))
+    (remove-hook 'delete-frame-functions 'lsp-ui-doc--on-delete t)))
+  (setq lsp-ui-doc-mode--was-already-enabled lsp-ui-doc-mode))
 
 (defun lsp-ui-doc-enable (enable)
   "Enable/disable ‘lsp-ui-doc-mode’.
