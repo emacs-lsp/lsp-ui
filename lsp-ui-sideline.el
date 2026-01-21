@@ -520,13 +520,29 @@ Argument HEIGHT is an actual image height in pixel."
        (propertize " " 'display (lsp-ui-sideline--code-actions-make-image))
        (propertize " " 'display '(space :width 0.3))))))
 
+(defface lsp-ui-sideline-disabled-code-action-face
+  '((t :inherit lsp-disabled-code-action-face))
+  "Faced used to show disabled code actions in the sideline.")
+
+(defface lsp-ui-sideline-preferred-code-action-face
+  '((t :inherit lsp-preferred-code-action-face))
+  "Face used to show preferred code actions in the sideline.")
+
+(defcustom lsp-ui-sideline-show-disabled-code-actions t
+  "Whether disabled code actions should be shown.
+They cannot be executed."
+  :type 'boolean
+  :group 'lsp-ui-sideline)
+
 (defun lsp-ui-sideline--code-actions (actions bol eol)
   "Show code ACTIONS."
   (let ((inhibit-modification-hooks t))
     (when lsp-ui-sideline-actions-kind-regex
-      (setq actions (seq-filter (-lambda ((&CodeAction :kind?))
-                                  (or (not kind?)
-                                      (s-match lsp-ui-sideline-actions-kind-regex kind?)))
+      (setq actions (seq-filter (-lambda ((&CodeAction :kind? :disabled?))
+                                  (and (or (not disabled?)
+                                           lsp-ui-sideline-show-disabled-code-actions)
+                                       (or (not kind?)
+                                           (s-match lsp-ui-sideline-actions-kind-regex kind?))))
                                 actions)))
     (setq lsp-ui-sideline--code-actions actions)
     (lsp-ui-sideline--delete-kind 'actions)
@@ -544,8 +560,14 @@ Argument HEIGHT is an actual image height in pixel."
                                                            (lsp-execute-code-action action))))
                         map))
               (len (length title))
+              ((&CodeAction :disabled? :is-preferred?) action)
               (title (progn (add-face-text-property 0 len 'lsp-ui-sideline-global nil title)
                             (add-face-text-property 0 len 'lsp-ui-sideline-code-action nil title)
+                            (when is-preferred?
+                              (add-face-text-property 0 len 'lsp-ui-sideline-preferred-code-action-face nil title))
+                            (when disabled?
+                              (add-face-text-property 0 len 'lsp-ui-sideline-disabled-code-action-face nil title)
+                              (add-text-properties 0 len `(help-echo ,(lsp:code-action-disabled-reason disabled?)) title))
                             (add-text-properties 0 len `(keymap ,keymap mouse-face highlight) title)
                             title))
               (string (concat (propertize " " 'display `(space :align-to (- right-fringe ,(lsp-ui-sideline--align (+ len (length image)) margin))))
