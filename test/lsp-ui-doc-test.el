@@ -15,15 +15,16 @@ It will show it will shrink empty lines
       (should (ert-equal-including-properties
                #("
 This is a test
- 
+  
 It will show it will shrink empty lines
 
 
 "
-                 0 1 (lsp-ui-doc-no-space t face (:height 0.2))
-                 16 17 (lsp-ui-doc-no-space t face (:height 0.5))
-                 17 18 (face (:height 0.5))
-                 58 60 (lsp-ui-doc-no-space t face (:height 0.3)))
+                 0 1 (face (:height 0.3))
+                 16 17 (face (:height 0.1))
+                 17 18 (face (:height 0.2))
+                 18 19 (face (:height 0.4))
+                 59 61 (face (:height 0.3)))
                (buffer-substring (point-min) (point-max)))))))
 
 
