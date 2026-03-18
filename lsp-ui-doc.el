@@ -1170,7 +1170,7 @@ If nil, do not prevent mouse on prefix keys.")
 (defun lsp-ui-doc--prevent-focus-doc (e)
   (not (frame-parameter (cadr e) 'lsp-ui-doc--no-focus)))
 
-(defvar lsp-ui-doc-mode--was-already-enabled nil
+(defvar-local lsp-ui-doc-mode--was-already-enabled nil
   "Whether the minor mode was previously enabled.
 This is used to notice if the mode is enabled again when it was already
 enabled, to avoid re-copying previous state.")
