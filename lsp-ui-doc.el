@@ -655,23 +655,48 @@ FN is the function to call on click."
        (frame-parameter nil 'lsp-ui-doc--no-focus)
        (select-frame (frame-parent) t)))
 
+(defun lsp-ui-doc--fill-check-and-fill (start end fill-column)
+  (let ((max-len 0))
+    (save-excursion
+      (goto-char start)
+      (while (< (point) end)
+        (setq max-len (max max-len (- (line-end-position) (line-beginning-position))))
+        (forward-line 1)))
+    (when (> max-len fill-column)
+      (fill-region start end))))
+
 (defun lsp-ui-doc--fill-document ()
   "Better wrap the document so it fits the doc window."
-  (let ((fill-column (lsp-ui-doc--scale-column-width (- lsp-ui-doc-max-width 5)))
-        start        ; record start for `fill-region'
-        first-line)  ; first line in paragraph
+  (let ((fill-column (lsp-ui-doc--scale-column-width (- lsp-ui-doc-max-width 5))))
     (save-excursion
       (goto-char (point-min))
-      (setq start (point)
-            first-line (thing-at-point 'line))
-      (while (re-search-forward "^[ \t]*\n" nil t)
-        (setq first-line (thing-at-point 'line))
-        (when (< fill-column (length first-line))
-          (fill-region start (point)))
-        (setq start (point)))
-      ;; Fill the last paragraph
-      (when (< fill-column (length first-line))
-        (fill-region start (point-max))))))
+      (while (not (eobp))
+        ;; Check if we are at a code block
+        (if (looking-at "^[ \t]*```")
+            ;; Skip code block
+            (progn
+              (forward-line 1)
+              (if (re-search-forward "^[ \t]*```" nil t)
+                  (forward-line 1)
+                (goto-char (point-max))))
+
+          ;; Not a code block. Process text.
+          (let ((limit (save-excursion
+                         (if (re-search-forward "^[ \t]*```" nil t)
+                             (match-beginning 0)
+                           (point-max)))))
+            (setq limit (copy-marker limit)) ;; Use marker
+
+            (while (< (point) limit)
+               (let ((p-start (point)))
+                 (if (re-search-forward "^[ \t]*\n" limit t)
+                     (let ((p-end (point)))
+                       (lsp-ui-doc--fill-check-and-fill p-start p-end fill-column))
+                   (lsp-ui-doc--fill-check-and-fill p-start limit fill-column)
+                   (goto-char limit))))
+
+            (set-marker limit nil)))))))
+
 
 (defun lsp-ui-doc--make-smaller-empty-lines ()
   "Make empty lines half normal lines."
