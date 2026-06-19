@@ -61,7 +61,7 @@ jobs:
           wget https://github.com/rust-analyzer/rust-analyzer/releases/download/$RUST_ANALYZER_VERSION/rust-analyzer-linux -O $HOME/bin/rust-analyzer
           chmod +x $HOME/bin/rust-analyzer
 
-      - uses: actions/checkout@v6
+      - uses: actions/checkout@v7
 
       - name: Run tests
         run: 'make ci'
