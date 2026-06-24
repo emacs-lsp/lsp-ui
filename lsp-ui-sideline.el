@@ -470,7 +470,7 @@ Push sideline overlays on `lsp-ui-sideline--ovs'."
                  (msg (replace-regexp-in-string " " " " msg))
                  (len (length msg))
                  (level (flycheck-error-level e))
-                 (face (if (eq level 'info) 'success level))
+		 (face (or (flycheck-error-level-error-list-face level) level))
                  (margin (lsp-ui-sideline--margin-width))
                  (msg (progn (add-face-text-property 0 len 'lsp-ui-sideline-global nil msg)
                              (add-face-text-property 0 len face nil msg)
